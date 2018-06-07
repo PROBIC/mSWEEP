@@ -1,7 +1,11 @@
 # mSWEEP
-Fast high-resolution sweep metagenomics using pseudoalignments and variational inference.
+Fast and accurate bacterial community composition estimation on strain
+level by using pseudoalignments and variational inference.
 
-More about the method\: paper info
+More about mSWEEP in the preprint [High-resolution sweep metagenomics
+using ultrafast read mapping and
+inference](https://www.biorxiv.org/content/early/2018/06/05/332544) in
+bioRxiv.
 
 # Installation
 ## Requirements

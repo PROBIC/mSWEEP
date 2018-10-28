@@ -8,5 +8,6 @@
 #include "Sample.hpp"
 
 void ProcessReads(const Reference &reference, const std::string &outfile, Sample &sample, OptimizerArgs args);
+void ProcessReads2(const Reference &reference, Sample &sample, OptimizerArgs args, unsigned iter);
 
 #endif

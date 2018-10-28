@@ -20,10 +20,13 @@ private:
 
   // Bootstrapping variables
   std::discrete_distribution<long unsigned> ec_distribution;
-  
+
 public:
   std::vector<long unsigned> ec_counts;
   Matrix<double> ec_probs = Matrix<double>(0, 0, 0.0);
+
+  // Bootstrap results
+  std::unordered_map<unsigned, std::vector<double>> bootstrap_abundances;
 
   Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<long unsigned> ec_counts_p, long unsigned counts_total_p, std::shared_ptr<std::unordered_map<long unsigned, std::vector<bool>>> ec_configs_p);
 

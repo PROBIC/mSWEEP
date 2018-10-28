@@ -18,6 +18,8 @@ void PrintHelpMessage() {
 	    << "\tOutput file (folder when estimating from a batch) to write results in.\n"
     	    << "\t-t <nrThreads>\n"
 	    << "\tHow many threads to use when processing a batch matrix (default: 1)\n"
+    	    << "\t--iters <nrIterations>\n"
+	    << "\tNumber of times to rerun estimation with bootstrapped alignments (default: 1)\n"
             << "\n\t--write-probs\n"
             << "\tIf specified, write the read equivalence class probabilities in a .csv matrix\n"
 	    << "\t--help\n"
@@ -106,6 +108,15 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     args.nr_threads = 1;
   }
 
+  if (CmdOptionPresent(argv, argv+argc, "--iters")) {
+    signed nr_iters_given = std::stoi(std::string(GetCmdOption(argv, argv+argc, "--iters")));
+    if (nr_iters_given < 1) {
+      throw std::runtime_error("number of iterations must be greater or equal to 1");
+    } else {
+      args.iters = nr_iters_given;
+    }
+  }
+  
   if (CmdOptionPresent(argv, argv+argc, "--tol")) {
     double tolerance = ParseDoubleOption(argv, argv+argc, "--tol");
     if (tolerance <= 0) {

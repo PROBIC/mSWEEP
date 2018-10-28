@@ -21,6 +21,7 @@ struct Arguments {
   std::string outfile;
 
   unsigned nr_threads = 1;
+  unsigned iters = 1;
   double params[2] = { 0.65, 0.01 };
 };
 

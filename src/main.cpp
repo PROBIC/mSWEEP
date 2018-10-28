@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <exception>
+#include <random>
 
 #include "parse_arguments.hpp"
 #include "read_bitfield.hpp"
@@ -67,9 +68,9 @@ int main (int argc, char *argv[]) {
   // Initialize the prior counts on the groups
   args.optimizer.alphas = std::vector<double>(reference.grouping.n_groups, 1.0);
 
-  if (!batch_mode) {
+  if (!batch_mode && args.iters == 1) {
     ProcessReads(reference, args.outfile, bitfields[0], args.optimizer);
-  } else {
+  } else if (args.iters == 1) {
     // Don't launch extra threads if the batch is small
     args.nr_threads = (args.nr_threads > bitfields.size() ? bitfields.size() : args.nr_threads);
     ThreadPool pool(args.nr_threads);
@@ -77,7 +78,30 @@ int main (int argc, char *argv[]) {
       std::string batch_outfile = (args.outfile.empty() ? args.outfile : args.outfile + "/" + bitfield.cell_name());
       pool.enqueue(&ProcessReads, reference, batch_outfile, bitfield, args.optimizer);
     }
+  } else {
+    // There's probably a more elegant way to implement this
+    args.nr_threads = (args.nr_threads > bitfields.size() ? bitfields.size() : args.nr_threads);
+    ThreadPool pool(args.nr_threads);
+    std::random_device rd;
+    std::mt19937_64 gen(rd());
+    std::cerr << "Running estimation with " << args.iters << " bootstrap iterations" << std::endl;
+    for (auto bitfield : bitfields) {
+      bitfield.init_bootstrap();
+      for (unsigned i = 0; i < args.iters; ++i) {
+	// Run the estimation multiple times without writing anything
+	pool.enqueue(&ProcessReads2, reference, bitfield, args.optimizer, i);
+	// Resample the pseudoalignment counts (here because we want to include the original)
+	bitfield.resample_counts(gen);
+      }
+    }
   }
-  
+  if (args.iters > 1) {
+    for (auto bitfield : bitfields) {
+      std::string outfile;
+      outfile = (args.outfile.empty() || !batch_mode ? args.outfile : args.outfile + "/" + bitfield.cell_name());
+      bitfield.write_bootstrap(reference.group_names, outfile, args.iters);
+    }
+  }
+
   return 0;
 }

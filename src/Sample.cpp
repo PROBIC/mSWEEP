@@ -32,6 +32,15 @@ std::vector<unsigned> Sample::group_counts(const std::vector<signed> &indicators
   return read_hitcounts;
 }
 
+void Sample::resample_counts(std::mt19937_64 &generator) {
+  std::vector<long unsigned> new_counts(this->ec_counts.size());
+  for (long unsigned i = 0; i < this->counts_total; ++i) {
+    long unsigned ec_id = this->ec_distribution(generator);
+    new_counts[ec_id] += 1;
+  }
+  this->ec_counts = new_counts;
+}
+
 void Sample::write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile) const {
   // Write the probability matrix to a file.
   outfile += "_probs.csv";

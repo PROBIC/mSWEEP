@@ -7,6 +7,7 @@
 #include <memory>
 #include <fstream>
 #include <iostream>
+#include <random>
 
 #include "matrix.hpp"
 
@@ -17,6 +18,9 @@ private:
   std::string cell_id;
   long unsigned counts_total;
 
+  // Bootstrapping variables
+  std::discrete_distribution<long unsigned> ec_distribution;
+  
 public:
   std::vector<long unsigned> ec_counts;
   Matrix<double> ec_probs = Matrix<double>(0, 0, 0.0);
@@ -32,6 +36,11 @@ public:
 
   // Count the number of pseudoalignments in groups defined by the given indicators.
   std::vector<unsigned> group_counts(const std::vector<signed> &indicators, unsigned n_groups, unsigned ec_id_pos) const;
+
+  // Initialize bootstrapping variables
+  void init_bootstrap() { this->ec_distribution = std::discrete_distribution<long unsigned>(this->ec_counts.begin(), this->ec_counts.end()); };
+  // Resample the pseudoalignment counts
+  void resample_counts(std::mt19937_64 &rng);
 
   // Getters
   unsigned num_ecs() const { return this->ec_ids.size(); };

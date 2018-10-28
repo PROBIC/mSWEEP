@@ -1,6 +1,7 @@
 #include "likelihood.hpp"
 
 #include <vector>
+#include <cmath>
 #include <math.h>
 
 inline double lbeta(double x, double y) {

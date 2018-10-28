@@ -92,8 +92,17 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     args.outfile = std::string(GetCmdOption(argv, argv+argc, "-o"));
   }
 
+  if (CmdOptionPresent(argv, argv+argc, "--iters")) {
+    signed nr_iters_given = std::stoi(std::string(GetCmdOption(argv, argv+argc, "--iters")));
+    if (nr_iters_given < 1) {
+      throw std::runtime_error("number of iterations must be greater or equal to 1");
+    } else {
+      args.iters = nr_iters_given;
+    }
+  }
+
   if (CmdOptionPresent(argv, argv+argc, "-t")) {
-    if (!CmdOptionPresent(argv, argv+argc, "-b")) {
+    if (!CmdOptionPresent(argv, argv+argc, "-b") && args.iters == 1) {
       std::cerr << "  parallel processing a single sample is not supported" << std::endl;
       args.nr_threads = 1;
     } else {
@@ -108,15 +117,6 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     args.nr_threads = 1;
   }
 
-  if (CmdOptionPresent(argv, argv+argc, "--iters")) {
-    signed nr_iters_given = std::stoi(std::string(GetCmdOption(argv, argv+argc, "--iters")));
-    if (nr_iters_given < 1) {
-      throw std::runtime_error("number of iterations must be greater or equal to 1");
-    } else {
-      args.iters = nr_iters_given;
-    }
-  }
-  
   if (CmdOptionPresent(argv, argv+argc, "--tol")) {
     double tolerance = ParseDoubleOption(argv, argv+argc, "--tol");
     if (tolerance <= 0) {

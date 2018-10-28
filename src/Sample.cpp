@@ -88,3 +88,31 @@ void Sample::write_abundances(const std::vector<std::string> &cluster_indicators
     of.close();
   }
 }
+
+void Sample::write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile, unsigned iters) {
+  // Write relative abundances to a file,
+  // outputs to std::cout if outfile is empty.
+  std::streambuf *buf;
+  std::ofstream of;
+  if (outfile.empty()) {
+    buf = std::cout.rdbuf();
+  } else {
+    outfile += "_abundances.txt";
+    of.open(outfile);
+    buf = of.rdbuf();
+  }
+  std::ostream out(buf);
+  out << "#c_id" << '\t' << "mean_theta" << '\t' << "abundances" << '\t' << "bootstrap_abundances" << '\n';
+  out << "#total_hits:" << '\t' << this->counts_total << '\n';
+
+  for (size_t i = 0; i < cluster_indicators_to_string.size(); ++i) {
+    out << cluster_indicators_to_string[i] << '\t';
+    for (unsigned j = 0; j < iters; ++j) {
+      out << this->bootstrap_abundances.at(j).at(i) << (j == iters - 1 ? '\n' : '\t');
+    }
+  }
+  out << std::endl;
+  if (!outfile.empty()) {
+    of.close();
+  }
+}

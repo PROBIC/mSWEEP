@@ -8,6 +8,6 @@
 #include "Sample.hpp"
 
 void ProcessReads(const Reference &reference, const std::string &outfile, Sample &sample, OptimizerArgs args);
-std::vector<double> ProcessReads2(const Reference &reference, Sample &sample, std::vector<long unsigned> ec_counts, OptimizerArgs args, unsigned iter);
+std::vector<double> ProcessBootstrap(const Reference &reference, Sample &sample, std::vector<long unsigned> ec_counts, OptimizerArgs args);
 
 #endif

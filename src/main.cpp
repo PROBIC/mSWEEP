@@ -121,7 +121,7 @@ int main (int argc, char *argv[]) {
       bitfield.init_bootstrap();
       for (unsigned i = 0; i < args.iters; ++i) {
 	// Run the estimation multiple times without writing anything
-	abus.emplace_back(pool.enqueue(&ProcessReads2, reference, bitfield, bitfield.ec_counts, args.optimizer, i));
+	abus.emplace_back(pool.enqueue(&ProcessBootstrap, reference, bitfield, bitfield.ec_counts, args.optimizer));
 	// Resample the pseudoalignment counts (here because we want to include the original)
 	bitfield.resample_counts(gen);
       }

@@ -20,12 +20,8 @@ void ProcessReads(const Reference &reference, const std::string &outfile, Sample
 
 std::vector<double> ProcessBootstrap(const Reference &reference, Sample &sample, std::vector<long unsigned> ec_counts, OptimizerArgs args) {
   // Process pseudoalignments but return the abundances rather than writing.
-  std::cerr << "Building log-likelihood array" << std::endl;
-
-  const Matrix<double> &log_likelihood = likelihood_array_mat(sample, reference.grouping);
-
   std::cerr << "Estimating relative abundances" << std::endl;
-  sample.ec_probs = rcg_optl_mat(log_likelihood, sample.total_counts(), ec_counts, args.alphas, args.tolerance, args.max_iters);
+  sample.ec_probs = rcg_optl_mat(sample.ll_mat, sample.total_counts(), ec_counts, args.alphas, args.tolerance, args.max_iters);
   const std::vector<double> &abundances = sample.group_abundances();
   return abundances;
   //  sample.bootstrap_abundances.insert(std::make_pair(iter, abundances));

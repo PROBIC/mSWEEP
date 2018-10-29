@@ -118,7 +118,8 @@ int main (int argc, char *argv[]) {
       // Store results in this
       std::vector<std::future<std::vector<double>>> abus;
       // Init the bootstrap variables
-      bitfield.init_bootstrap();
+      std::cerr << "Building log-likelihood array" << std::endl;
+      bitfield.init_bootstrap(reference.grouping);
       for (unsigned i = 0; i < args.iters; ++i) {
 	// Run the estimation multiple times without writing anything
 	abus.emplace_back(pool.enqueue(&ProcessBootstrap, reference, bitfield, bitfield.ec_counts, args.optimizer));

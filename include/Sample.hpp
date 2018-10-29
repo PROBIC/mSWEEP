@@ -10,6 +10,7 @@
 #include <random>
 
 #include "matrix.hpp"
+#include "Reference.hpp"
 
 class Sample {
 private:
@@ -24,6 +25,8 @@ private:
 public:
   std::vector<long unsigned> ec_counts;
   Matrix<double> ec_probs = Matrix<double>(0, 0, 0.0);
+  // Optional storage for likelihood, used in bootstrap
+  Matrix<double> ll_mat = Matrix<double>(0, 0, 0.0);
 
   // Bootstrap results
   std::unordered_map<unsigned, std::vector<double>> bootstrap_abundances;
@@ -42,7 +45,7 @@ public:
   std::vector<unsigned> group_counts(const std::vector<signed> &indicators, unsigned n_groups, unsigned ec_id_pos) const;
 
   // Initialize bootstrapping variables
-  void init_bootstrap() { this->ec_distribution = std::discrete_distribution<long unsigned>(this->ec_counts.begin(), this->ec_counts.end()); };
+  void init_bootstrap(Grouping &grouping);
   // Resample the pseudoalignment counts
   void resample_counts(std::mt19937_64 &rng);
 

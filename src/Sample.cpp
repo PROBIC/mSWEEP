@@ -1,4 +1,5 @@
 #include "Sample.hpp"
+#include "likelihood.hpp"
 
 Sample::Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<long unsigned> ec_counts_p, long unsigned counts_total_p, std::shared_ptr<std::unordered_map<long unsigned, std::vector<bool>>> ec_configs_p) {
   this->cell_id = cell_id_p;
@@ -30,6 +31,11 @@ std::vector<unsigned> Sample::group_counts(const std::vector<signed> &indicators
     read_hitcounts[indicators[j]] += bitset[j];
   }
   return read_hitcounts;
+}
+
+void Sample::init_bootstrap(Grouping &grouping) {
+  this->ec_distribution = std::discrete_distribution<long unsigned>(this->ec_counts.begin(), this->ec_counts.end());
+  this->ll_mat = likelihood_array_mat(*this, grouping);
 }
 
 void Sample::resample_counts(std::mt19937_64 &generator) {

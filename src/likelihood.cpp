@@ -1,7 +1,7 @@
 #include "likelihood.hpp"
 
 #include <vector>
-#include <math.h>
+#include <cmath>
 
 inline double lbeta(double x, double y) {
   return(std::lgamma(x) + std::lgamma(y) - std::lgamma(x + y));

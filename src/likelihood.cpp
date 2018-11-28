@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <cmath>
-#include <math.h>
 
 inline double lbeta(double x, double y) {
   return(std::lgamma(x) + std::lgamma(y) - std::lgamma(x + y));

@@ -2,7 +2,7 @@
 #include "rcg.hpp"
 
 #include <assert.h>
-#include <math.h>
+#include <cmath>
 #include <algorithm>
 #include <numeric>
 #include <iostream>
@@ -16,7 +16,7 @@ double digamma(double x) {
   xx = 1.0/x;
   xx2 = xx*xx;
   xx4 = xx2*xx2;
-  result += log(x)+(1./24.)*xx2-(7.0/960.0)*xx4+(31.0/8064.0)*xx4*xx2-(127.0/30720.0)*xx4*xx4;
+  result += std::log(x)+(1./24.)*xx2-(7.0/960.0)*xx4+(31.0/8064.0)*xx4*xx2-(127.0/30720.0)*xx4*xx4;
   return result;
 }
 
@@ -57,7 +57,7 @@ void ELBO_rcg_mat(const Matrix<double> &logl, const Matrix<double> &q_Z, const M
     for (unsigned j = 0; j < q_Z.get_cols(); ++j) {
       bound += (q_Z(i, j) * (logl(i, j) - gamma_Z(i, j))) * counts[j];
     }
-    bound -= lgamma(alpha0[i]) - lgamma(N_k[i]);
+    bound -= std::lgamma(alpha0[i]) - std::lgamma(N_k[i]);
   }
 }
 
@@ -77,8 +77,8 @@ Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const Sample &sample, co
 
   double bound_const = std::accumulate(alpha0.begin(), alpha0.end(), 0.0);;
   bound_const += sample.total_counts();
-  bound_const = -lgamma(bound_const);
-  bound_const += std::accumulate(alpha0.begin(), alpha0.end(), 0.0, [](double a, double b) { return a + lgamma(b); });
+  bound_const = -std::lgamma(bound_const);
+  bound_const += std::accumulate(alpha0.begin(), alpha0.end(), 0.0, [](double a, double b) { return a + std::lgamma(b); });
 
   std::vector<double> N_k(alpha0.size());
   q_Z.right_multiply(sample.ec_counts, N_k);

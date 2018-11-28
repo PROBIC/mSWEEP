@@ -2,7 +2,7 @@
 #define MATRIX_CPP
 
 #include "matrix.hpp"
-#include <math.h>
+#include <cmath>
 
 // Parameter Constructor
 template<typename T>
@@ -273,9 +273,9 @@ T Matrix<T>::log_sum_exp_col(unsigned col_id) {
     max_elem = (this->mat[i][col_id] > max_elem ? this->mat[i][col_id] : max_elem);
   }
   for (unsigned i = 0; i < this->rows; ++i) {
-    sum += exp(this->mat[i][col_id] - max_elem);
+    sum += std::exp(this->mat[i][col_id] - max_elem);
   }
-  return max_elem + log(sum);
+  return max_elem + std::log(sum);
 }
 
 // Get the number of rows of the matrix

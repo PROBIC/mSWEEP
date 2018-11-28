@@ -72,7 +72,9 @@ mSWEEP can be used to produce confidence intervals for the abundance
 estimates by bootstrapping the pseudoalignment counts and rerunning
 the abundance estimation a number of times. This can be done
 automatically by adding the '--iters' option to running mSWEEP:
+```
 > mSWEEP -f kallisto_out_folder -i cluster_indicators.txt --iters 100 -o abundances.txt
+```
 The bootstrapped abundance estimates will be appended to the output
 file as new columns and can be used to calculate confidence intervals
 for each of the abundance estimates.

@@ -67,6 +67,21 @@ The grouping identifiers must be in the same order as their corresponding sequen
 kallisto can utilize multiple threads in the mapping phase. You can run kallisto on multiple threads by specifying the number of threads with the '-t' flag.
 When estimating samples submitted in a kallisto batch, mSWEEP can estimate multiple samples in parallel by specifying the number of threads with the '-t' flag.
 
+## Bootstrapping confidence intervals (EXPERIMENTAL)
+mSWEEP can be used to produce confidence intervals for the abundance
+estimates by bootstrapping the pseudoalignment counts and rerunning
+the abundance estimation a number of times. This can be done
+automatically by adding the '--iters' option to running mSWEEP:
+> mSWEEP -f kallisto_out_folder -i cluster_indicators.txt --iters 100 -o abundances.txt
+The bootstrapped abundance estimates will be appended to the output
+file as new columns and can be used to calculate confidence intervals
+for each of the abundance estimates.
+
+Bootstrapping can be performed on multiple threads by adding the '-t
+4' option (NOTE: running the bootstrapping on multiple threads hasn't
+been optimised and may use large amounts of memory).
+
+# Running mSWEEP
 mSWEEP accepts the following flags:
 
 ```
@@ -80,6 +95,8 @@ mSWEEP accepts the following flags:
 	Output file (folder when estimating from a batch) to write results in.
 	-t <nrThreads>
 	How many threads to use when processing a batch matrix (default: 1)
+	--iters <nrIterations>
+	Number of times to rerun estimation with bootstrapped alignments (default: 1)
 
 	--write-probs
 	If specified, write the read equivalence class probabilities in a .csv matrix

@@ -1,5 +1,7 @@
 #include "Sample.hpp"
 
+#include "version.h"
+
 Sample::Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<long unsigned> ec_counts_p, long unsigned counts_total_p, std::shared_ptr<std::unordered_map<long unsigned, std::vector<bool>>> ec_configs_p) {
   this->cell_id = cell_id_p;
   this->ec_ids = ec_ids_p;
@@ -70,10 +72,11 @@ void Sample::write_abundances(const std::vector<std::string> &cluster_indicators
     buf = of.rdbuf();
   }
   std::ostream out(buf);
-  out << "#c_id" << '\t' << "mean_theta" << std::endl;
-  out << "#total_hits:" << '\t' << this->counts_total << std::endl;
+  out << "#mSWEEP_version:" << '\t' << _BUILD_VERSION << '\n';
+  out << "#total_hits:" << '\t' << this->counts_total << '\n';
+  out << "#c_id" << '\t' << "mean_theta" << '\n';
   for (size_t i = 0; i < abundances.size(); ++i) {
-    out << cluster_indicators_to_string[i] << '\t' << abundances[i] << std::endl;
+    out << cluster_indicators_to_string[i] << '\t' << abundances[i] << '\n';
   }
   if (!outfile.empty()) {
     of.close();

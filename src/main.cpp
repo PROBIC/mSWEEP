@@ -8,9 +8,10 @@
 #include "thread_pool.hpp"
 #include "Sample.hpp"
 #include "Reference.hpp"
+#include "version.h"
 
 int main (int argc, char *argv[]) {
-  std::cerr << "mSWEEP relative abundance estimation" << std::endl;
+  std::cerr << "mSWEEP-" << _BUILD_VERSION << " abundance estimation" << std::endl;
   Arguments args;
   try {
     ParseArguments(argc, argv, args);

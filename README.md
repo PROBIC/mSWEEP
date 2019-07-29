@@ -3,9 +3,21 @@ Fast and accurate bacterial community composition estimation on strain
 level by using pseudoalignments and variational inference.
 
 More about mSWEEP in the preprint [High-resolution sweep metagenomics
-using ultrafast read mapping and
-inference](https://www.biorxiv.org/content/early/2018/06/05/332544) in
+using fast probabilistic
+inference](https://www.biorxiv.org/content/10.1101/332544v2) in
 bioRxiv.
+
+A reference sequence collection and a grouping into clonal
+complexes/sequence types is available in
+[FigShare](https://figshare.com/articles/mSWEEP_reference_v1-0-0_tgz/8222636)
+for the following species
+- Campylobacter jejuni
+- Escherichia coli
+- Klebsiella pneumoniae
+- Staphylococcus epidermidis
+Using the complete reference collection will consume large amounts of
+memory (~80 gigabytes) when pseudoaligning with kallisto. Consider
+filtering the sequences if resources are limited.
 
 # Installation
 ## Requirements
@@ -67,7 +79,7 @@ The grouping identifiers must be in the same order as their corresponding sequen
 kallisto can utilize multiple threads in the mapping phase. You can run kallisto on multiple threads by specifying the number of threads with the '-t' flag.
 When estimating samples submitted in a kallisto batch, mSWEEP can estimate multiple samples in parallel by specifying the number of threads with the '-t' flag.
 
-## Bootstrapping confidence intervals (EXPERIMENTAL)
+## Bootstrapping confidence intervals (experimental)
 mSWEEP can be used to produce confidence intervals for the abundance
 estimates by bootstrapping the pseudoalignment counts and rerunning
 the abundance estimation a number of times. This can be done

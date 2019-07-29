@@ -15,6 +15,7 @@ for the following species
 - Escherichia coli
 - Klebsiella pneumoniae
 - Staphylococcus epidermidis
+
 Using the complete reference collection will consume large amounts of
 memory (~80 gigabytes) when pseudoaligning with kallisto. Consider
 filtering the sequences if resources are limited.

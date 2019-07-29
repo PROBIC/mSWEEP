@@ -10,6 +10,7 @@
 #include "thread_pool.hpp"
 #include "Sample.hpp"
 #include "Reference.hpp"
+#include "version.h"
 
 void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, const std::vector<std::vector<double>> &abundances, std::string &outfile, unsigned iters) {
   // Write relative abundances to a file,
@@ -39,7 +40,7 @@ void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_strin
 }
 
 int main (int argc, char *argv[]) {
-  std::cerr << "mSWEEP relative abundance estimation" << std::endl;
+  std::cerr << "mSWEEP-" << _BUILD_VERSION << " abundance estimation" << std::endl;
   Arguments args;
   try {
     ParseArguments(argc, argv, args);

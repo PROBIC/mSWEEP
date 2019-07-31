@@ -35,7 +35,7 @@ void ProcessBootstrap(Reference &reference, Arguments &args, std::vector<Sample>
   // Avoid launching extra threads if bootstrapping for only a few iterations
   args.nr_threads = (args.nr_threads > args.iters ? args.iters : args.nr_threads);
   ThreadPool pool(args.nr_threads);
-  std::unordered_map<std::string, std::vector<std::vector<double>>> results = bootstrap_abundances(bitfields, reference, pool, args.optimizer, args.batch_mode, args.iters);
+  std::unordered_map<std::string, std::vector<std::vector<double>>> results = bootstrap_abundances(bitfields, reference, pool, args);
 
   for (auto kv : results) {
     std::string outfile = (args.outfile.empty() || !args.batch_mode ? args.outfile : args.outfile + '/' + kv.first);

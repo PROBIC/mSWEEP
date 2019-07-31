@@ -36,26 +36,26 @@ void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_strin
   }
 }
 
-std::unordered_map<std::string, std::vector<std::vector<double>>> bootstrap_abundances(const std::vector<Sample> &bitfields, Reference &reference, ThreadPool &pool, const OptimizerArgs &optimizer, bool batch_mode, short unsigned iters) {
+std::unordered_map<std::string, std::vector<std::vector<double>>> bootstrap_abundances(const std::vector<Sample> &bitfields, Reference &reference, ThreadPool &pool, Arguments &args) {
     std::unordered_map<std::string, std::vector<std::vector<double>>> results;
     std::random_device rd;
     std::mt19937_64 gen(rd());
-    std::cerr << "Running estimation with " << iters << " bootstrap iterations" << '\n';
+    std::cerr << "Running estimation with " << args.iters << " bootstrap iterations" << '\n';
     for (auto bitfield : bitfields) {
       // Store results in this
       std::vector<std::future<std::vector<double>>> abus;
       // Init the bootstrap variables
       std::cerr << "Building log-likelihood array" << std::endl;
       bitfield.init_bootstrap(reference.grouping);
-      for (unsigned i = 0; i < iters; ++i) {
+      for (unsigned i = 0; i < args.iters; ++i) {
 	// Run the estimation multiple times without writing anything
-	abus.emplace_back(pool.enqueue(&BootstrapIter, reference, bitfield, bitfield.ec_counts, optimizer));
+	abus.emplace_back(pool.enqueue(&BootstrapIter, reference, bitfield, bitfield.ec_counts, args.optimizer));
 	// Resample the pseudoalignment counts (here because we want to include the original)
 	bitfield.resample_counts(gen);
       }
-      std::string name = (batch_mode ? bitfield.cell_name() : "0");
+      std::string name = (args.batch_mode ? bitfield.cell_name() : "0");
       results.insert(std::make_pair(name, std::vector<std::vector<double>>()));
-      for (unsigned i = 0; i < iters; ++i) {
+      for (unsigned i = 0; i < args.iters; ++i) {
 	results.at(name).emplace_back(abus.at(i).get());
       }
     }

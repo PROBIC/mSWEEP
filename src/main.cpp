@@ -56,10 +56,10 @@ int main (int argc, char *argv[]) {
 
   // Process the reads accordingly
   switch(args.run_mode()) {
-  case 0: ProcessReads(reference, args.outfile, bitfields[0], args.optimizer);
-  case 1: ProcessBatch(reference, args, bitfields);
-  case 2: ProcessBootstrap(reference, args, bitfields);
-  case 3: ProcessBootstrap(reference, args, bitfields); // Same function for batch and single files
+  case 0: ProcessReads(reference, args.outfile, bitfields[0], args.optimizer); break;
+  case 1: ProcessBatch(reference, args, bitfields); break;
+  case 2: ProcessBootstrap(reference, args, bitfields); break;
+  case 3: ProcessBootstrap(reference, args, bitfields); break; // Same function for batch and single files
   }
 
   return 0;

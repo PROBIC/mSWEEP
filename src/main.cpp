@@ -8,7 +8,6 @@
 #include "thread_pool.hpp"
 #include "Sample.hpp"
 #include "Reference.hpp"
-#include "bootstrap.hpp"
 #include "version.h"
 
 int main (int argc, char *argv[]) {
@@ -59,22 +58,9 @@ int main (int argc, char *argv[]) {
   if (!args.batch_mode && args.iters == 1) {
     ProcessReads(reference, args.outfile, bitfields[0], args.optimizer);
   } else if (args.iters == 1) {
-    // Don't launch extra threads if the batch is small
-    args.nr_threads = (args.nr_threads > bitfields.size() ? bitfields.size() : args.nr_threads);
-    ThreadPool pool(args.nr_threads);
-    for (auto bitfield : bitfields) {
-      std::string batch_outfile = (args.outfile.empty() ? args.outfile : args.outfile + "/" + bitfield.cell_name());
-      pool.enqueue(&ProcessReads, reference, batch_outfile, bitfield, args.optimizer);
-    }
+    ProcessBatch(reference, args, bitfields);
   } else {
-    args.nr_threads = (args.nr_threads > args.iters ? args.iters : args.nr_threads);
-    ThreadPool pool(args.nr_threads);
-    std::unordered_map<std::string, std::vector<std::vector<double>>> results = bootstrap_abundances(bitfields, reference, pool, args.optimizer, args.batch_mode, args.iters);
-
-    for (auto kv : results) {
-      std::string outfile = (args.outfile.empty() || !args.batch_mode ? args.outfile : args.outfile + '/' + kv.first);
-      pool.enqueue(&write_bootstrap, reference.group_names, kv.second, outfile, args.iters);
-    }
+    ProcessBootstrap(reference, args, bitfields);
   }
 
   return 0;

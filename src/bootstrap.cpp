@@ -48,7 +48,7 @@ std::unordered_map<std::string, std::vector<std::vector<double>>> bootstrap_abun
       bitfield.init_bootstrap(reference.grouping);
       for (unsigned i = 0; i < iters; ++i) {
 	// Run the estimation multiple times without writing anything
-	abus.emplace_back(pool.enqueue(&ProcessBootstrap, reference, bitfield, bitfield.ec_counts, optimizer));
+	abus.emplace_back(pool.enqueue(&BootstrapIter, reference, bitfield, bitfield.ec_counts, optimizer));
 	// Resample the pseudoalignment counts (here because we want to include the original)
 	bitfield.resample_counts(gen);
       }

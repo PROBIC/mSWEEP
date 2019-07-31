@@ -7,6 +7,7 @@
 #include "Reference.hpp"
 #include "process_reads.hpp"
 #include "parse_arguments.hpp"
+#include "thread_pool.hpp"
 
 void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, const std::vector<std::vector<double>> &abundances, std::string &outfile, unsigned iters) {
   // Write relative abundances to a file,

@@ -5,7 +5,6 @@
 #include "parse_arguments.hpp"
 #include "read_bitfield.hpp"
 #include "process_reads.hpp"
-#include "thread_pool.hpp"
 #include "Sample.hpp"
 #include "Reference.hpp"
 #include "version.h"

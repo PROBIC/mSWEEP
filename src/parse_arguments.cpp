@@ -111,8 +111,6 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     args.bootstrap_mode = true;
     if (nr_iters_given < 1) {
       throw std::runtime_error("number of iterations must be greater or equal to 1");
-    } else if (CmdOptionPresent(argv, argv+argc, "-b")) {
-      throw std::runtime_error("bootstrapping is not implemented for batches");
     } else {
       args.iters = nr_iters_given;
     }

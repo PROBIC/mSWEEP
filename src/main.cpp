@@ -59,6 +59,7 @@ int main (int argc, char *argv[]) {
   case 0: ProcessReads(reference, args.outfile, bitfields[0], args.optimizer);
   case 1: ProcessBatch(reference, args, bitfields);
   case 2: ProcessBootstrap(reference, args, bitfields);
+  case 3: ProcessBootstrap(reference, args, bitfields); // Same function for batch and single files
   }
 
   return 0;

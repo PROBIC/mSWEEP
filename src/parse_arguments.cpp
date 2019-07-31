@@ -76,8 +76,22 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     args.infile = std::string(GetCmdOption(argv, argv+argc, "--file"));
   } else if (CmdOptionPresent(argv, argv+argc, "-b")) {
     args.batch_infile = std::string(GetCmdOption(argv, argv+argc, "-b"));
+    args.batch_mode = true;
   } else {
     throw std::runtime_error("infile not found.");
+  }
+
+  // Fill the kallisto_files vector
+  args.kallisto_files = std::vector<std::string>((args.batch_mode ? 4 : 3));
+  if (args.batch_mode) {
+    args.kallisto_files[0] = args.batch_infile + "/run_info.json";
+    args.kallisto_files[1] = args.batch_infile + "/matrix.ec";
+    args.kallisto_files[2] = args.batch_infile + "/matrix.tsv";
+    args.kallisto_files[3] = args.batch_infile + "/matrix.cells";
+  } else {
+    args.kallisto_files[0] = args.infile + "/run_info.json";
+    args.kallisto_files[1] = args.infile + "/pseudoalignments.ec";
+    args.kallisto_files[2] = args.infile + "/pseudoalignments.tsv";
   }
 
   if (CmdOptionPresent(argv, argv+argc, "-i")) {

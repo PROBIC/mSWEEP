@@ -29,33 +29,20 @@ int main (int argc, char *argv[]) {
     return 0;
   }
 
-  std::cerr << "Reading the input files" << '\n';
-  bool batch_mode = args.infile.empty();
-  std::vector<std::string> kallisto_files((batch_mode ? 4 : 3));
-  if (batch_mode) {
-    kallisto_files[0] = args.batch_infile + "/run_info.json";
-    kallisto_files[1] = args.batch_infile + "/matrix.ec";
-    kallisto_files[2] = args.batch_infile + "/matrix.tsv";
-    kallisto_files[3] = args.batch_infile + "/matrix.cells";
-  } else {
-    kallisto_files[0] = args.infile + "/run_info.json";
-    kallisto_files[1] = args.infile + "/pseudoalignments.ec";
-    kallisto_files[2] = args.infile + "/pseudoalignments.tsv";
-  }
-
   std::vector<Sample> bitfields;
   Reference reference;
   try {
+    std::cerr << "Reading the input files" << '\n';
     std::cerr << "  reading group indicators" << '\n';
     ReadClusterIndicators(args.indicators_file, reference);
     std::cerr << "  read " << reference.n_refs << " group indicators" << std::endl;
 
     // Check that the number of reference sequences matches in the grouping and the alignment.
-    VerifyGrouping(kallisto_files[0], reference.n_refs);
+    VerifyGrouping(args.kallisto_files[0], reference.n_refs);
 
     std::cerr << "  reading pseudoalignments" << '\n';
-    ReadBitfield(kallisto_files, reference.n_refs, bitfields);
-    std::cerr << "  read " << (batch_mode ? bitfields.size() : bitfields[0].num_ecs()) << (batch_mode ? " samples from the batch" : " unique alignments") << std::endl;
+    ReadBitfield(args.kallisto_files, reference.n_refs, bitfields);
+    std::cerr << "  read " << (args.batch_mode ? bitfields.size() : bitfields[0].num_ecs()) << (args.batch_mode ? " samples from the batch" : " unique alignments") << std::endl;
   } catch (std::runtime_error &e) {
     std::cerr << "Reading pseudoalignments failed:\n  ";
     std::cerr << e.what();
@@ -69,7 +56,7 @@ int main (int argc, char *argv[]) {
   // Initialize the prior counts on the groups
   args.optimizer.alphas = std::vector<double>(reference.grouping.n_groups, 1.0);
 
-  if (!batch_mode && args.iters == 1) {
+  if (!args.batch_mode && args.iters == 1) {
     ProcessReads(reference, args.outfile, bitfields[0], args.optimizer);
   } else if (args.iters == 1) {
     // Don't launch extra threads if the batch is small
@@ -82,10 +69,10 @@ int main (int argc, char *argv[]) {
   } else {
     args.nr_threads = (args.nr_threads > args.iters ? args.iters : args.nr_threads);
     ThreadPool pool(args.nr_threads);
-    std::unordered_map<std::string, std::vector<std::vector<double>>> results = bootstrap_abundances(bitfields, reference, pool, args.optimizer, batch_mode, args.iters);
+    std::unordered_map<std::string, std::vector<std::vector<double>>> results = bootstrap_abundances(bitfields, reference, pool, args.optimizer, args.batch_mode, args.iters);
 
     for (auto kv : results) {
-      std::string outfile = (args.outfile.empty() || !batch_mode ? args.outfile : args.outfile + '/' + kv.first);
+      std::string outfile = (args.outfile.empty() || !args.batch_mode ? args.outfile : args.outfile + '/' + kv.first);
       pool.enqueue(&write_bootstrap, reference.group_names, kv.second, outfile, args.iters);
     }
   }

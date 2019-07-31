@@ -19,6 +19,9 @@ struct Arguments {
   std::string batch_infile;
   std::string indicators_file;
   std::string outfile;
+  std::vector<std::string> kallisto_files;
+
+  bool batch_mode = false;
 
   unsigned nr_threads = 1;
   unsigned iters = 1;

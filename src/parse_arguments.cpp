@@ -108,6 +108,7 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
 
   if (CmdOptionPresent(argv, argv+argc, "--iters")) {
     signed nr_iters_given = std::stoi(std::string(GetCmdOption(argv, argv+argc, "--iters")));
+    args.bootstrap_mode = true;
     if (nr_iters_given < 1) {
       throw std::runtime_error("number of iterations must be greater or equal to 1");
     } else {

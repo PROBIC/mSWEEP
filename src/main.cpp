@@ -55,12 +55,11 @@ int main (int argc, char *argv[]) {
   // Initialize the prior counts on the groups
   args.optimizer.alphas = std::vector<double>(reference.grouping.n_groups, 1.0);
 
-  if (!args.batch_mode && args.iters == 1) {
-    ProcessReads(reference, args.outfile, bitfields[0], args.optimizer);
-  } else if (args.iters == 1) {
-    ProcessBatch(reference, args, bitfields);
-  } else {
-    ProcessBootstrap(reference, args, bitfields);
+  // Process the reads accordingly
+  switch(args.run_mode()) {
+  case 0: ProcessReads(reference, args.outfile, bitfields[0], args.optimizer);
+  case 1: ProcessBatch(reference, args, bitfields);
+  case 2: ProcessBootstrap(reference, args, bitfields);
   }
 
   return 0;

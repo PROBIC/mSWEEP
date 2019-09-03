@@ -12,7 +12,7 @@
 #include "Reference.hpp"
 #include "version.h"
 
-void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, const std::vector<std::vector<double>> &abundances, std::string &outfile, unsigned iters) {
+void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, const std::vector<std::vector<double>> &abundances, std::string &outfile, unsigned iters, unsigned counts_total) {
   // Write relative abundances to a file,
   // outputs to std::cout if outfile is empty.
   std::streambuf *buf;
@@ -25,7 +25,10 @@ void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_strin
     buf = of.rdbuf();
   }
   std::ostream out(buf);
-  out << "#c_id" << '\t' << "abundances" << '\t' << "bootstrap_abundances" << '\n';
+  out << "#mSWEEP_version:" << '\t' << _BUILD_VERSION << '\n';
+  out << "#total_hits:" << '\t' << counts_total << '\n';
+  out << "#bootstrap_iters:" << '\t' << iters << '\n';
+  out << "#c_id" << '\t' << "mean_theta" << '\t' << "bootstrap_mean_thetas" << '\n';
 
   for (size_t i = 0; i < cluster_indicators_to_string.size(); ++i) {
     out << cluster_indicators_to_string[i] << '\t';
@@ -135,7 +138,7 @@ int main (int argc, char *argv[]) {
     }
     for (auto kv : results) {
       std::string outfile = (args.outfile.empty() || !batch_mode ? args.outfile : args.outfile + '/' + kv.first);
-      pool.enqueue(&write_bootstrap, reference.group_names, kv.second, outfile, args.iters);
+      pool.enqueue(&write_bootstrap, reference.group_names, kv.second, outfile, args.iters, bitfields.at(0).total_counts());
     }
   }
 

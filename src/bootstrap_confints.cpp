@@ -35,7 +35,7 @@ void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_strin
   }
 }
 
-std::vector<std::vector<double>> bootstrap_abundances(const Arguments &args, std::mt19937_64 &gen, Reference &reference, Sample &sample, ThreadPool &pool) {
+void bootstrap_abundances(const Arguments &args, std::string &outfile, std::mt19937_64 &gen, Reference &reference, Sample &sample, ThreadPool &pool) {
   std::vector<std::future<std::vector<double>>> abus;
   // Init the bootstrap variables
   std::cerr << "Building log-likelihood array" << std::endl;
@@ -51,5 +51,5 @@ std::vector<std::vector<double>> bootstrap_abundances(const Arguments &args, std
     results[i] = abus.at(i).get();
   }
 
-  return results;
+  pool.enqueue(&write_bootstrap, reference.group_names, results, outfile, args.iters, sample.total_counts());
 }

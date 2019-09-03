@@ -2,7 +2,6 @@
 #include <vector>
 #include <exception>
 #include <random>
-#include <future>
 
 #include "parse_arguments.hpp"
 #include "read_bitfield.hpp"
@@ -91,11 +90,8 @@ int main (int argc, char *argv[]) {
     std::cerr << "Running estimation with " << args.iters << " bootstrap iterations" << '\n';
     for (auto bitfield : bitfields) {
       std::string name = (batch_mode ? bitfield.cell_name() : "0");
-      results.insert(std::make_pair(name, bootstrap_abundances(args, gen, reference, bitfield, pool)));
-    }
-    for (auto kv : results) {
-      std::string outfile = (args.outfile.empty() || !batch_mode ? args.outfile : args.outfile + '/' + kv.first);
-      pool.enqueue(&write_bootstrap, reference.group_names, kv.second, outfile, args.iters, bitfields.at(0).total_counts());
+      std::string outfile = (args.outfile.empty() || !batch_mode ? args.outfile : args.outfile + '/' + name);
+      bootstrap_abundances(args, outfile, gen, reference, bitfield, pool);
     }
   }
 

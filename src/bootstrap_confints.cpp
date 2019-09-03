@@ -40,7 +40,11 @@ void bootstrap_abundances(const Arguments &args, std::string &outfile, std::mt19
   // Init the bootstrap variables
   std::cerr << "Building log-likelihood array" << std::endl;
   sample.init_bootstrap(reference.grouping);
+  std::cout << "Running estimation on the original sample" << std::endl;
   for (unsigned i = 0; i <= args.iters; ++i) {
+    if (i != 0) {
+      std::cout << "Running bootstrap iteration " << i << " out of " << args.iters << std::endl;
+    }
     // Run the estimation multiple times without writing anything
     abus.emplace_back(pool.enqueue(&ProcessBootstrap, reference, sample, sample.ec_counts, args.optimizer));
     // Resample the pseudoalignment counts (here because we want to include the original)

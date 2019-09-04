@@ -55,4 +55,13 @@ public:
   const long unsigned &total_counts() const { return this->counts_total; };
 };
 
+struct BootstrapResults {
+  std::unordered_map<std::string, std::pair<unsigned, std::vector<std::vector<double>>>> results;
+
+  //  void at(std::string key) { return this->results.at(key); };
+  void insert(std::string key, unsigned counts, std::vector<std::vector<double>> abundances) { this->results.insert(std::make_pair(key, std::make_pair(counts, abundances))); };
+  void insert_iter(std::string key, std::vector<double> iter) { this->results.at(key).second.emplace_back(iter); };
+  std::unordered_map<std::string, std::pair<unsigned, std::vector<std::vector<double>>>> get() const { return this->results; };
+};
+
 #endif

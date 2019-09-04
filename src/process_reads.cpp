@@ -35,19 +35,11 @@ void ProcessBootstrap(Reference &reference, Arguments &args, std::vector<Sample>
   // Avoid launching extra threads if bootstrapping for only a few iterations
   args.nr_threads = (args.nr_threads > args.iters ? args.iters : args.nr_threads);
   ThreadPool pool(args.nr_threads);
-  std::unordered_map<std::string, std::vector<std::vector<double>>> results = bootstrap_abundances(bitfields, reference, pool, args);
+  //  const std::unordered_map<std::string, std::vector<std::vector<double>>> &results = bootstrap_abundances(bitfields, reference, pool, args);
+  const BootstrapResults &results = bootstrap_abundances(bitfields, reference, pool, args);
 
-  for (auto kv : results) {
+  for (auto kv : results.get()) {
     std::string outfile = (args.outfile.empty() || !args.batch_mode ? args.outfile : args.outfile + '/' + kv.first);
-    pool.enqueue(&write_bootstrap, reference.group_names, kv.second, outfile, args.iters);
+    pool.enqueue(&write_bootstrap, reference.group_names, kv.second.second, outfile, args.iters, kv.second.first);
   }
-}
-
-std::vector<double> BootstrapIter(Reference &reference, Sample &sample, std::vector<long unsigned> ec_counts, OptimizerArgs args) {
-  // Process pseudoalignments but return the abundances rather than writing.
-  std::cerr << "Estimating relative abundances" << std::endl;
-  sample.ec_probs = rcg_optl_mat(sample.ll_mat, sample.total_counts(), ec_counts, args.alphas, args.tolerance, args.max_iters);
-  const std::vector<double> &abundances = sample.group_abundances();
-
-  return abundances;
 }

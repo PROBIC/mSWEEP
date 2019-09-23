@@ -17,7 +17,7 @@ void ProcessReads(const Reference &reference, const std::string &outfile, Sample
 
   sample.write_abundances(reference.group_names, outfile);  
   if (args.write_probs && !outfile.empty()) {
-    sample.write_probabilities(reference.group_names, outfile);
+    sample.write_probabilities(reference.group_names, args.gzip_probs, outfile);
   }
 }
 

@@ -1,7 +1,10 @@
 #include "Sample.hpp"
-#include "likelihood.hpp"
 
+#include <memory>
+
+#include "likelihood.hpp"
 #include "version.h"
+#include "zstr/zstr.hpp"
 
 Sample::Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<long unsigned> ec_counts_p, long unsigned counts_total_p, std::shared_ptr<std::unordered_map<long unsigned, std::vector<bool>>> ec_configs_p) {
   this->cell_id = cell_id_p;
@@ -49,27 +52,32 @@ void Sample::resample_counts(std::mt19937_64 &generator) {
   this->ec_counts = new_counts;
 }
 
-void Sample::write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile) const {
+void Sample::write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, const bool gzip_probs, std::string outfile) const {
   // Write the probability matrix to a file.
-  outfile += "_probs.csv";
-  std::ofstream of;
-  of.open(outfile);
-  if (of.is_open()) {
-    of << "ec_id" << ',';
+  std::unique_ptr<std::ostream> of;
+  if (gzip_probs) {
+    outfile += "_probs.csv.gz";
+    of = std::unique_ptr<std::ostream>(new zstr::ofstream(outfile));
+  } else {
+    outfile += "_probs.csv";
+    of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));
+  }
+  if (of->good()) {
+    *of << "ec_id" << ',';
     for (unsigned i = 0; i < this->ec_probs.get_rows(); ++i) {
-      of << cluster_indicators_to_string[i];
-      of << (i < this->ec_probs.get_rows() - 1 ? ',' : '\n');
+      *of << cluster_indicators_to_string[i];
+      *of << (i < this->ec_probs.get_rows() - 1 ? ',' : '\n');
     }
     for (unsigned i = 0; i < this->ec_probs.get_cols(); ++i) {
-      of << this->ec_ids[i] << ',';
+      *of << this->ec_ids[i] << ',';
       for (unsigned j = 0; j < this->ec_probs.get_rows(); ++j) {
-	of << this->ec_probs(j, i);
-	of << (j < this->ec_probs.get_rows() - 1 ? ',' : '\n');
+	*of << this->ec_probs(j, i);
+	*of << (j < this->ec_probs.get_rows() - 1 ? ',' : '\n');
       }
     }
   }
-  of << std::endl;
-  of.close();
+  *of << std::endl;
+  of->flush();
 }
 
 void Sample::write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile) const {

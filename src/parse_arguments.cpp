@@ -67,6 +67,7 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
   std::cerr << "Parsing arguments" << std::endl;
 
   args.optimizer.write_probs = CmdOptionPresent(argv, argv+argc, "--write-probs");
+  args.optimizer.gzip_probs = CmdOptionPresent(argv, argv+argc, "--gzip-probs");
   
   if ((CmdOptionPresent(argv, argv+argc, "-f") || CmdOptionPresent(argv, argv+argc, "--file"))  && CmdOptionPresent(argv, argv+argc, "-b")) {
     throw std::runtime_error("infile and batchfile found, specify only one");

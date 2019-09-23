@@ -36,7 +36,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 add_executable(mSWEEP ${SOURCES})
 
 # Link libraries
-target_link_libraries(mSWEEP pthread)
+target_link_libraries(mSWEEP pthread z)
 
 # Configure compiler flags, release enables -O2 optimization.
 set(CMAKE_BUILD_TYPE Release)

@@ -22,6 +22,8 @@ void PrintHelpMessage() {
 	    << "\tNumber of times to rerun estimation with bootstrapped alignments (default: 1)\n"
             << "\n\t--write-probs\n"
             << "\tIf specified, write the read equivalence class probabilities in a .csv matrix\n"
+            << "\n\t--gzip-probs\n"
+            << "\tGzip the .csv matrix output from --write-probs\n"
 	    << "\t--help\n"
 	    << "\tPrint this message.\n"
 	    << "\n\tELBO optimization and modeling (these seldom need to be changed)\n"

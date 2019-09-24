@@ -115,6 +115,8 @@ mSWEEP accepts the following flags:
 
 	--write-probs
 	If specified, write the read equivalence class probabilities in a .csv matrix
+	--gzip-probs
+	Gzip the .csv matrix output from --write-probs
 	--help
 	Print this message.
 

@@ -1,12 +1,14 @@
+#include "process_reads.hpp"
+
 #include <unordered_map>
 
-#include "process_reads.hpp"
 #include "likelihood.hpp"
 #include "rcg.hpp"
 #include "thread_pool.hpp"
 #include "bootstrap.hpp"
+#include "zstr/zstr.hpp"
 
-void ProcessReads(const Reference &reference, const std::string &outfile, Sample &sample, OptimizerArgs args) {
+void ProcessReads(const Reference &reference, std::string outfile, Sample &sample, OptimizerArgs args) {
   // Process pseudoalignments from kallisto.
   std::cerr << "Building log-likelihood array" << std::endl;
 
@@ -17,7 +19,15 @@ void ProcessReads(const Reference &reference, const std::string &outfile, Sample
 
   sample.write_abundances(reference.group_names, outfile);  
   if (args.write_probs && !outfile.empty()) {
-    sample.write_probabilities(reference.group_names, args.gzip_probs, outfile);
+    std::unique_ptr<std::ostream> of;
+    if (args.gzip_probs) {
+      outfile += "_probs.csv.gz";
+      of = std::unique_ptr<std::ostream>(new zstr::ofstream(outfile));
+    } else {
+      outfile += "_probs.csv";
+      of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));
+    }
+    sample.write_probabilities(reference.group_names, args.gzip_probs, (args.print_probs ? std::cout : *of));
   }
 }
 

@@ -11,6 +11,7 @@ struct OptimizerArgs {
   std::vector<double> alphas;
   bool write_probs;
   bool gzip_probs;
+  bool print_probs;
 };
 
 struct Arguments {

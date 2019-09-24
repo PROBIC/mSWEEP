@@ -37,7 +37,7 @@ public:
   std::vector<double> group_abundances() const;
 
   // Writer functions for the contents.
-  void write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, const bool gzip_probs, std::string outfile) const;
+  void write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, const bool gzip_probs, std::ostream &outfile) const;
   void write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile) const;
   void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile, unsigned iters);
 

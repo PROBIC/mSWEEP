@@ -22,6 +22,8 @@ void PrintHelpMessage() {
 	    << "\tNumber of times to rerun estimation with bootstrapped alignments (default: 1)\n"
             << "\n\t--write-probs\n"
             << "\tIf specified, write the read equivalence class probabilities in a .csv matrix\n"
+            << "\n\t--print-probs\n"
+            << "\tPrint the equivalence class probabilities rather than writing when using --write-probs\n"    
             << "\n\t--gzip-probs\n"
             << "\tGzip the .csv matrix output from --write-probs\n"
 	    << "\t--help\n"
@@ -70,6 +72,7 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
 
   args.optimizer.write_probs = CmdOptionPresent(argv, argv+argc, "--write-probs");
   args.optimizer.gzip_probs = CmdOptionPresent(argv, argv+argc, "--gzip-probs");
+  args.optimizer.print_probs = CmdOptionPresent(argv, argv+argc, "--print-probs");
   
   if ((CmdOptionPresent(argv, argv+argc, "-f") || CmdOptionPresent(argv, argv+argc, "--file"))  && CmdOptionPresent(argv, argv+argc, "-b")) {
     throw std::runtime_error("infile and batchfile found, specify only one");

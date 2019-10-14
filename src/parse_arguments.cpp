@@ -99,6 +99,11 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     args.kallisto_files[1] = args.infile + "/pseudoalignments.ec";
     args.kallisto_files[2] = args.infile + "/pseudoalignments.tsv";
   }
+  if (CmdOptionPresent(argv, argv+argc, "--compressed-input")) {
+    for (size_t i = 1; i < args.kallisto_files.size(); ++i) {
+      args.kallisto_files[i] += ".gz";
+    }
+  }
 
   if (CmdOptionPresent(argv, argv+argc, "-i")) {
     args.indicators_file = std::string(GetCmdOption(argv, argv+argc, "-i"));

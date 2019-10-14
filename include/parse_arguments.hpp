@@ -25,6 +25,7 @@ struct Arguments {
 
   bool batch_mode = false;
   bool bootstrap_mode = false;
+  bool compressed_input = false;
 
   unsigned nr_threads = 1;
   unsigned iters = 1;

@@ -7,6 +7,7 @@
 #include <exception>
 
 #include "read_bitfield.hpp"
+#include "zstr/zstr.hpp"
 
 void VerifyGrouping(std::string &run_info_file, unsigned n_refs) {
   // Get the number of reference sequences in the pseudoalignment
@@ -47,8 +48,8 @@ void VerifyGrouping(std::string &run_info_file, unsigned n_refs) {
 void ReadClusterIndicators(std::string &indicator_path, Reference &reference) {
   std::unordered_map<std::string, unsigned> str_to_int;
 
-  std::ifstream indicator_file(indicator_path);
-  if (indicator_file.is_open()) {
+  zstr::ifstream indicator_file(indicator_path);
+  if (indicator_file.good()) {
     std::string indicator_s;
     signed indicator_i = 0;
     while (getline(indicator_file, indicator_s)) {
@@ -64,7 +65,6 @@ void ReadClusterIndicators(std::string &indicator_path, Reference &reference) {
   } else {
     throw std::runtime_error(indicator_path + " not found.");
   }
-  indicator_file.close();
 
   reference.n_refs = reference.grouping.indicators.size();
   reference.grouping.n_groups = str_to_int.size();
@@ -89,14 +89,14 @@ void ReadBitfield(std::vector<std::string> &kallisto_files, unsigned n_refs, std
   } else {
     batch_cells.emplace_back("sample");
   }
-  std::ifstream ec_file(kallisto_files[1]);
-  std::ifstream tsv_file(kallisto_files[2]);
+  zstr::ifstream ec_file(kallisto_files[1]);
+  zstr::ifstream tsv_file(kallisto_files[2]);
 
   std::shared_ptr<std::unordered_map<long unsigned, std::vector<bool>>> kallisto_configs;
   kallisto_configs = std::make_shared<std::unordered_map<long unsigned, std::vector<bool>>>();
   std::unordered_set<long unsigned> config_ids;
 
-  if (tsv_file.is_open()) {
+  if (tsv_file.good()) {
     std::string line;
     unsigned cell_id = 0;
     std::vector<long unsigned> ec_ids;
@@ -138,9 +138,8 @@ void ReadBitfield(std::vector<std::string> &kallisto_files, unsigned n_refs, std
   } else {
     throw std::runtime_error(kallisto_files[2] + " not found.");
   }
-  tsv_file.close();
 
-  if (ec_file.is_open()) {
+  if (ec_file.good()) {
     std::string line;
     while (getline(ec_file, line)) {
       std::string part;
@@ -170,5 +169,4 @@ void ReadBitfield(std::vector<std::string> &kallisto_files, unsigned n_refs, std
   } else {
     throw std::runtime_error(kallisto_files[1] + " not found.");
   }
-  ec_file.close();
 }

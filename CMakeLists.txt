@@ -1,13 +1,19 @@
-cmake_minimum_required (VERSION 2.8.12)
-project (mSWEEP)
+cmake_minimum_required(VERSION 2.8.12)
+project(mSWEEP)
 
-## Set C++11 support depending on cmake version
-if (${CMAKE_MAJOR_VERSION} GREATER 2 AND ${CMAKE_MINOR_VERSION} GREATER 0)
-  set (CMAKE_CXX_STANDARD 11)
-  set (CMAKE_CXX_STANDARD_REQUIRED ON)
-else()
-  add_compile_options(-std=c++11)
+## Determine build type
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release) ## Build Release by default
 endif()
+
+## Check dependencies
+find_package(Threads REQUIRED)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(ZLIB)
+set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 
 ## Get version number from git tags
 find_package(Git)
@@ -27,16 +33,43 @@ endif()
 string(TIMESTAMP _BUILD_TIMESTAMP)
 
 ## Generate a version.h file containing build version and timestamp
-configure_file(include/version.h.in ${CMAKE_SOURCE_DIR}/include/version.h @ONLY)
+configure_file(include/version.h.in ${CMAKE_BINARY_DIR}/include/version.h @ONLY)
 
-include_directories(include)
+if(NOT ZLIB_FOUND OR CMAKE_BUILD_ZLIB)
+  configure_file(CMakeLists.txt.in ${CMAKE_BINARY_DIR}/external/zlib-download/CMakeLists.txt)
+  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/zlib-download )
+  if(result)
+    message(FATAL_ERROR "CMake step for zlib failed: ${result}")
+  endif()
+  execute_process(COMMAND ${CMAKE_COMMAND} --build .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/zlib-download )
+  if(result)
+    message(FATAL_ERROR "Build step for zlib failed: ${result}")
+  endif()
+  set(ZLIB ${CMAKE_BINARY_DIR}/lib/libz.a)
+else()
+  set(ZLIB ZLIB::ZLIB)
+endif()
+
+
+include_directories(include ${CMAKE_BINARY_DIR}/include)
 file(GLOB SOURCES "src/*.cpp")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 add_executable(mSWEEP ${SOURCES})
 
-# Link libraries
-target_link_libraries(mSWEEP pthread z)
+## Handle compiling zlib from source
+if(CMAKE_BUILD_ZLIB)
+  add_subdirectory(${CMAKE_BINARY_DIR}/external/zlib
+                   ${CMAKE_BINARY_DIR}/external/zlib)
+  set_target_properties(example PROPERTIES EXCLUDE_FROM_ALL 1)
+  set_target_properties(minigzip PROPERTIES EXCLUDE_FROM_ALL 1)
+  set_target_properties(zlib PROPERTIES EXCLUDE_FROM_ALL 1)
+  add_dependencies(mSWEEP zlibstatic)
+endif()
 
-# Configure compiler flags, release enables -O2 optimization.
-set(CMAKE_BUILD_TYPE Release)
+# Link libraries
+target_link_libraries(mSWEEP Threads::Threads ${ZLIB})

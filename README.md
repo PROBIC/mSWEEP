@@ -35,8 +35,7 @@ filtering the sequences if resources are limited.
 > cmake ..
 > make
 ```
-- This will download and install mSWEEP.
-- You can remove the build directory afterwards.
+- This will compile the mSWEEP executable in build/bin/mSWEEP.
 
 # Usage
 # Toy data

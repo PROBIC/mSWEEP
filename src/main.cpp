@@ -9,6 +9,8 @@
 #include "Reference.hpp"
 #include "version.h"
 
+#include "zstr.hpp"
+
 int main (int argc, char *argv[]) {
   std::cerr << "mSWEEP-" << _BUILD_VERSION << " abundance estimation" << std::endl;
   Arguments args;
@@ -32,14 +34,17 @@ int main (int argc, char *argv[]) {
   try {
     std::cerr << "Reading the input files" << '\n';
     std::cerr << "  reading group indicators" << '\n';
-    ReadClusterIndicators(args.indicators_file, reference);
+    KallistoFiles kallisto_files((args.batch_mode ? args.batch_infile : args.infile), args.batch_mode);
+
+    zstr::ifstream indicators_file(args.indicators_file);
+    ReadClusterIndicators(indicators_file, reference);
     std::cerr << "  read " << reference.n_refs << " group indicators" << std::endl;
 
     // Check that the number of reference sequences matches in the grouping and the alignment.
-    VerifyGrouping(args.kallisto_files[0], reference.n_refs);
+    VerifyGrouping(*kallisto_files.run_info, reference.n_refs);
 
     std::cerr << "  reading pseudoalignments" << '\n';
-    ReadBitfield(args.kallisto_files, reference.n_refs, bitfields);
+    ReadBitfield(kallisto_files, reference.n_refs, bitfields);
     std::cerr << "  read " << (args.batch_mode ? bitfields.size() : bitfields[0].num_ecs()) << (args.batch_mode ? " samples from the batch" : " unique alignments") << std::endl;
   } catch (std::runtime_error &e) {
     std::cerr << "Reading pseudoalignments failed:\n  ";

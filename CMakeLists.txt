@@ -56,7 +56,7 @@ else()
 endif()
 
 
-include_directories(include ${CMAKE_BINARY_DIR}/include)
+include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include ${CMAKE_SOURCE_DIR}/external/zstr)
 file(GLOB SOURCES "src/*.cpp")
 
 add_executable(mSWEEP ${SOURCES})

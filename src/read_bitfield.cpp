@@ -1,5 +1,4 @@
 #include <string>
-#include <fstream>
 #include <sstream>
 #include <vector>
 #include <unordered_map>
@@ -7,14 +6,12 @@
 #include <exception>
 
 #include "read_bitfield.hpp"
-#include "zstr/zstr.hpp"
 
-void VerifyGrouping(std::string &run_info_file, unsigned n_refs) {
+void VerifyGrouping(std::istream &run_info, unsigned n_refs) {
   // Get the number of reference sequences in the pseudoalignment
   // contained in the 'n_targets' variable in run_info.json file.
   short unsigned line_nr = 0; // number of reference seqs is on line 2 (kallisto v0.43)
-  std::ifstream run_info(run_info_file);
-  if (run_info.is_open()) {
+  if (run_info.good()) {
     std::string line;
     while (getline(run_info, line)) {
       if (line_nr == 0) {
@@ -40,15 +37,13 @@ void VerifyGrouping(std::string &run_info_file, unsigned n_refs) {
       }
     }
   } else {
-    throw std::runtime_error(run_info_file + " not found.");
+    throw std::runtime_error("Could not read run_info.json found.");
   }
-  run_info.close();
 }
 
-void ReadClusterIndicators(std::string &indicator_path, Reference &reference) {
+void ReadClusterIndicators(std::istream &indicator_file, Reference &reference) {
   std::unordered_map<std::string, unsigned> str_to_int;
 
-  zstr::ifstream indicator_file(indicator_path);
   if (indicator_file.good()) {
     std::string indicator_s;
     signed indicator_i = 0;
@@ -63,47 +58,44 @@ void ReadClusterIndicators(std::string &indicator_path, Reference &reference) {
       reference.grouping.indicators.emplace_back(str_to_int[indicator_s]);
     }
   } else {
-    throw std::runtime_error(indicator_path + " not found.");
+    throw std::runtime_error("Could not read cluster indicators.");
   }
 
   reference.n_refs = reference.grouping.indicators.size();
   reference.grouping.n_groups = str_to_int.size();
 }
 
-std::vector<std::string> ReadCellNames(std::string &cells_file) {
+std::vector<std::string> ReadCellNames(std::istream &cells_file) {
   Reference reference;
   ReadClusterIndicators(cells_file, reference);
   return reference.group_names;
 }
 
-void ReadBitfield(std::vector<std::string> &kallisto_files, unsigned n_refs, std::vector<Sample> &batch) {
+void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sample> &batch) {
   // Reads the alignment file for further analyses.
   // Args:
   //   kallisto_files: kallisto alignment files.
   //   n_refs: number of reference sequences.
   //   batch: alignments for the sample will be appended to this vector
-  bool batch_mode = (kallisto_files.size() == 4); // Batch mode (kallisto v0.44) has four files
   std::vector<std::string> batch_cells;
-  if (batch_mode) {
-    batch_cells = ReadCellNames(kallisto_files[3]);
+  if (kallisto_files.batch_mode) {
+    batch_cells = ReadCellNames(*kallisto_files.cells);
   } else {
     batch_cells.emplace_back("sample");
   }
-  zstr::ifstream ec_file(kallisto_files[1]);
-  zstr::ifstream tsv_file(kallisto_files[2]);
 
   std::shared_ptr<std::unordered_map<long unsigned, std::vector<bool>>> kallisto_configs;
   kallisto_configs = std::make_shared<std::unordered_map<long unsigned, std::vector<bool>>>();
   std::unordered_set<long unsigned> config_ids;
 
-  if (tsv_file.good()) {
+  if (kallisto_files.tsv->good()) {
     std::string line;
     unsigned cell_id = 0;
     std::vector<long unsigned> ec_ids;
     std::vector<long unsigned> ec_counts;
     long unsigned counts_total = 0;
     
-    while (getline(tsv_file, line)) {
+    while (getline(*kallisto_files.tsv, line)) {
       std::string part;
       std::stringstream partition(line);
       unsigned count = 0;
@@ -113,7 +105,7 @@ void ReadBitfield(std::vector<std::string> &kallisto_files, unsigned n_refs, std
 	if (count == 0) {
 	  key = std::stoi(part);
 	  ++count;
-	} else if (count == 1 && batch_mode) {
+	} else if (count == 1 && kallisto_files.batch_mode) {
 	  unsigned current_cell_id = std::stoi(part);
 	  ++count;
 	  if (current_cell_id != cell_id) {
@@ -136,12 +128,12 @@ void ReadBitfield(std::vector<std::string> &kallisto_files, unsigned n_refs, std
     }
     batch.emplace_back(Sample(batch_cells[cell_id], ec_ids, ec_counts, counts_total, kallisto_configs));
   } else {
-    throw std::runtime_error(kallisto_files[2] + " not found.");
+    throw std::runtime_error(".tsv file not found.");
   }
 
-  if (ec_file.good()) {
+  if (kallisto_files.ec->good()) {
     std::string line;
-    while (getline(ec_file, line)) {
+    while (getline(*kallisto_files.ec, line)) {
       std::string part;
       std::stringstream partition(line);
       bool firstel = true;
@@ -167,6 +159,6 @@ void ReadBitfield(std::vector<std::string> &kallisto_files, unsigned n_refs, std
       }
     }
   } else {
-    throw std::runtime_error(kallisto_files[1] + " not found.");
+    throw std::runtime_error(".ec file not found.");
   }
 }

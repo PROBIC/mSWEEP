@@ -6,7 +6,7 @@
 #include "rcg.hpp"
 #include "thread_pool.hpp"
 #include "bootstrap.hpp"
-#include "zstr/zstr.hpp"
+#include "zstr.hpp"
 
 void ProcessReads(const Reference &reference, std::string outfile, Sample &sample, OptimizerArgs args) {
   // Process pseudoalignments from kallisto.

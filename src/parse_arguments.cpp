@@ -90,11 +90,13 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
   // Fill the kallisto_files vector
   args.kallisto_files = std::vector<std::string>((args.batch_mode ? 4 : 3));
   if (args.batch_mode) {
+    args.infiles = KallistoFiles(args.batch_infile, args.batch_mode);
     args.kallisto_files[0] = args.batch_infile + "/run_info.json";
     args.kallisto_files[1] = args.batch_infile + "/matrix.ec";
     args.kallisto_files[2] = args.batch_infile + "/matrix.tsv";
     args.kallisto_files[3] = args.batch_infile + "/matrix.cells";
   } else {
+    args.infiles = KallistoFiles(args.infile, args.batch_mode);
     args.kallisto_files[0] = args.infile + "/run_info.json";
     args.kallisto_files[1] = args.infile + "/pseudoalignments.ec";
     args.kallisto_files[2] = args.infile + "/pseudoalignments.tsv";

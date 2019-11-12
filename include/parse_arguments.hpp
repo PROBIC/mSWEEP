@@ -4,6 +4,8 @@
 #include <vector>
 #include <string>
 
+#include "KallistoFiles.hpp"
+
 struct OptimizerArgs {
   unsigned max_iters = 5000;
   double tolerance = 1e-06;
@@ -17,6 +19,7 @@ struct OptimizerArgs {
 struct Arguments {
   OptimizerArgs optimizer;
 
+  KallistoFiles infiles;
   std::string infile;
   std::string batch_infile;
   std::string indicators_file;

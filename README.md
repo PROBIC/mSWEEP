@@ -21,14 +21,27 @@ memory (~80 gigabytes) when pseudoaligning with kallisto. Consider
 filtering the sequences if resources are limited.
 
 # Installation
-## Requirements
+mSWEEP can be obtained either in the form of a precompiled binary
+* [Linux 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.2.2/mSWEEP_linux-v1.2.2.tar.gz)
+* [macOS 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.2.2/mSWEEP_macOS-v1.2.2.tar.gz)
+or by following the instructions below for compiling mSWEEP from source.
+
+In addition to mSWEEP, you will need to install either [Themisto
+(recommended)](https://github.com/jnalanko/Themisto) or
+[kallisto](https://github.com/pachterlab/kallisto) for
+pseudoalignment.
+
+## Compiling from source
+### Requirements (compilation)
 - C++11 compliant compiler.
 - cmake
 
-## Installing the pipeline
-- Install [kallisto](https://github.com/pachterlab/kallisto).
-- NOTE: if you want to run kallisto in batch mode, install [the forked version](https://github.com/tmaklin/kallisto) which contains a fix to the pseudoalignment counts when running in batch mode.
-- Clone the mSWEEP repository, enter the directory and run
+### Compilation
+Clone the mSWEEP repository (note the --recursive option in git clone!)
+```
+git clone --recursive https://github.com/PROBIC/mSWEEP.git
+```
+enter the directory and run
 ```
 > mkdir build
 > cd build
@@ -38,7 +51,7 @@ filtering the sequences if resources are limited.
 - This will compile the mSWEEP executable in build/bin/mSWEEP.
 
 # Usage
-# Toy data
+## Toy data (kallisto)
 There is a toy dataset included in the example/ folder. To run it, enter the directory and run the commands
 
 ```
@@ -48,7 +61,22 @@ kallisto pseudo -i example_index -o kallisto_out_folder 215_1.fastq.gz 215_2.fas
 mSWEEP -f kallisto_out_folder -i clustering.txt
 
 ```
-You should see that roughly 94.6% of the reads are assigned to group "clust2".
+You should see that roughly 90% of the reads are assigned to group "clust2".
+
+## Toy data (Themisto)
+Enter the directory as above and run the build_index and pseudoalign commands from Themisto
+
+```
+mkdir themisto_index
+mkdir tmp
+gunzip 215_*.fastq.gz
+
+build_index --k 31 --input-file example.fasta --color-file clustering.txt --index-dir themisto_index --temp-dir tmp
+pseudoalign --query-file 215_1.fastq --outfile 215_1_alignment.txt --index-dir themisto_index --temp-dir tmp --rc
+pseudoalign --query-file 215_2.fastq --outfile 215_2_alignment.txt --index-dir themisto_index --temp-dir tmp --rc
+
+mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -i clustering.txt
+```
 
 # General pipeline
 ## Preprocessing
@@ -65,7 +93,7 @@ cluster1
 ```
 The grouping identifiers must be in the same order as their corresponding sequences appear in the reference file.
 
-## Analysing reads
+## Analysing reads (with kallisto)
 - Pseudomap paired-end reads:
 > kallisto pseudo -i reference_kmi -o kallisto_out reads_1.fastq reads_2.fastq
 - Or use [kallisto's batch mode](https://pachterlab.github.io/kallisto/manual) to analyze multiple files at once:
@@ -74,6 +102,7 @@ The grouping identifiers must be in the same order as their corresponding sequen
 - Use mSWEEP to estimate cluster abundances from a single file:
 > mSWEEP -f kallisto_out_folder -i cluster_indicators.txt -o abundances.txt
 - Or from a batch file and output to abundances/ folder:
+- (**NOT RECOMMENDED** anymore as of 18 December 2019: kallisto's batch mode can be a bit unstable)
 > mSWEEP -b kallisto_batch_out -i cluster_indicators.txt -o abundances
 
 kallisto can utilize multiple threads in the mapping phase. You can run kallisto on multiple threads by specifying the number of threads with the '-t' flag.
@@ -99,16 +128,25 @@ been optimised and may use large amounts of memory).
 mSWEEP accepts the following flags:
 
 ```
+	--themisto-1 <themistoPseudoalignment1>
+	Pseudoalignment results from Themisto for the 1st strand of paired-end reads.
+	--themisto-2 <themistoPseudoalignment2>
+	Pseudoalignment results from Themisto for the 2nd strand of paired-end reads.
+
 	-f <pseudomappingFile>
-	The pseudoalignment output file location. Can't be used when -b is specified.
+    Pseudoalignment output file location from kallisto. Can't be used when -b is specified.
 	-b <pseudomappingBatch>
 	The kallisto batch matrix file location. Can't be used when -f is specified.
+
 	-i <clusterIndicators>
 	Group identifiers file. Must be supplied.
 	-o <outputFile>
 	Output file (folder when estimating from a batch) to write results in.
 	-t <nrThreads>
 	How many threads to use when processing a batch matrix (default: 1)
+
+	--themisto-mode <PairedEndMergeMode>
+	How to merge Themisto pseudoalignments for paired-end reads	(default: union).
 	--iters <nrIterations>
 	Number of times to rerun estimation with bootstrapped alignments (default: 1)
 
@@ -131,3 +169,9 @@ mSWEEP accepts the following flags:
 	-e <dispersionTerm>
 	Calibration term in the likelihood function. (default: 0.01)
 ```
+
+# License
+The source code from this project is subject to the terms of the MIT
+license. A copy of the MIT license is supplied with the project, or
+can be obtained at
+[https://opensource.org/licenses/MIT](https://opensource.org/licenses/MIT).

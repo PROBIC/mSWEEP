@@ -8,23 +8,33 @@ void PrintHelpMessage() {
   std::cerr << "Usage: mSWEEP -f <pseudomappingFile> -i <clusterIndicators> [OPTIONS]\n"
 	    << "Estimates the group abundances in a sample.\n\n"
 	    << "Options:\n"
+	    << "\t--themisto-1 <themistoPseudoalignment1>\n"
+	    << "\tPseudoalignment results from Themisto for the 1st strand of paired-end reads.\n"
+	    << "\t--themisto-2 <themistoPseudoalignment2>\n"
+	    << "\tPseudoalignment results from Themisto for the 2nd strand of paired-end reads.\n"
+	    << "\n"
 	    << "\t-f <pseudomappingFile>\n"
-	    << "\tThe pseudoalignment output file location. Can't be used when -b is specified.\n"
+	    << "\tPseudoalignment output file location from kallisto. Can't be used when -b is specified.\n"
     	    << "\t-b <pseudomappingBatch>\n"
 	    << "\tThe kallisto batch matrix file location. Can't be used when -f is specified.\n"
+	    << "\n"
 	    << "\t-i <clusterIndicators>\n"
 	    << "\tGroup identifiers file. Must be supplied.\n"
 	    << "\t-o <outputFile>\n"
 	    << "\tOutput file (folder when estimating from a batch) to write results in.\n"
     	    << "\t-t <nrThreads>\n"
 	    << "\tHow many threads to use when processing a batch matrix (default: 1)\n"
+	    << "\n"
+	    << "\t--themisto-mode <PairedEndMergeMode>\n"
+	    << "\tHow to merge Themisto pseudoalignments for paired-end reads	(default: union).\n"
     	    << "\t--iters <nrIterations>\n"
 	    << "\tNumber of times to rerun estimation with bootstrapped alignments (default: 1)\n"
-            << "\n\t--write-probs\n"
+	    << "\n"
+            << "\t--write-probs\n"
             << "\tIf specified, write the read equivalence class probabilities in a .csv matrix\n"
-            << "\n\t--print-probs\n"
+            << "\t--print-probs\n"
             << "\tPrint the equivalence class probabilities rather than writing when using --write-probs\n"    
-            << "\n\t--gzip-probs\n"
+            << "\t--gzip-probs\n"
             << "\tGzip the .csv matrix output from --write-probs\n"
 	    << "\t--help\n"
 	    << "\tPrint this message.\n"
@@ -83,6 +93,13 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
   } else if (CmdOptionPresent(argv, argv+argc, "-b")) {
     args.batch_infile = std::string(GetCmdOption(argv, argv+argc, "-b"));
     args.batch_mode = true;
+  } else if (CmdOptionPresent(argv, argv+argc, "--themisto-1") && CmdOptionPresent(argv, argv+argc, "--themisto-2")) {
+    args.tinfile1 = std::string(GetCmdOption(argv, argv+argc, "--themisto-1"));
+    args.tinfile2 = std::string(GetCmdOption(argv, argv+argc, "--themisto-2"));
+    args.themisto_mode = true;
+    if (CmdOptionPresent(argv, argv+argc, "--themisto-mode")) {
+      args.themisto_merge_mode = std::string(GetCmdOption(argv, argv+argc, "--themisto-mode"));
+    }
   } else {
     throw std::runtime_error("infile not found.");
   }
@@ -95,13 +112,13 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     args.kallisto_files[1] = args.batch_infile + "/matrix.ec";
     args.kallisto_files[2] = args.batch_infile + "/matrix.tsv";
     args.kallisto_files[3] = args.batch_infile + "/matrix.cells";
-  } else {
+  } else if (!args.themisto_mode) {
     args.infiles = KallistoFiles(args.infile, args.batch_mode);
     args.kallisto_files[0] = args.infile + "/run_info.json";
     args.kallisto_files[1] = args.infile + "/pseudoalignments.ec";
     args.kallisto_files[2] = args.infile + "/pseudoalignments.tsv";
   }
-  if (CmdOptionPresent(argv, argv+argc, "--compressed-input")) {
+  if (CmdOptionPresent(argv, argv+argc, "--compressed-input") && !args.themisto_mode) {
     for (size_t i = 1; i < args.kallisto_files.size(); ++i) {
       args.kallisto_files[i] += ".gz";
     }

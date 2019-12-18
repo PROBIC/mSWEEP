@@ -55,8 +55,11 @@ else()
   set(ZLIB ZLIB::ZLIB)
 endif()
 
+add_subdirectory(${CMAKE_SOURCE_DIR}/external/telescope
+                 ${CMAKE_BINARY_DIR}/external/telescope/build)
+set_target_properties(telescope PROPERTIES EXCLUDE_FROM_ALL 1)
 
-include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include ${CMAKE_SOURCE_DIR}/external/zstr)
+include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include ${CMAKE_SOURCE_DIR}/external/zstr ${CMAKE_SOURCE_DIR}/external)
 file(GLOB SOURCES "src/*.cpp")
 
 add_executable(mSWEEP ${SOURCES})
@@ -72,4 +75,4 @@ if(CMAKE_BUILD_ZLIB)
 endif()
 
 # Link libraries
-target_link_libraries(mSWEEP Threads::Threads ${ZLIB})
+target_link_libraries(mSWEEP Threads::Threads ${ZLIB} libtelescope)

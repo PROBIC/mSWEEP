@@ -1,5 +1,5 @@
-#ifndef SAMPLE_H
-#define SAMPLE_H
+#ifndef MSWEEP_SAMPLE_HPP
+#define MSWEEP_SAMPLE_HPP
 
 #include <string>
 #include <vector>
@@ -8,6 +8,8 @@
 #include <fstream>
 #include <iostream>
 #include <random>
+
+#include "telescope/include/telescope.hpp"
 
 #include "matrix.hpp"
 #include "Reference.hpp"
@@ -32,6 +34,7 @@ public:
   std::unordered_map<unsigned, std::vector<double>> bootstrap_abundances;
 
   Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<long unsigned> ec_counts_p, long unsigned counts_total_p, std::shared_ptr<std::unordered_map<long unsigned, std::vector<bool>>> ec_configs_p);
+  Sample(KAlignment converted_aln);
 
   // Retrieve relative abundances from the ec_probs matrix.
   std::vector<double> group_abundances() const;

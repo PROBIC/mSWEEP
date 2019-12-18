@@ -1,3 +1,5 @@
+#include "read_bitfield.hpp"
+
 #include <string>
 #include <sstream>
 #include <vector>
@@ -5,7 +7,7 @@
 #include <unordered_set>
 #include <exception>
 
-#include "read_bitfield.hpp"
+#include "telescope/include/telescope.hpp"
 
 void VerifyGrouping(std::istream &run_info, unsigned n_refs) {
   // Get the number of reference sequences in the pseudoalignment
@@ -161,4 +163,12 @@ void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sa
   } else {
     throw std::runtime_error(".ec file not found.");
   }
+}
+
+void ReadBitfield(const std::string &tinfile1, const std::string &tinfile2, const std::string &themisto_mode, const unsigned n_refs, std::vector<Sample> &batch) {
+  std::vector<std::istream*> strands(2);
+  strands.at(0) = new zstr::ifstream(tinfile1);
+  strands.at(1) = new zstr::ifstream(tinfile2);
+  KAlignment kallisto = ReadAlignments(get_mode(themisto_mode), n_refs, &strands);
+  batch.emplace_back(Sample(kallisto));
 }

@@ -13,6 +13,23 @@ Sample::Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::
   this->ec_configs = ec_configs_p;
 }
 
+Sample::Sample(KAlignment converted_aln) {
+  this->cell_id = "";
+  this->ec_ids.resize(converted_aln.ecs.size());
+  this->ec_counts.resize(converted_aln.ecs.size());
+  this->ec_configs.reset(new std::unordered_map<long unsigned, std::vector<bool>>);
+  this->ec_configs->reserve(converted_aln.ecs.bucket_count());
+  this->counts_total = 0;
+  size_t i = 0;
+  for (auto kv : converted_aln.ecs) {
+    this->ec_ids[i] = i;
+    this->ec_counts[i] = kv.second.count;
+    this->counts_total += kv.second.count;
+    this->ec_configs->insert(std::make_pair(i, kv.first));
+    ++i;
+  }
+}
+
 std::vector<double> Sample::group_abundances() const {
   // Calculate the relative abundances of the
   // reference groups from the ec_probs matrix

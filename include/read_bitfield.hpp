@@ -1,5 +1,5 @@
-#ifndef READ_BITFIELD_H
-#define READ_BITFIELD_H
+#ifndef MSWEEP_READ_BITFIELD_HPP
+#define MSWEEP_READ_BITFIELD_HPP
 
 #include <memory>
 #include <string>
@@ -14,6 +14,7 @@
 
 void ReadClusterIndicators(std::istream &indicators_file, Reference &reference);
 void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sample> &batch);
+void ReadBitfield(const std::string &tinfile1, const std::string &tinfile2, const std::string &themisto_mode, const unsigned n_refs, std::vector<Sample> &batch);
 void VerifyGrouping(std::istream &run_info, unsigned n_refs);
 
 #endif

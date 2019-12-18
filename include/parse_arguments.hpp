@@ -1,5 +1,5 @@
-#ifndef PARSE_ARGUMENTS_H
-#define PARSE_ARGUMENTS_H
+#ifndef MSWEEP_PARSE_ARGUMENTS_HPP
+#define MSWEEP_PARSE_ARGUMENTS_HPP
 
 #include <vector>
 #include <string>
@@ -24,11 +24,16 @@ struct Arguments {
   std::string batch_infile;
   std::string indicators_file;
   std::string outfile;
+  std::string tinfile1;
+  std::string tinfile2;
   std::vector<std::string> kallisto_files;
 
   bool batch_mode = false;
   bool bootstrap_mode = false;
   bool compressed_input = false;
+  bool themisto_mode = false;
+
+  std::string themisto_merge_mode = "union";
 
   unsigned nr_threads = 1;
   unsigned iters = 1;

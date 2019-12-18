@@ -16,15 +16,14 @@ class KallistoFiles {
     return (stat (name.c_str(), &buffer) == 0); 
   }
 
-  std::unique_ptr<zstr::ifstream> open_file(const std::string &path) const {
+  void open_file(const std::string &path, std::unique_ptr<std::istream> &ptr) const {
     if (!file_exists(path)) {
       throw std::runtime_error("File: " + path + " does not exist.");
     }
-    zstr::ifstream stream(path);
-    if (!stream.good()) {
+    ptr.reset(new zstr::ifstream(path));
+    if (!ptr->good()) {
       throw std::runtime_error("Cannot read from file: " + path + ".");
     }
-    return std::unique_ptr<zstr::ifstream>(&stream);
   }
 
  public:
@@ -36,13 +35,13 @@ class KallistoFiles {
   bool batch_mode = false;
 
   KallistoFiles(std::string path, bool batch_mode) : batch_mode(batch_mode) {
-    std::string alignment_path = path + (batch_mode ? "/pseudoalignments" : "/matrix");
+    std::string alignment_path = path + (batch_mode ? "/matrix" : "/pseudoalignments");
     if (batch_mode) {
-      cells = open_file(path + "/matrix.cells");
+      open_file(path + "/matrix.cells", this->cells);
     }
-    ec = open_file(alignment_path + ".ec");
-    tsv = open_file(alignment_path + ".tsv");
-    run_info = open_file(path + "/run_info.json");
+    open_file(alignment_path + ".ec", this->ec);
+    open_file(alignment_path + ".tsv", this->tsv);
+    open_file(path + "/run_info.json", this->run_info);
   }
 };
 

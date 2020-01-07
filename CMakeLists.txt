@@ -59,10 +59,11 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/external/telescope
                  ${CMAKE_BINARY_DIR}/external/telescope/build)
 set_target_properties(telescope PROPERTIES EXCLUDE_FROM_ALL 1)
 
-include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include ${CMAKE_SOURCE_DIR}/external/zstr ${CMAKE_SOURCE_DIR}/external)
+include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include ${CMAKE_SOURCE_DIR}/external/zstr ${CMAKE_SOURCE_DIR}/external ${CMAKE_SOURCE_DIR}/include/tools)
 file(GLOB SOURCES "src/*.cpp")
 
 add_executable(mSWEEP ${SOURCES})
+add_executable(matchfasta ${CMAKE_SOURCE_DIR}/src/tools/matchfasta.cpp)
 
 ## Handle compiling zlib from source
 if(CMAKE_BUILD_ZLIB)

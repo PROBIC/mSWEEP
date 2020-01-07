@@ -134,7 +134,7 @@ mSWEEP accepts the following flags:
 	Pseudoalignment results from Themisto for the 2nd strand of paired-end reads.
 
 	-f <pseudomappingFile>
-    Pseudoalignment output file location from kallisto. Can't be used when -b is specified.
+	Pseudoalignment output file location from kallisto. Can't be used when -b is specified.
 	-b <pseudomappingBatch>
 	The kallisto batch matrix file location. Can't be used when -f is specified.
 

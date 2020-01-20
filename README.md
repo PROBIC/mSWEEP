@@ -22,8 +22,8 @@ filtering the sequences if resources are limited.
 
 # Installation
 mSWEEP can be obtained either in the form of a precompiled binary
-* [Linux 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.2.2/mSWEEP_linux-v1.2.2.tar.gz)
-* [macOS 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.2.2/mSWEEP_macOS-v1.2.2.tar.gz)
+* [Linux 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.3.0/mSWEEP_linux-v1.3.0.tar.gz)
+* [macOS 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.3.0/mSWEEP_macOS-v1.3.0.tar.gz)
 or by following the instructions below for compiling mSWEEP from source.
 
 In addition to mSWEEP, you will need to install either [Themisto
@@ -51,9 +51,23 @@ enter the directory and run
 - This will compile the mSWEEP executable in build/bin/mSWEEP.
 
 # Usage
-## Toy data (kallisto)
+## Toy data (Themisto)
 There is a toy dataset included in the example/ folder. To run it, enter the directory and run the commands
 
+Enter the directory as above and run the build_index and pseudoalign commands from Themisto
+
+```
+mkdir themisto_index
+mkdir tmp
+
+build_index --k 31 --input-file example.fasta --color-file clustering.txt --index-dir themisto_index --temp-dir tmp
+pseudoalign --query-file 215_1.fastq.gz --outfile 215_1_alignment.txt --rc --index-dir themisto_index --temp-dir tmp
+pseudoalign --query-file 215_2.fastq.gz --outfile 215_2_alignment.txt --rc --index-dir themisto_index --temp-dir tmp
+
+mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -i clustering.txt
+```
+
+## Toy data (kallisto)
 ```
 kallisto index -i example_index example.fasta
 
@@ -62,21 +76,6 @@ mSWEEP -f kallisto_out_folder -i clustering.txt
 
 ```
 You should see that roughly 90% of the reads are assigned to group "clust2".
-
-## Toy data (Themisto)
-Enter the directory as above and run the build_index and pseudoalign commands from Themisto
-
-```
-mkdir themisto_index
-mkdir tmp
-gunzip 215_*.fastq.gz
-
-build_index --k 31 --input-file example.fasta --color-file clustering.txt --index-dir themisto_index --temp-dir tmp
-pseudoalign --query-file 215_1.fastq --outfile 215_1_alignment.txt --index-dir themisto_index --temp-dir tmp --rc
-pseudoalign --query-file 215_2.fastq --outfile 215_2_alignment.txt --index-dir themisto_index --temp-dir tmp --rc
-
-mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -i clustering.txt
-```
 
 # General pipeline
 ## Preprocessing
@@ -92,6 +91,18 @@ cluster2
 cluster1
 ```
 The grouping identifiers must be in the same order as their corresponding sequences appear in the reference file.
+## Analysing reads (with Themisto)
+- Pseudomap paired-end reads:
+> mkdir tmp
+> pseudoalign --index-dir themisto_index --query-file reads_1.fastq.gz --outfile reads_1_out.txt --temp-dir tmp --rc
+> pseudoalign --index-dir themisto_index --query-file reads_2.fastq.gz --outfile reads_2_out.txt --temp-dir tmp --rc
+
+- Use mSWEEP to estimate cluster abundances from a single file:
+> mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -i clustering.txt
+
+Themisto can utilize multiple threads in the mapping phase. You can
+run Themisto on multiple threads by specifying the number of threads
+with e.g. the '--threads 8' flag.
 
 ## Analysing reads (with kallisto)
 - Pseudomap paired-end reads:

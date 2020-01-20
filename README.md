@@ -73,7 +73,6 @@ kallisto index -i example_index example.fasta
 
 kallisto pseudo -i example_index -o kallisto_out_folder 215_1.fastq.gz 215_2.fastq.gz
 mSWEEP -f kallisto_out_folder -i clustering.txt
-
 ```
 You should see that roughly 90% of the reads are assigned to group "clust2".
 
@@ -83,7 +82,6 @@ You should see that roughly 90% of the reads are assigned to group "clust2".
 - Index the reference sequences for pseudoalignment with:
 > kallisto pseudo -i reference_kmi reference_sequences.fasta
 - Define some grouping for the reference and save the grouping in a text file where each line contains the identifier of the grouping the corresponding reference sequence belongs to. For example with four sequences and two groups:
-
 ```
 cluster1
 cluster2
@@ -112,6 +110,7 @@ seq_5	group3
 ```
 and the fasta file. Running
 > matchfasta --fasta sequences.fasta --groups groups_table.tsv > clustering_reordered.txt
+
 will save the identifiers in the correct order to the
 'clustering_reordered.txt' file. It is also possible to use a table
 separated by a character different from tab, e. g. ',', by specifying the
@@ -120,9 +119,11 @@ separator with the '-d' argument:
 
 ## Analysing reads (with Themisto)
 - Pseudomap paired-end reads:
-> mkdir tmp
-> pseudoalign --index-dir themisto_index --query-file reads_1.fastq.gz --outfile reads_1_out.txt --temp-dir tmp --rc
-> pseudoalign --index-dir themisto_index --query-file reads_2.fastq.gz --outfile reads_2_out.txt --temp-dir tmp --rc
+```
+mkdir tmp
+pseudoalign --index-dir themisto_index --query-file reads_1.fastq.gz --outfile reads_1_out.txt --temp-dir tmp --rc
+pseudoalign --index-dir themisto_index --query-file reads_2.fastq.gz --outfile reads_2_out.txt --temp-dir tmp --rc
+```
 
 - Use mSWEEP to estimate cluster abundances from a single file:
 > mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -i clustering.txt

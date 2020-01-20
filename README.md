@@ -90,7 +90,34 @@ cluster2
 cluster2
 cluster1
 ```
-The grouping identifiers must be in the same order as their corresponding sequences appear in the reference file.
+The grouping identifiers must be in the same order as their
+corresponding sequences appear in the reference file.
+
+### Reordering identifiers
+If your grouping identifiers are not in the same order as in the fasta
+file, you can use the 'matchfasta' utility tool supplied
+with mSWEEP to reorder them based on the fasta file. matchfasta takes
+as input a tab-separated table where the first column contains the name of the
+sequence as it appears in the fasta file and the second column
+contains the group:
+```
+seq_156	group2
+seq_157	group1
+seq_197	group4
+seq_20	group3
+seq_285	group4
+seq_43	group2
+seq_44	group1
+seq_5	group3
+```
+and the fasta file. Running
+> matchfasta --fasta sequences.fasta --groups groups_table.tsv > clustering_reordered.txt
+will save the identifiers in the correct order to the
+'clustering_reordered.txt' file. It is also possible to use a table
+separated by a character different from tab, e. g. ',', by specifying the
+separator with the '-d' argument:
+> matchfasta --fasta sequences.fasta --groups groups_table.csv > clustering_reordered.txt -d ,
+
 ## Analysing reads (with Themisto)
 - Pseudomap paired-end reads:
 > mkdir tmp

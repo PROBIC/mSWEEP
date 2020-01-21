@@ -22,8 +22,8 @@ filtering the sequences if resources are limited.
 
 # Installation
 mSWEEP can be obtained either in the form of a precompiled binary
-* [Linux 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.3.0/mSWEEP_linux-v1.3.0.tar.gz)
-* [macOS 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.3.0/mSWEEP_macOS-v1.3.0.tar.gz)
+* [Linux 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.3.1/mSWEEP_linux-v1.3.1.tar.gz)
+* [macOS 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.3.1/mSWEEP_macOS-v1.3.1.tar.gz)
 or by following the instructions below for compiling mSWEEP from source.
 
 In addition to mSWEEP, you will need to install either [Themisto

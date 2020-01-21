@@ -6,6 +6,7 @@
 #include <sstream>
 #include <utility>
 #include <vector>
+#include <algorithm>
 
 namespace tools {
 namespace exceptions {

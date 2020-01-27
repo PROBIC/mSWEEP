@@ -40,24 +40,13 @@ int main (int argc, char *argv[]) {
     ReadClusterIndicators(indicators_file, reference);
     std::cerr << "  read " << reference.n_refs << " group indicators" << std::endl;
 
+    std::cerr << "  reading pseudoalignments" << '\n';
     if (!args.themisto_mode) {
       // Check that the number of reference sequences matches in the grouping and the alignment.
       VerifyGrouping(*args.infiles.run_info, reference.n_refs);
-      std::cerr << "  reading pseudoalignments" << '\n';
       ReadBitfield(args.infiles, reference.n_refs, bitfields);
     } else {
-      std::cerr << "  reading pseudoalignments" << '\n';
       ReadBitfield(args.tinfile1, args.tinfile2, args.themisto_merge_mode, reference.n_refs, bitfields);
-      // Convert the clustering into Themisto colors
-      std::vector<signed> colors;
-      std::set<signed> uniques;
-      for (size_t i = 0; i < reference.grouping.indicators.size(); ++i) {
-	if (uniques.find(i) == uniques.end()) {
-	  uniques.insert(i);
-	  colors.push_back(i);
-	}
-      }
-      reference.grouping.indicators = colors;
     }
 
     std::cerr << "  read " << (args.batch_mode ? bitfields.size() : bitfields[0].num_ecs()) << (args.batch_mode ? " samples from the batch" : " unique alignments") << std::endl;

@@ -105,7 +105,9 @@ You should see that roughly 90% of the reads are assigned to group "clust2".
 # General pipeline
 ## Preprocessing
 - Obtain a set of reference sequences.
-- Index the reference sequences for pseudoalignment with:
+- Index the reference sequences for pseudoalignment with Themisto:
+> build_index --k 31 --input-file reference_sequences.fasta --auto-colors --index-dir themisto_index --temp-dir tmp
+- ... or with kallisto
 > kallisto pseudo -i reference_kmi reference_sequences.fasta
 - Define some grouping for the reference and save the grouping in a text file where each line contains the identifier of the grouping the corresponding reference sequence belongs to. For example with four sequences and two groups:
 ```
@@ -115,7 +117,8 @@ cluster2
 cluster1
 ```
 The grouping identifiers must be in the same order as their
-corresponding sequences appear in the reference file.
+corresponding sequences appear in the reference file. Alternatively,
+you can use the 'matchfasta' utility to reorder the indicators.
 
 ### Reordering identifiers
 If your grouping identifiers are not in the same order as in the fasta
@@ -178,6 +181,10 @@ mSWEEP can be used to produce confidence intervals for the abundance
 estimates by bootstrapping the pseudoalignment counts and rerunning
 the abundance estimation a number of times. This can be done
 automatically by adding the '--iters' option to running mSWEEP:
+```
+> mSWEEP --themisto-1 alignment_1.txt --themisto-2 alignment_2.txt -i cluster_indicators.txt --iters 100 -o abundances.txt
+```
+or with kallisto
 ```
 > mSWEEP -f kallisto_out_folder -i cluster_indicators.txt --iters 100 -o abundances.txt
 ```

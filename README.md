@@ -16,10 +16,6 @@ for the following species
 - Klebsiella pneumoniae
 - Staphylococcus epidermidis
 
-Using the complete reference collection will consume large amounts of
-memory (~80 gigabytes) when pseudoaligning with kallisto. Consider
-filtering the sequences if resources are limited.
-
 # Installation
 mSWEEP can be obtained either in the form of a precompiled binary
 * [Linux 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.3.1/mSWEEP_linux-v1.3.1.tar.gz)
@@ -32,7 +28,7 @@ In addition to mSWEEP, you will need to install either [Themisto
 pseudoalignment.
 
 ## Compiling from source
-### Requirements (compilation)
+### Requirements
 - C++11 compliant compiler.
 - cmake
 
@@ -52,20 +48,50 @@ enter the directory and run
 
 # Usage
 ## Toy data (Themisto)
-There is a toy dataset included in the example/ folder. To run it, enter the directory and run the commands
-
-Enter the directory as above and run the build_index and pseudoalign commands from Themisto
-
+(Recommended) Enter the toy data directory (example/) and run the
+build_index and pseudoalign commands from Themisto
 ```
+## Build the Themisto index without clustering
 mkdir themisto_index
 mkdir tmp
 
-build_index --k 31 --input-file example.fasta --color-file clustering.txt --index-dir themisto_index --temp-dir tmp
+build_index --k 31 --input-file example.fasta --auto-colors --index-dir themisto_index --temp-dir tmp
+
+## Pseudoalign reads
 pseudoalign --query-file 215_1.fastq.gz --outfile 215_1_alignment.txt --rc --index-dir themisto_index --temp-dir tmp
 pseudoalign --query-file 215_2.fastq.gz --outfile 215_2_alignment.txt --rc --index-dir themisto_index --temp-dir tmp
 
+## Run mSWEEP
 mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -i clustering.txt
 ```
+
+(Experimental) Alternatively, it is possible to embed the grouping
+information in Themisto's index, effectively treating any pseudoalignment in the
+group as if the read aligned to all sequences in the group. This
+approach will in most cases produce different results than the recommended one, but will
+reduce the RAM, CPU, and disk space requirements for running Themisto
+and mSWEEP.
+```
+## Build grouped Themisto index
+mkdir themisto_grouped_index
+mkdir tmp
+build_index --k 31 --input-file example.fasta --color-file clustering.txt --index-dir themisto_grouped_index --temp-dir tmp
+
+## Pseudoalign reads
+pseudoalign --query-file 215_1.fastq.gz --outfile 215_1_alignment.txt --rc --index-dir themisto_grouped_index --temp-dir tmp
+pseudoalign --query-file 215_2.fastq.gz --outfile 215_2_alignment.txt --rc --index-dir themisto_grouped_index --temp-dir tmp
+
+## Extract unique cluster indicators from the clustering.txt file
+awk '!seen[$0]++' clustering.txt > unique_clusters.txt
+
+## Run mSWEEP
+mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -i unique_clusters.txt
+```
+These example commands will construct the Themisto index with the
+grouping indicators from 'clustering.txt' embedded in it. This means
+that if you wish to change the grouping indicators, the index must be
+reconstructed.
+
 
 ## Toy data (kallisto)
 ```

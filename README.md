@@ -2,19 +2,15 @@
 Fast and accurate bacterial community composition estimation on strain
 level by using pseudoalignments and variational inference.
 
-More about mSWEEP in the preprint [High-resolution sweep metagenomics
+More about mSWEEP in the article [High-resolution sweep metagenomics
 using fast probabilistic
-inference](https://www.biorxiv.org/content/10.1101/332544v2) in
-bioRxiv.
+inference](https://doi.org/10.12688/wellcomeopenres.15639.1) in
+Wellcome Open Research (awaiting peer review)
 
-A reference sequence collection and a grouping into clonal
-complexes/sequence types is available in
-[FigShare](https://figshare.com/articles/mSWEEP_reference_v1-0-0_tgz/8222636)
-for the following species
-- Campylobacter jejuni
-- Escherichia coli
-- Klebsiella pneumoniae
-- Staphylococcus epidermidis
+If you use our method, please cite us as Mäklin T, Kallonen T, David S
+ et al. High-resolution sweep metagenomics using fast probabilistic
+ inference [version 1; peer review: awaiting peer review]. Wellcome
+ Open Res 2020, 5:14 (https://doi.org/10.12688/wellcomeopenres.15639.1)
 
 # Installation
 mSWEEP can be obtained either in the form of a precompiled binary
@@ -47,6 +43,35 @@ enter the directory and run
 - This will compile the mSWEEP executable in build/bin/mSWEEP.
 
 # Usage
+## Reference data
+
+A reference sequence collection and a grouping into clonal
+complexes/sequence types is available in
+[FigShare](https://figshare.com/articles/mSWEEP_reference_v1-0-0_tgz/8222636)
+for the following species
+- Campylobacter jejuni
+- Escherichia coli
+- Klebsiella pneumoniae
+- Staphylococcus epidermidis
+
+mSWEEP supports using a custom reference database. A typical workflow
+for constructing the custom database might proceed as follows
+
+1. Gather assembled sequences for the species of interest. Use
+taxonomic profiling tools like [MetaFlow](https://doi.org/10.1007/978-3-319-31957-5_8) or
+[MetaPhlAn2](https://doi.org/10.1038/nmeth.3589) to identify the
+species in your sample if you are unsure
+what sequences to include.
+
+2. Provide a grouping for the assemblies (e.g. sequence types, clonal
+   complexes, or the output of some clustering algorithm.)
+
+3. If an assembly contains multiple contigs, merge them into a
+   single contig. Do this for all assemblies.
+
+4. Index the database with your pseudoalignment tool of choice and
+   proceed with running the mSWEEP pipeline.
+
 ## Toy data (Themisto)
 (Recommended) Enter the toy data directory (example/) and run the
 build_index and pseudoalign commands from Themisto

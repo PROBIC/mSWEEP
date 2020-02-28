@@ -23,28 +23,41 @@ double digamma(double x) {
 void logsumexp(Matrix<double> &gamma_Z, Matrix<double> &q_Z) {
   unsigned n_cols = gamma_Z.get_cols();
   unsigned n_rows = gamma_Z.get_rows();
+
+  std::vector<double> m(n_cols, 0.0);
+#pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < n_cols; ++i) {
-    double m = gamma_Z.log_sum_exp_col(i);
-    for (unsigned j = 0; j < n_rows; ++j) {
-      gamma_Z(j, i) -= m;
-      q_Z(j, i) = std::exp(gamma_Z(j, i));
+    m[i] = gamma_Z.log_sum_exp_col(i);
+  }
+
+#pragma omp parallel for schedule(static) collapse(2)
+  for (unsigned i = 0; i < n_rows; ++i) {
+    for (unsigned j = 0; j < n_cols; ++j) {
+      gamma_Z(i, j) -= m[j];
+      q_Z(i, j) = std::exp(gamma_Z(i, j));
     }
   }
 }
 
 double mixt_negnatgrad(const Matrix<double> &q_Z, const Matrix<double> &gamma_Z, const std::vector<double> &N_k, const Matrix<double> &logl, Matrix<double> &dL_dphi) {
-  std::vector<double> colsums(q_Z.get_cols());  
-  for (unsigned i = 0; i < dL_dphi.get_rows(); ++i) {
-    double digamma_N_k = digamma(N_k[i]);
-    for (unsigned j = 0; j < dL_dphi.get_cols(); ++j) {
+  unsigned n_cols = q_Z.get_cols();
+  unsigned n_rows = q_Z.get_rows();
+
+  std::vector<double> colsums(n_cols, 0.0);
+  for (unsigned i = 0; i < n_rows; ++i) {
+    double digamma_N_k = digamma(N_k[i]) - 1;
+#pragma omp parallel for schedule(static)
+    for (unsigned j = 0; j < n_cols; ++j) {
       dL_dphi(i, j) = logl(i, j);
-      dL_dphi(i, j) += digamma_N_k - gamma_Z(i, j) - 1;
+      dL_dphi(i, j) += digamma_N_k - gamma_Z(i, j);
       colsums[j] += dL_dphi(i, j) * q_Z(i, j);
     }
   }
+
   double newnorm = 0.0;
-  for (unsigned i = 0; i < dL_dphi.get_rows(); ++i) {
-    for (unsigned j = 0; j < dL_dphi.get_cols(); ++j) {
+#pragma omp parallel for schedule(static) reduction(+:newnorm)
+  for (unsigned i = 0; i < n_rows; ++i) {
+    for (unsigned j = 0; j < n_cols; ++j) {
       // dL_dgamma(i, j) would be q_Z(i, j) * (dL_dphi(i, j) - colsums[j])
       newnorm += q_Z(i, j) * (dL_dphi(i, j) - colsums[j]) * dL_dphi(i, j);
     }
@@ -53,10 +66,15 @@ double mixt_negnatgrad(const Matrix<double> &q_Z, const Matrix<double> &gamma_Z,
 }
 
 void ELBO_rcg_mat(const Matrix<double> &logl, const Matrix<double> &q_Z, const Matrix<double> &gamma_Z, const std::vector<long unsigned> &counts, const std::vector<double> &alpha0, const std::vector<double> &N_k, long double &bound) {
+#pragma omp parallel for schedule(static) reduction(+:bound) collapse(2)
   for (unsigned i = 0; i < q_Z.get_rows(); ++i) {
     for (unsigned j = 0; j < q_Z.get_cols(); ++j) {
       bound += (q_Z(i, j) * (logl(i, j) - gamma_Z(i, j))) * counts[j];
     }
+  }
+
+#pragma omp parallel for schedule(static) reduction(-:bound)
+  for (unsigned i = 0; i < q_Z.get_rows(); ++i) {
     bound -= std::lgamma(alpha0[i]) - std::lgamma(N_k[i]);
   }
 }

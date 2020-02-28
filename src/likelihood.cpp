@@ -21,6 +21,7 @@ Matrix<double> likelihood_array_mat(const Sample &sample, Grouping grouping) {
   unsigned num_ecs = sample.num_ecs();
   Matrix<double> log_likelihoods(grouping.n_groups, num_ecs, 0.0);
 
+#pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < num_ecs; ++i) {
     std::vector<unsigned> read_hitcounts = sample.group_counts(grouping.indicators, grouping.n_groups, i);
     for (size_t j = 0; j < grouping.n_groups; ++j) {

@@ -4,10 +4,20 @@ project(mSWEEP)
 ## Determine build type
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release) ## Build Release by default
+elseif(CMAKE_BUILD_TYPE MATCHES Debug)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pg")
 endif()
 
 ## Check dependencies
 find_package(Threads REQUIRED)
+find_package(OpenMP)
+if (OPENMP_FOUND)
+  set(MSWEEP_OPENMP_SUPPORT 1)
+else()
+  set(MSWEEP_OPENMP_SUPPORT 0)
+endif()
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(ZLIB)
 set (CMAKE_CXX_STANDARD 11)
@@ -35,6 +45,7 @@ string(TIMESTAMP _BUILD_TIMESTAMP)
 
 ## Generate a version.h file containing build version and timestamp
 configure_file(include/version.h.in ${CMAKE_BINARY_DIR}/include/version.h @ONLY)
+configure_file(include/openmp_config.hpp.in ${CMAKE_BINARY_DIR}/include/openmp_config.hpp @ONLY)
 
 if(NOT ZLIB_FOUND OR CMAKE_BUILD_ZLIB)
   configure_file(CMakeLists.txt.in ${CMAKE_BINARY_DIR}/external/zlib-download/CMakeLists.txt)
@@ -77,3 +88,6 @@ endif()
 
 # Link libraries
 target_link_libraries(mSWEEP Threads::Threads ${ZLIB} libtelescope)
+if (OPENMP_FOUND)
+  target_link_libraries(mSWEEP OpenMP::OpenMP_CXX)
+endif()

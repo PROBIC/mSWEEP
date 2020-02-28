@@ -34,6 +34,7 @@ std::vector<double> Sample::group_abundances() const {
   // Calculate the relative abundances of the
   // reference groups from the ec_probs matrix
   std::vector<double> thetas(this->ec_probs.get_rows(), 0.0);
+#pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < this->ec_probs.get_rows(); ++i) {
     for (unsigned j = 0; j < this->ec_probs.get_cols(); ++j) {
       thetas[i] += this->ec_probs(i, j) * this->ec_counts[j];

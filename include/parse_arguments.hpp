@@ -14,6 +14,7 @@ struct OptimizerArgs {
   bool write_probs;
   bool gzip_probs;
   bool print_probs;
+  unsigned nr_threads = 1;
 };
 
 struct Arguments {
@@ -35,7 +36,6 @@ struct Arguments {
 
   std::string themisto_merge_mode = "union";
 
-  unsigned nr_threads = 1;
   unsigned iters = 1;
   double params[2] = { 0.65, 0.01 };
 

@@ -28,6 +28,13 @@ pseudoalignment.
 - C++11 compliant compiler.
 - cmake
 
+### Optional
+- Compiler with OpenMP support.
+
+If your compiler does not support OpenMP, only limited parts of mSWEEP
+will benefit from parallellization. The prebuilt binaries are compiled
+with OpenMP support and support parallellization.
+
 ### Compilation
 Clone the mSWEEP repository (note the --recursive option in git clone!)
 ```
@@ -109,14 +116,13 @@ pseudoalign --query-file 215_2.fastq.gz --outfile 215_2_alignment.txt --rc --ind
 ## Extract unique cluster indicators from the clustering.txt file
 awk '!seen[$0]++' clustering.txt > unique_clusters.txt
 
-## Run mSWEEP
-mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -i unique_clusters.txt
+## Run mSWEEP with 2 threads
+mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -i unique_clusters.txt -t 2
 ```
 These example commands will construct the Themisto index with the
 grouping indicators from 'clustering.txt' embedded in it. This means
 that if you wish to change the grouping indicators, the index must be
 reconstructed.
-
 
 ## Toy data (kallisto)
 ```
@@ -179,8 +185,8 @@ pseudoalign --index-dir themisto_index --query-file reads_1.fastq.gz --outfile r
 pseudoalign --index-dir themisto_index --query-file reads_2.fastq.gz --outfile reads_2_out.txt --temp-dir tmp --rc
 ```
 
-- Use mSWEEP to estimate cluster abundances from a single file:
-> mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -i clustering.txt
+- Use mSWEEP to estimate cluster abundances from a single file with 2 threads:
+> mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -i clustering.txt -t 2
 
 Themisto can utilize multiple threads in the mapping phase. You can
 run Themisto on multiple threads by specifying the number of threads
@@ -193,7 +199,7 @@ with e.g. the '--threads 8' flag.
 > kallisto pseudo -i reference_kmi -o kallisto_batch_out -b kallisto_batch.txt
 
 - Use mSWEEP to estimate cluster abundances from a single file:
-> mSWEEP -f kallisto_out_folder -i cluster_indicators.txt -o abundances.txt
+> mSWEEP -f kallisto_out_folder -i cluster_indicators.txt -o abundances.txt -t 2
 - Or from a batch file and output to abundances/ folder:
 - (**NOT RECOMMENDED** anymore as of 18 December 2019: kallisto's batch mode can be a bit unstable)
 > mSWEEP -b kallisto_batch_out -i cluster_indicators.txt -o abundances
@@ -240,7 +246,7 @@ mSWEEP accepts the following flags:
 	-o <outputFile>
 	Output file (folder when estimating from a batch) to write results in.
 	-t <nrThreads>
-	How many threads to use when processing a batch matrix (default: 1)
+	How many threads to use. (default: 1)
 
 	--themisto-mode <PairedEndMergeMode>
 	How to merge Themisto pseudoalignments for paired-end reads	(default: union).

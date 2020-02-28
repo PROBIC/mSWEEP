@@ -23,7 +23,7 @@ void PrintHelpMessage() {
 	    << "\t-o <outputFile>\n"
 	    << "\tOutput file (folder when estimating from a batch) to write results in.\n"
     	    << "\t-t <nrThreads>\n"
-	    << "\tHow many threads to use when processing a batch matrix (default: 1)\n"
+	    << "\tHow many threads to use. (default: 1)\n"
 	    << "\n"
 	    << "\t--themisto-mode <PairedEndMergeMode>\n"
 	    << "\tHow to merge Themisto pseudoalignments for paired-end reads	(default: union).\n"
@@ -147,19 +147,14 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
   }
 
   if (CmdOptionPresent(argv, argv+argc, "-t")) {
-    if (!CmdOptionPresent(argv, argv+argc, "-b") && args.iters == 1) {
-      std::cerr << "  parallel processing a single sample is not supported" << std::endl;
-      args.nr_threads = 1;
+    signed nr_threads_given = std::stoi(std::string(GetCmdOption(argv, argv+argc, "-t")));
+    if (nr_threads_given < 1) {
+      throw std::runtime_error("number of threads must be strictly positive");
     } else {
-      signed nr_threads_given = std::stoi(std::string(GetCmdOption(argv, argv+argc, "-t")));
-      if (nr_threads_given < 1) {
-	throw std::runtime_error("number of threads must be strictly positive");
-      } else {
-	args.nr_threads = nr_threads_given;
-      }
+      args.optimizer.nr_threads = nr_threads_given;
     }
   } else {
-    args.nr_threads = 1;
+    args.optimizer.nr_threads = 1;
   }
 
   if (CmdOptionPresent(argv, argv+argc, "--tol")) {

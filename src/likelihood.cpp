@@ -39,16 +39,11 @@ Matrix<double> likelihood_array_mat(const Sample &sample, Grouping grouping) {
   const Matrix<double> &my_lls = precalc_lls(grouping);
   Matrix<double> log_likelihoods(grouping.n_groups, num_ecs, 0.0);
 
-  std::vector<std::vector<unsigned short>> hitcounts(num_ecs, std::vector<unsigned short>(grouping.n_groups));
 #pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < num_ecs; ++i) {
-    hitcounts[i] = sample.group_counts(grouping.indicators, grouping.n_groups, i);
-  }
-
-#pragma omp parallel for schedule(static) collapse(2)
-  for (unsigned short i = 0; i < grouping.n_groups; ++i) {
-    for (unsigned j = 0; j < num_ecs; ++j) {
-      log_likelihoods(i, j) = my_lls(i, hitcounts[j][i]);
+    const std::vector<short unsigned> &hitcounts = sample.group_counts(i);
+    for (unsigned short j = 0; j < grouping.n_groups; ++j) {
+      log_likelihoods(j, i) = my_lls(j, hitcounts[j]);
     }
   }
 

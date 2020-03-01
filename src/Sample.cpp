@@ -5,7 +5,7 @@
 #include "likelihood.hpp"
 #include "version.h"
 
-Sample::Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<long unsigned> ec_counts_p, long unsigned counts_total_p, std::shared_ptr<std::unordered_map<long unsigned, std::vector<bool>>> ec_configs_p) {
+Sample::Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<long unsigned> ec_counts_p, long unsigned counts_total_p, std::shared_ptr<std::unordered_map<long unsigned, std::vector<short unsigned>>> ec_configs_p) {
   this->cell_id = cell_id_p;
   this->ec_ids = ec_ids_p;
   this->ec_counts = ec_counts_p;
@@ -17,7 +17,7 @@ Sample::Sample(KAlignment converted_aln) {
   this->cell_id = "";
   this->ec_ids.resize(converted_aln.ecs.size());
   this->ec_counts.resize(converted_aln.ecs.size());
-  this->ec_configs.reset(new std::unordered_map<long unsigned, std::vector<bool>>);
+  this->ec_configs.reset(new std::unordered_map<long unsigned, std::vector<short unsigned>>);
   this->ec_configs->reserve(converted_aln.ecs.bucket_count());
   this->counts_total = 0;
   size_t i = 0;
@@ -25,7 +25,7 @@ Sample::Sample(KAlignment converted_aln) {
     this->ec_ids[i] = i;
     this->ec_counts[i] = kv.second.count;
     this->counts_total += kv.second.count;
-    this->ec_configs->insert(std::make_pair(i, kv.first));
+    //    this->ec_configs->insert(std::make_pair(i, kv.first));
     ++i;
   }
 }
@@ -46,7 +46,7 @@ std::vector<double> Sample::group_abundances() const {
 
 std::vector<unsigned short> Sample::group_counts(const std::vector<signed> indicators, unsigned short n_groups, unsigned ec_id_pos) const {
   long unsigned ec_id = this->ec_ids[ec_id_pos];
-  std::vector<bool> bitset = (*this->ec_configs)[ec_id];
+  std::vector<short unsigned> bitset = (*this->ec_configs)[ec_id];
 
   std::vector<unsigned short> read_hitcounts(n_groups);
   for (unsigned short j = 0; j < bitset.size(); ++j) {

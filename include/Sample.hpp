@@ -17,7 +17,7 @@
 class Sample {
 private:
   std::vector<long unsigned> ec_ids;
-  std::shared_ptr<std::unordered_map<long unsigned, std::vector<bool>>> ec_configs;
+  std::shared_ptr<std::unordered_map<long unsigned, std::vector<short unsigned>>> ec_configs;
   std::string cell_id;
   long unsigned counts_total;
 
@@ -29,11 +29,12 @@ public:
   Matrix<double> ec_probs = Matrix<double>(0, 0, 0.0);
   // Optional storage for likelihood, used in bootstrap
   Matrix<double> ll_mat = Matrix<double>(0, 0, 0.0);
+  std::vector<std::vector<short unsigned>> group_hitcounts;
 
   // Bootstrap results
   std::unordered_map<unsigned, std::vector<double>> bootstrap_abundances;
 
-  Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<long unsigned> ec_counts_p, long unsigned counts_total_p, std::shared_ptr<std::unordered_map<long unsigned, std::vector<bool>>> ec_configs_p);
+  Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<long unsigned> ec_counts_p, long unsigned counts_total_p, std::shared_ptr<std::unordered_map<long unsigned, std::vector<short unsigned>>> ec_configs_p);
   Sample(KAlignment converted_aln);
 
   // Retrieve relative abundances from the ec_probs matrix.
@@ -46,6 +47,9 @@ public:
 
   // Count the number of pseudoalignments in groups defined by the given indicators.
   std::vector<unsigned short> group_counts(const std::vector<signed> indicators, unsigned short n_groups, unsigned ec_id_pos) const;
+  // Return the number of pseudoalignments in a given group
+  std::vector<short unsigned> group_counts(unsigned ec_id_pos) const { return (*this->ec_configs)[this->ec_ids[ec_id_pos]]; };
+  short unsigned group_counts(unsigned ec_id_pos, unsigned group_id) const { return (*this->ec_configs)[this->ec_ids[ec_id_pos]][group_id]; };
 
   // Initialize bootstrapping variables
   void init_bootstrap(Grouping &grouping);

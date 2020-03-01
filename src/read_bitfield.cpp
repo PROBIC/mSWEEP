@@ -73,7 +73,7 @@ std::vector<std::string> ReadCellNames(std::istream &cells_file) {
   return reference.group_names;
 }
 
-void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sample> &batch) {
+void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sample> &batch, Reference &reference) {
   // Reads the alignment file for further analyses.
   // Args:
   //   kallisto_files: kallisto alignment files.
@@ -86,8 +86,8 @@ void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sa
     batch_cells.emplace_back("sample");
   }
 
-  std::shared_ptr<std::unordered_map<long unsigned, std::vector<bool>>> kallisto_configs;
-  kallisto_configs = std::make_shared<std::unordered_map<long unsigned, std::vector<bool>>>();
+  std::shared_ptr<std::unordered_map<long unsigned, std::vector<short unsigned>>> kallisto_configs;
+  kallisto_configs = std::make_shared<std::unordered_map<long unsigned, std::vector<short unsigned>>>();
   std::unordered_set<long unsigned> config_ids;
 
   if (kallisto_files.tsv->good()) {
@@ -140,7 +140,7 @@ void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sa
       std::stringstream partition(line);
       bool firstel = true;
       long unsigned key = 0;
-      std::vector<bool> config(n_refs, 0);
+      std::vector<short unsigned> config(reference.grouping.n_groups, 0);
       bool lookup;
       while (getline(partition, part, '\t')) {
 	if (firstel) {
@@ -152,7 +152,7 @@ void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sa
 	  std::stringstream ones(part);
 	  while (getline(ones, one, ',')) {
 	    unsigned makeone = std::stoi(one);
-	    config[makeone] = 1;
+	    config[reference.grouping.indicators[makeone]] += 1;
 	  }
 	}
       }

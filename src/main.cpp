@@ -44,7 +44,7 @@ int main (int argc, char *argv[]) {
     if (!args.themisto_mode) {
       // Check that the number of reference sequences matches in the grouping and the alignment.
       VerifyGrouping(*args.infiles.run_info, reference.n_refs);
-      ReadBitfield(args.infiles, reference.n_refs, bitfields);
+      ReadBitfield(args.infiles, reference.n_refs, bitfields, reference);
     } else {
       ReadBitfield(args.tinfile1, args.tinfile2, args.themisto_merge_mode, reference.n_refs, bitfields);
     }

@@ -32,20 +32,16 @@ Matrix<double> precalc_lls(const Grouping &grouping) {
   return lls;
 }
 
-Matrix<double> likelihood_array_mat(const Sample &sample, Grouping grouping) {
-  // Pass grouping by copy since multiple threads accessing the values
-  // (which they often do) by reference slow things down somewhat.
+Matrix<double> likelihood_array_mat(const Sample &sample, const Grouping &grouping) {
   unsigned num_ecs = sample.num_ecs();
   const Matrix<double> &my_lls = precalc_lls(grouping);
   Matrix<double> log_likelihoods(grouping.n_groups, num_ecs, 0.0);
 
 #pragma omp parallel for schedule(static)
-  for (unsigned i = 0; i < num_ecs; ++i) {
-    const std::vector<short unsigned> &hitcounts = sample.group_counts(i);
-    for (unsigned short j = 0; j < grouping.n_groups; ++j) {
-      log_likelihoods(j, i) = my_lls(j, hitcounts[j]);
+  for (unsigned short i = 0; i < grouping.n_groups; ++i) {
+    for (unsigned j = 0; j < num_ecs; ++j) {
+      log_likelihoods(i, j) = my_lls(i, (*sample.ec_configs)[i][j]);
     }
   }
-
   return(log_likelihoods);
 }

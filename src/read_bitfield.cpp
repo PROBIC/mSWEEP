@@ -88,7 +88,6 @@ void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sa
 
   std::shared_ptr<std::vector<std::vector<short unsigned>>> kallisto_configs;
   kallisto_configs = std::make_shared<std::vector<std::vector<short unsigned>>>();
-  std::unordered_set<long unsigned> config_ids;
 
   if (kallisto_files.tsv->good()) {
     std::string line;
@@ -112,6 +111,10 @@ void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sa
 	  ++count;
 	  if (current_cell_id != cell_id) {
 	    batch.emplace_back(Sample(batch_cells[cell_id], ec_ids, ec_counts, counts_total, kallisto_configs));
+	    unsigned num_ecs = ec_ids.size();
+	    for (unsigned i = 0; i < reference.grouping.n_groups; ++i) {
+	      batch.back().ec_configs->emplace_back(std::vector<short unsigned>(num_ecs, 0));
+	    }
 	    ec_ids.clear();
 	    ec_counts.clear();
 	    counts_total = 0;
@@ -122,43 +125,36 @@ void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sa
 	}
       }
       if (howmany > 0) {
-	config_ids.insert(key);
 	ec_ids.push_back(key);
 	ec_counts.push_back(howmany);
 	counts_total += howmany;
       }
     }
     batch.emplace_back(Sample(batch_cells[cell_id], ec_ids, ec_counts, counts_total, kallisto_configs));
+    unsigned num_ecs = ec_ids.size();
+    for (unsigned i = 0; i < reference.grouping.n_groups; ++i) {
+      batch.back().ec_configs->emplace_back(std::vector<short unsigned>(num_ecs, 0));
+    }
   } else {
     throw std::runtime_error(".tsv file not found.");
   }
 
   if (kallisto_files.ec->good()) {
     std::string line;
+    unsigned current_id = 0;
     while (getline(*kallisto_files.ec, line)) {
       std::string part;
       std::stringstream partition(line);
-      bool firstel = true;
-      long unsigned key = 0;
-      std::vector<short unsigned> config(reference.grouping.n_groups, 0);
-      bool lookup;
+      getline(partition, part, '\t');
       while (getline(partition, part, '\t')) {
-	if (firstel) {
-	  key = std::stoi(part);
-	  firstel = false;
-	  lookup = config_ids.find(key) != config_ids.end();
-	} else if (lookup) {
-	  std::string one;
-	  std::stringstream ones(part);
-	  while (getline(ones, one, ',')) {
-	    unsigned makeone = std::stoi(one);
-	    config[reference.grouping.indicators[makeone]] += 1;
-	  }
+	std::string one;
+	std::stringstream ones(part);
+	while (getline(ones, one, ',')) {
+	  unsigned short makeone = std::stoi(one);
+	  (*kallisto_configs)[reference.grouping.indicators[makeone]][current_id] += 1;
 	}
       }
-      if (lookup) {
-	kallisto_configs->push_back(config);
-      }
+      ++current_id;
     }
   } else {
     throw std::runtime_error(".ec file not found.");

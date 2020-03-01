@@ -44,12 +44,12 @@ std::vector<double> Sample::group_abundances() const {
   return thetas;
 }
 
-std::vector<unsigned> Sample::group_counts(const std::vector<signed> &indicators, unsigned n_groups, unsigned ec_id_pos) const {
+std::vector<unsigned short> Sample::group_counts(const std::vector<signed> indicators, unsigned short n_groups, unsigned ec_id_pos) const {
   long unsigned ec_id = this->ec_ids[ec_id_pos];
   std::vector<bool> bitset = (*this->ec_configs)[ec_id];
 
-  std::vector<unsigned> read_hitcounts(n_groups);
-  for (size_t j = 0; j < bitset.size(); ++j) {
+  std::vector<unsigned short> read_hitcounts(n_groups);
+  for (unsigned short j = 0; j < bitset.size(); ++j) {
     read_hitcounts[indicators[j]] += bitset[j];
   }
   return read_hitcounts;

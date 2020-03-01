@@ -45,7 +45,7 @@ public:
   void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile, unsigned iters);
 
   // Count the number of pseudoalignments in groups defined by the given indicators.
-  std::vector<unsigned> group_counts(const std::vector<signed> &indicators, unsigned n_groups, unsigned ec_id_pos) const;
+  std::vector<unsigned short> group_counts(const std::vector<signed> indicators, unsigned short n_groups, unsigned ec_id_pos) const;
 
   // Initialize bootstrapping variables
   void init_bootstrap(Grouping &grouping);

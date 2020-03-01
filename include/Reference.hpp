@@ -8,7 +8,7 @@ struct Grouping {
   std::vector<signed> indicators;
   std::vector<short unsigned> sizes;
   std::vector<std::array<double, 2>> bb_params;
-  unsigned n_groups;
+  unsigned short n_groups;
 };
 
 class Reference {

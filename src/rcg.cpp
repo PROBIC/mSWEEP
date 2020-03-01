@@ -1,11 +1,22 @@
 // Riemannian conjugate gradient for parameter estimation.
 #include "rcg.hpp"
+#include "openmp_config.hpp"
+
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
+#include <omp.h>
+#endif
 
 #include <assert.h>
 #include <cmath>
 #include <algorithm>
 #include <numeric>
 #include <iostream>
+
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
+#pragma omp declare reduction(vec_double_plus : std::vector<double> : \
+                              std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<double>())) \
+                    initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
+#endif
 
 double digamma(double x) {
   double result = 0, xx, xx2, xx4;
@@ -22,7 +33,7 @@ double digamma(double x) {
 
 void logsumexp(Matrix<double> &gamma_Z, Matrix<double> &q_Z) {
   unsigned n_cols = gamma_Z.get_cols();
-  unsigned n_rows = gamma_Z.get_rows();
+  unsigned short n_rows = gamma_Z.get_rows();
 
   std::vector<double> m(n_cols, 0.0);
 #pragma omp parallel for schedule(static)
@@ -31,7 +42,7 @@ void logsumexp(Matrix<double> &gamma_Z, Matrix<double> &q_Z) {
   }
 
 #pragma omp parallel for schedule(static) collapse(2)
-  for (unsigned i = 0; i < n_rows; ++i) {
+  for (unsigned short i = 0; i < n_rows; ++i) {
     for (unsigned j = 0; j < n_cols; ++j) {
       gamma_Z(i, j) -= m[j];
       q_Z(i, j) = std::exp(gamma_Z(i, j));
@@ -41,12 +52,12 @@ void logsumexp(Matrix<double> &gamma_Z, Matrix<double> &q_Z) {
 
 double mixt_negnatgrad(const Matrix<double> &q_Z, const Matrix<double> &gamma_Z, const std::vector<double> &N_k, const Matrix<double> &logl, Matrix<double> &dL_dphi) {
   unsigned n_cols = q_Z.get_cols();
-  unsigned n_rows = q_Z.get_rows();
+  unsigned short n_rows = q_Z.get_rows();
 
   std::vector<double> colsums(n_cols, 0.0);
-  for (unsigned i = 0; i < n_rows; ++i) {
-    double digamma_N_k = digamma(N_k[i]) - 1;
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) reduction(vec_double_plus:colsums)
+  for (unsigned short i = 0; i < n_rows; ++i) {
+    double digamma_N_k = digamma(N_k[i]) - 1.0;
     for (unsigned j = 0; j < n_cols; ++j) {
       dL_dphi(i, j) = logl(i, j);
       dL_dphi(i, j) += digamma_N_k - gamma_Z(i, j);
@@ -55,8 +66,8 @@ double mixt_negnatgrad(const Matrix<double> &q_Z, const Matrix<double> &gamma_Z,
   }
 
   double newnorm = 0.0;
-#pragma omp parallel for schedule(static) reduction(+:newnorm)
-  for (unsigned i = 0; i < n_rows; ++i) {
+#pragma omp parallel for schedule(static) reduction(+:newnorm) collapse(2)
+  for (unsigned short i = 0; i < n_rows; ++i) {
     for (unsigned j = 0; j < n_cols; ++j) {
       // dL_dgamma(i, j) would be q_Z(i, j) * (dL_dphi(i, j) - colsums[j])
       newnorm += q_Z(i, j) * (dL_dphi(i, j) - colsums[j]) * dL_dphi(i, j);
@@ -66,43 +77,50 @@ double mixt_negnatgrad(const Matrix<double> &q_Z, const Matrix<double> &gamma_Z,
 }
 
 void ELBO_rcg_mat(const Matrix<double> &logl, const Matrix<double> &q_Z, const Matrix<double> &gamma_Z, const std::vector<long unsigned> &counts, const std::vector<double> &alpha0, const std::vector<double> &N_k, long double &bound) {
+  unsigned short n_rows = q_Z.get_rows();
+  unsigned n_cols = q_Z.get_cols();
 #pragma omp parallel for schedule(static) reduction(+:bound) collapse(2)
-  for (unsigned i = 0; i < q_Z.get_rows(); ++i) {
-    for (unsigned j = 0; j < q_Z.get_cols(); ++j) {
+  for (unsigned short i = 0; i < n_rows; ++i) {
+    for (unsigned j = 0; j < n_cols; ++j) {
       bound += (q_Z(i, j) * (logl(i, j) - gamma_Z(i, j))) * counts[j];
     }
   }
 
 #pragma omp parallel for schedule(static) reduction(-:bound)
-  for (unsigned i = 0; i < q_Z.get_rows(); ++i) {
+  for (unsigned short i = 0; i < n_rows; ++i) {
     bound -= std::lgamma(alpha0[i]) - std::lgamma(N_k[i]);
   }
 }
 
 Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const Sample &sample, const std::vector<double> &alpha0, const double &tol, unsigned maxiters) {
-  unsigned n_rows = logl.get_rows();
+  unsigned short n_rows = logl.get_rows();
   unsigned n_cols = logl.get_cols();
-  Matrix<double> gamma_Z(n_rows, n_cols, 1.0);
+  Matrix<double> q_Z(n_rows, n_cols, 1.0/(double)n_rows); // value after logsumexp(gamma_Z, q_Z)
+  Matrix<double> gamma_Z(n_rows, n_cols, std::log(q_Z(0, 0))); // where gamma_Z is init at 1.0
   Matrix<double> gamma_new(n_rows, n_cols, 0.0);
   Matrix<double> oldstep(n_rows, n_cols, 0.0);
   Matrix<double> step(n_rows, n_cols, 0.0);
   double oldnorm = 1.0;
-
-  Matrix<double> q_Z(n_rows, n_cols, 0.0);
-  logsumexp(gamma_Z, q_Z);
   long double bound = -100000.0;
   bool didreset = false;
+  double bound_const = sample.total_counts();
 
-  double bound_const = std::accumulate(alpha0.begin(), alpha0.end(), 0.0);;
-  bound_const += sample.total_counts();
+#pragma omp parallel for schedule(static) reduction(+:bound_const)
+  for (unsigned short i = 0; i < n_rows; ++i) {
+    bound_const += alpha0[i];
+    bound_const += std::lgamma(alpha0[i]);
+  }
+
   bound_const = -std::lgamma(bound_const);
-  bound_const += std::accumulate(alpha0.begin(), alpha0.end(), 0.0, [](double a, double b) { return a + std::lgamma(b); });
-
   std::vector<double> N_k(alpha0.size());
   q_Z.right_multiply(sample.ec_counts, N_k);
-  std::transform(N_k.begin(), N_k.end(), alpha0.begin(), N_k.begin(), std::plus<double>());
 
-  for (unsigned k = 0; k < maxiters; ++k) {
+#pragma omp parallel for schedule(static)
+    for (unsigned short i = 0; i < n_rows; ++i) {
+      N_k[i] += alpha0[i];
+    }
+
+  for (unsigned short k = 0; k < maxiters; ++k) {
     double newnorm = mixt_negnatgrad(q_Z, gamma_Z, N_k, logl, step);
     double beta_FR = newnorm/oldnorm;
     oldnorm = newnorm;
@@ -118,7 +136,12 @@ Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const Sample &sample, co
     gamma_new.sum_fill(gamma_Z, step); // gamma_new = gamma_Z + step
     logsumexp(gamma_new, q_Z);
     q_Z.right_multiply(sample.ec_counts, N_k);
-    std::transform(N_k.begin(), N_k.end(), alpha0.begin(), N_k.begin(), std::plus<double>());
+
+    #pragma omp parallel for schedule(static)
+    for (unsigned short i = 0; i < n_rows; ++i) {
+      N_k[i] += alpha0[i];
+    }
+
     long double oldbound = bound;
     bound = bound_const;
     ELBO_rcg_mat(logl, q_Z, gamma_new, sample.ec_counts, alpha0, N_k, bound);
@@ -131,7 +154,12 @@ Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const Sample &sample, co
       }
       logsumexp(gamma_Z, q_Z);
       q_Z.right_multiply(sample.ec_counts, N_k);
-      std::transform(N_k.begin(), N_k.end(), alpha0.begin(), N_k.begin(), std::plus<double>());
+
+    #pragma omp parallel for schedule(static)
+    for (unsigned short i = 0; i < n_rows; ++i) {
+      N_k[i] += alpha0[i];
+    }
+
       bound = bound_const;
       ELBO_rcg_mat(logl, q_Z, gamma_Z, sample.ec_counts, alpha0, N_k, bound);
     } else {
@@ -151,29 +179,35 @@ Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const Sample &sample, co
 }
 
 Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const long unsigned &total_counts, const std::vector<long unsigned> &ec_counts, const std::vector<double> &alpha0, const double &tol, unsigned maxiters) {
-  unsigned n_rows = logl.get_rows();
+  unsigned short n_rows = logl.get_rows();
   unsigned n_cols = logl.get_cols();
-  Matrix<double> gamma_Z(n_rows, n_cols, 1.0);
+  Matrix<double> q_Z(n_rows, n_cols, 1.0/(double)n_rows); // value after logsumexp(gamma_Z, q_Z)
+  Matrix<double> gamma_Z(n_rows, n_cols, std::log(q_Z(0, 0))); // where gamma_Z is init at 1.0
   Matrix<double> gamma_new(n_rows, n_cols, 0.0);
   Matrix<double> oldstep(n_rows, n_cols, 0.0);
   Matrix<double> step(n_rows, n_cols, 0.0);
   double oldnorm = 1.0;
-
-  Matrix<double> q_Z(n_rows, n_cols, 0.0);
-  logsumexp(gamma_Z, q_Z);
   long double bound = -100000.0;
   bool didreset = false;
 
-  double bound_const = std::accumulate(alpha0.begin(), alpha0.end(), 0.0);;
-  bound_const += total_counts;
-  bound_const = -lgamma(bound_const);
-  bound_const += std::accumulate(alpha0.begin(), alpha0.end(), 0.0, [](double a, double b) { return a + lgamma(b); });
+  double bound_const = total_counts;
 
+  #pragma omp parallel for schedule(static) reduction(+:bound_const)
+  for (unsigned short i = 0; i < n_rows; ++i) {
+    bound_const += alpha0[i];
+    bound_const += std::lgamma(alpha0[i]);
+  }
+
+  bound_const = -std::lgamma(bound_const);
   std::vector<double> N_k(alpha0.size());
   q_Z.right_multiply(ec_counts, N_k);
-  std::transform(N_k.begin(), N_k.end(), alpha0.begin(), N_k.begin(), std::plus<double>());
 
-  for (unsigned k = 0; k < maxiters; ++k) {
+  #pragma omp parallel for schedule(static)
+  for (unsigned short i = 0; i < n_rows; ++i) {
+    N_k[i] += alpha0[i];
+  }
+
+  for (unsigned short k = 0; k < maxiters; ++k) {
     double newnorm = mixt_negnatgrad(q_Z, gamma_Z, N_k, logl, step);
     double beta_FR = newnorm/oldnorm;
     oldnorm = newnorm;
@@ -189,7 +223,12 @@ Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const long unsigned &tot
     gamma_new.sum_fill(gamma_Z, step); // gamma_new = gamma_Z + step
     logsumexp(gamma_new, q_Z);
     q_Z.right_multiply(ec_counts, N_k);
-    std::transform(N_k.begin(), N_k.end(), alpha0.begin(), N_k.begin(), std::plus<double>());
+
+    #pragma omp parallel for schedule(static)
+    for (unsigned short i = 0; i < n_rows; ++i) {
+      N_k[i] += alpha0[i];
+    }
+
     long double oldbound = bound;
     bound = bound_const;
     ELBO_rcg_mat(logl, q_Z, gamma_new, ec_counts, alpha0, N_k, bound);
@@ -202,7 +241,12 @@ Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const long unsigned &tot
       }
       logsumexp(gamma_Z, q_Z);
       q_Z.right_multiply(ec_counts, N_k);
-      std::transform(N_k.begin(), N_k.end(), alpha0.begin(), N_k.begin(), std::plus<double>());
+
+      #pragma omp parallel for schedule(static)
+      for (unsigned short i = 0; i < n_rows; ++i) {
+        N_k[i] += alpha0[i];
+      }
+
       bound = bound_const;
       ELBO_rcg_mat(logl, q_Z, gamma_Z, ec_counts, alpha0, N_k, bound);
     } else {

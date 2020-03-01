@@ -86,8 +86,8 @@ void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sa
     batch_cells.emplace_back("sample");
   }
 
-  std::shared_ptr<std::unordered_map<long unsigned, std::vector<short unsigned>>> kallisto_configs;
-  kallisto_configs = std::make_shared<std::unordered_map<long unsigned, std::vector<short unsigned>>>();
+  std::shared_ptr<std::vector<std::vector<short unsigned>>> kallisto_configs;
+  kallisto_configs = std::make_shared<std::vector<std::vector<short unsigned>>>();
   std::unordered_set<long unsigned> config_ids;
 
   if (kallisto_files.tsv->good()) {
@@ -157,7 +157,7 @@ void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sa
 	}
       }
       if (lookup) {
-	(*kallisto_configs)[key] = config;
+	kallisto_configs->push_back(config);
       }
     }
   } else {

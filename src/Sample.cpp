@@ -5,7 +5,7 @@
 #include "likelihood.hpp"
 #include "version.h"
 
-Sample::Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<long unsigned> ec_counts_p, long unsigned counts_total_p, std::shared_ptr<std::unordered_map<long unsigned, std::vector<short unsigned>>> ec_configs_p) {
+Sample::Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<long unsigned> ec_counts_p, long unsigned counts_total_p, std::shared_ptr<std::vector<std::vector<short unsigned>>> ec_configs_p) {
   this->cell_id = cell_id_p;
   this->ec_ids = ec_ids_p;
   this->ec_counts = ec_counts_p;
@@ -17,7 +17,7 @@ Sample::Sample(KAlignment converted_aln) {
   this->cell_id = "";
   this->ec_ids.resize(converted_aln.ecs.size());
   this->ec_counts.resize(converted_aln.ecs.size());
-  this->ec_configs.reset(new std::unordered_map<long unsigned, std::vector<short unsigned>>);
+  this->ec_configs.reset(new std::vector<std::vector<short unsigned>>);
   this->ec_configs->reserve(converted_aln.ecs.bucket_count());
   this->counts_total = 0;
   size_t i = 0;

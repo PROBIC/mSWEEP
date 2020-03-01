@@ -1,9 +1,10 @@
+#include "openmp_config.hpp"
+
 #include <fstream>
 #include <iostream>
 #include <future>
 #include <random>
 
-#include "bootstrap.hpp"
 #include "Reference.hpp"
 #include "parse_arguments.hpp"
 #include "thread_pool.hpp"
@@ -61,7 +62,11 @@ BootstrapResults bootstrap_abundances(const std::vector<Sample> &bitfields, Refe
       std::string name = (args.batch_mode ? bitfield.cell_name() : "0");
       std::cout << "Processing " << (args.batch_mode ? name : "the sample") << std::endl;
       // Store results in this
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 0
       std::vector<std::future<std::vector<double>>> abus;
+#else
+      std::vector<std::vector<double>> abus;
+#endif
       // Init the bootstrap variables
       std::cerr << "Building log-likelihood array" << std::endl;
       bitfield.init_bootstrap(reference.grouping);
@@ -71,7 +76,11 @@ BootstrapResults bootstrap_abundances(const std::vector<Sample> &bitfields, Refe
 	  std::cout << "  iter: " << i << "/" << args.iters << std::endl;
 	}
 	// Run the estimation multiple times without writing anything
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 0
 	abus.emplace_back(pool.enqueue(&bootstrap_iter, reference, bitfield, bitfield.ec_counts, args.optimizer));
+#else
+	abus.emplace_back(bootstrap_iter(reference, bitfield, bitfield.ec_counts, args.optimizer));
+#endif
 	// Resample the pseudoalignment counts (here because we want to include the original)
 	bitfield.resample_counts(gen);
       }
@@ -79,7 +88,11 @@ BootstrapResults bootstrap_abundances(const std::vector<Sample> &bitfields, Refe
       results.insert(name, bitfield.total_counts(), std::vector<std::vector<double>>());
       for (unsigned i = 0; i <= args.iters; ++i) {
 	//	results.at(name).emplace_back(abus.at(i).get());
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 0
 	results.insert_iter(name, abus.at(i).get());
+#else
+	results.insert_iter(name, abus.at(i));
+#endif
       }
     }
     return results;

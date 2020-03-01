@@ -40,34 +40,40 @@ void ProcessReads(const Reference &reference, std::string outfile, Sample &sampl
 }
 
 void ProcessBatch(const Reference &reference, Arguments &args, std::vector<Sample> &bitfields) {
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 0
+  // Run several samples in parallel if not compiled with OpenMP
   // Don't launch extra threads if the batch is small
-  unsigned short nr_threads_estim = 1;
-  if (args.optimizer.nr_threads > bitfields.size()) {
-    nr_threads_estim = args.optimizer.nr_threads - bitfields.size(); // Let the estimation use more threads
-    args.optimizer.nr_threads = bitfields.size();
-  }
+  args.optimizer.nr_threads = (args.optimizer.nr_threads > bitfields.size() ? bitfields.size() : args.optimizer.nr_threads);
   ThreadPool pool(args.optimizer.nr_threads);
-  args.optimizer.nr_threads = nr_threads_estim;
+#endif
   for (auto bitfield : bitfields) {
     std::string batch_outfile = (args.outfile.empty() ? args.outfile : args.outfile + "/" + bitfield.cell_name());
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 0
     pool.enqueue(&ProcessReads, reference, batch_outfile, bitfield, args.optimizer);
+#else
+    ProcessReads(reference, batch_outfile, bitfield, args.optimizer);
+#endif
   }
 }
 
 void ProcessBootstrap(Reference &reference, Arguments &args, std::vector<Sample> &bitfields) {
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 0
+  // Run bootstrap iterations in parallel if not compiled with OpenMP
   // Avoid launching extra threads if bootstrapping for only a few iterations
-  unsigned short nr_threads_estim = 1;
-  if (args.optimizer.nr_threads > args.iters) {
-    nr_threads_estim = args.optimizer.nr_threads - args.iters; // Let the estimation use more threads
-    args.optimizer.nr_threads = args.iters;
-  }
+  args.optimizer.nr_threads = (args.optimizer.nr_threads > args.iters ? args.iters : args.optimizer.nr_threads);
   ThreadPool pool(args.optimizer.nr_threads);
-  args.optimizer.nr_threads = nr_threads_estim;
-  //  const std::unordered_map<std::string, std::vector<std::vector<double>>> &results = bootstrap_abundances(bitfields, reference, pool, args);
+#else
+  omp_set_num_threads(args.optimizer.nr_threads);
+  ThreadPool pool(0); // dummy pool to pass as argument for bootstrap_abundances
+#endif
   const BootstrapResults &results = bootstrap_abundances(bitfields, reference, pool, args);
 
   for (auto kv : results.get()) {
     std::string outfile = (args.outfile.empty() || !args.batch_mode ? args.outfile : args.outfile + '/' + kv.first);
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 0
     pool.enqueue(&write_bootstrap, reference.group_names, kv.second.second, outfile, args.iters, kv.second.first);
+#else
+    write_bootstrap(reference.group_names, kv.second.second, outfile, args.iters, kv.second.first);
+#endif
   }
 }

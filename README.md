@@ -49,6 +49,25 @@ enter the directory and run
 ```
 - This will compile the mSWEEP executable in build/bin/mSWEEP.
 
+### Compilation tips for improving performance
+1. If you intend to run mSWEEP on the machine used in compiling the
+source code, you might want to add the '-march=native -mtune=native'
+flags if compiling with GCC by running
+```
+> cmake -DCMAKE_CXX_FLAGS="-march=native -mtune=native" -DCMAKE_C_FLAGS="-march=native -mtune=native" ..
+> make
+```
+Using these options significantly reduces the runtime of mSWEEP in
+some environments (e.g. most HPC setups).
+
+2. If the [Intel C++ compiler](https://software.intel.com/en-us/c-compilers) is
+   available in your environment, you might want to use that to
+   compile mSWEEP — especially if running on Intel hardware. The compiler can be specified by running
+```
+> cmake -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc ..
+> make
+```
+
 # Usage
 ## Reference data
 

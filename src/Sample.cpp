@@ -1,11 +1,9 @@
 #include "Sample.hpp"
 
-#include <memory>
-
 #include "likelihood.hpp"
 #include "version.h"
 
-Sample::Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<long unsigned> ec_counts_p, long unsigned counts_total_p, std::shared_ptr<std::vector<std::vector<short unsigned>>> ec_configs_p) {
+Sample::Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<long unsigned> ec_counts_p, long unsigned counts_total_p, std::vector<std::vector<bool>> ec_configs_p) {
   this->cell_id = cell_id_p;
   this->ec_ids = ec_ids_p;
   this->ec_counts = ec_counts_p;
@@ -17,8 +15,7 @@ Sample::Sample(KAlignment converted_aln) {
   this->cell_id = "";
   this->ec_ids.resize(converted_aln.ecs.size());
   this->ec_counts.resize(converted_aln.ecs.size());
-  this->ec_configs.reset(new std::vector<std::vector<short unsigned>>);
-  this->ec_configs->reserve(converted_aln.ecs.bucket_count());
+  //  this->ec_configs.resize(converted_aln.ecs.size());
   this->counts_total = 0;
   size_t i = 0;
   for (auto kv : converted_aln.ecs) {
@@ -44,13 +41,10 @@ std::vector<double> Sample::group_abundances() const {
   return thetas;
 }
 
-std::vector<unsigned short> Sample::group_counts(const std::vector<signed> indicators, unsigned short n_groups, unsigned ec_id_pos) const {
-  long unsigned ec_id = this->ec_ids[ec_id_pos];
-  std::vector<short unsigned> bitset = (*this->ec_configs)[ec_id];
-
+std::vector<unsigned short> Sample::group_counts(const std::vector<unsigned short> indicators, const unsigned ec_id) const {
   std::vector<unsigned short> read_hitcounts(n_groups);
-  for (unsigned short j = 0; j < bitset.size(); ++j) {
-    read_hitcounts[indicators[j]] += bitset[j];
+  for (unsigned short j = 0; j < m_num_refs; ++j) {
+    read_hitcounts[indicators[j]] += ec_configs[ec_id][j];
   }
   return read_hitcounts;
 }

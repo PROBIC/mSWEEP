@@ -5,7 +5,7 @@
 #include <array>
 
 struct Grouping {
-  std::vector<signed> indicators;
+  std::vector<unsigned short> indicators;
   std::vector<short unsigned> sizes;
   std::vector<std::array<double, 2>> bb_params;
   unsigned short n_groups;

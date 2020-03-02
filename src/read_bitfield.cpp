@@ -48,7 +48,7 @@ void ReadClusterIndicators(std::istream &indicator_file, Reference &reference) {
 
   if (indicator_file.good()) {
     std::string indicator_s;
-    signed indicator_i = 0;
+    unsigned indicator_i = 0;
     while (getline(indicator_file, indicator_s)) {
       if (str_to_int.find(indicator_s) == str_to_int.end()) {
 	str_to_int[indicator_s] = indicator_i;
@@ -86,59 +86,53 @@ void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sa
     batch_cells.emplace_back("sample");
   }
 
-  std::shared_ptr<std::vector<std::vector<short unsigned>>> kallisto_configs;
-  kallisto_configs = std::make_shared<std::vector<std::vector<short unsigned>>>();
-
+  batch.emplace_back(Sample());
+  Sample *current_sample = &batch.back();
+  (*current_sample).n_groups = reference.grouping.n_groups;
+  (*current_sample).m_num_refs = reference.n_refs;
   if (kallisto_files.tsv->good()) {
     std::string line;
-    unsigned cell_id = 0;
-    std::vector<long unsigned> ec_ids;
-    std::vector<long unsigned> ec_counts;
-    long unsigned counts_total = 0;
+    int cell_id = 0;
     
     while (getline(*kallisto_files.tsv, line)) {
       std::string part;
       std::stringstream partition(line);
-      unsigned count = 0;
-      long unsigned key = 0;
-      long unsigned howmany = 0;
-      while (getline(partition, part, '\t')) {
-	if (count == 0) {
-	  key = std::stoi(part);
-	  ++count;
-	} else if (count == 1 && kallisto_files.batch_mode) {
-	  unsigned current_cell_id = std::stoi(part);
-	  ++count;
-	  if (current_cell_id != cell_id) {
-	    batch.emplace_back(Sample(batch_cells[cell_id], ec_ids, ec_counts, counts_total, kallisto_configs));
-	    unsigned num_ecs = ec_ids.size();
-	    for (unsigned i = 0; i < reference.grouping.n_groups; ++i) {
-	      batch.back().ec_configs->emplace_back(std::vector<short unsigned>(num_ecs, 0));
-	    }
-	    ec_ids.clear();
-	    ec_counts.clear();
-	    counts_total = 0;
-	    ++cell_id;
-	  }
-	} else {
-	  howmany = std::stoi(part);
-	}
+      int key = 0;
+      int howmany = 0;
+      getline(partition, part, '\t');
+      key = std::stoi(part);
+      getline(partition, part, '\t');
+      if (kallisto_files.batch_mode) {
+      	int current_cell_id = std::stoi(part);
+      	if (current_cell_id != cell_id) {
+      	  unsigned num_ecs = (*current_sample).ec_ids.size();
+      	  (*current_sample).ec_configs.resize(num_ecs, std::vector<bool>(reference.n_refs, false));
+      	  (*current_sample).m_num_ecs = num_ecs;
+      	  (*current_sample).cell_id = cell_id;
+      	  batch.emplace_back(Sample());
+      	  current_sample = &batch.back();
+      	  (*current_sample).n_groups = reference.grouping.n_groups;
+      	  (*current_sample).m_num_refs = reference.n_refs;
+      	  ++cell_id;
+      	}
+      	getline(partition, part, '\t');
+      	howmany = std::stoi(part);
+      } else {
+	howmany = std::stoi(part);
       }
       if (howmany > 0) {
-	ec_ids.push_back(key);
-	ec_counts.push_back(howmany);
-	counts_total += howmany;
+	(*current_sample).ec_ids.push_back(key);
+	(*current_sample).ec_counts.push_back(howmany);
+	(*current_sample).counts_total += howmany;
       }
     }
-    batch.emplace_back(Sample(batch_cells[cell_id], ec_ids, ec_counts, counts_total, kallisto_configs));
-    unsigned num_ecs = ec_ids.size();
-    for (unsigned i = 0; i < reference.grouping.n_groups; ++i) {
-      batch.back().ec_configs->emplace_back(std::vector<short unsigned>(num_ecs, 0));
-    }
+    unsigned num_ecs = (*current_sample).ec_ids.size();
+    (*current_sample).ec_configs.resize(num_ecs, std::vector<bool>(reference.n_refs, false));
+    (*current_sample).m_num_ecs = num_ecs;
+    (*current_sample).cell_id = cell_id;
   } else {
     throw std::runtime_error(".tsv file not found.");
   }
-
   if (kallisto_files.ec->good()) {
     std::string line;
     unsigned current_id = 0;
@@ -151,7 +145,7 @@ void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sa
 	std::stringstream ones(part);
 	while (getline(ones, one, ',')) {
 	  unsigned short makeone = std::stoi(one);
-	  (*kallisto_configs)[reference.grouping.indicators[makeone]][current_id] += 1;
+	  batch.back().ec_configs[current_id][makeone] = true;
 	}
       }
       ++current_id;

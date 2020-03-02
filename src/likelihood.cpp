@@ -22,7 +22,7 @@ Matrix<double> precalc_lls(const Grouping &grouping) {
   }
 
   Matrix<double> lls(grouping.n_groups, max_size + 1, -4.60517); // log(0.01) = -4.60517
-#pragma omp parallel for schedule(static) collapse(2)
+#pragma omp parallel for schedule(static)
   for (unsigned short i = 0; i < grouping.n_groups; ++i) {
     for (unsigned short j = 1; j <= max_size; ++j) {
       lls(i, j) = ldbb_scaled(j, grouping.sizes[i], grouping.bb_params[i][0], grouping.bb_params[i][1]) - 0.01005034; // log(0.99) = -0.01005034

@@ -44,7 +44,7 @@ Matrix<T>& Matrix<T>::operator=(const Matrix<T>& rhs) {
     }
   }
 
-#pragma omp parallel for schedule(static) collapse(2)
+#pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < new_rows; i++) {
     for (unsigned j = 0; j < new_cols; j++) {
       mat[i][j] = rhs(i, j);
@@ -61,7 +61,7 @@ template<typename T>
 Matrix<T> Matrix<T>::operator+(const Matrix<T>& rhs) {
   Matrix result(this->rows, this->cols, 0.0);
 
-#pragma omp parallel for schedule(static) collapse(2)
+#pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < this->rows; i++) {
     for (unsigned j = 0; j < this->cols; j++) {
       result(i, j) = this->mat[i][j] + rhs(i,j);
@@ -74,7 +74,7 @@ Matrix<T> Matrix<T>::operator+(const Matrix<T>& rhs) {
 // In-place matrix-matrix addition
 template<typename T>
 Matrix<T>& Matrix<T>::operator+=(const Matrix<T>& rhs) {
-#pragma omp parallel for schedule(static) collapse(2)
+#pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < this->rows; i++) {
     for (unsigned j = 0; j < this->cols; j++) {
       this->mat[i][j] += rhs(i, j);
@@ -87,7 +87,7 @@ Matrix<T>& Matrix<T>::operator+=(const Matrix<T>& rhs) {
 // Fill matrix with sum of two matrices
 template <typename T>
 void Matrix<T>::sum_fill(const Matrix<T>& rhs1, const Matrix<T>& rhs2) {
-#pragma omp parallel for schedule(static) collapse(2)
+#pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < this->rows; ++i) {
     for (unsigned j = 0; j < this->cols; ++j) {
       this->mat[i][j] = rhs1(i, j) + rhs2(i, j);
@@ -100,7 +100,7 @@ template<typename T>
 Matrix<T> Matrix<T>::operator-(const Matrix<T>& rhs) {
   Matrix result(this->rows, this->cols, 0.0);
 
-#pragma omp parallel for schedule(static) collapse(2)
+#pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < this->rows; i++) {
     for (unsigned j = 0; j < this->cols; j++) {
       result(i, j) = this->mat[i][j] - rhs(i, j);
@@ -113,7 +113,7 @@ Matrix<T> Matrix<T>::operator-(const Matrix<T>& rhs) {
 // In-place matrix-matrix subtraction
 template<typename T>
 Matrix<T>& Matrix<T>::operator-=(const Matrix<T>& rhs) {
-#pragma omp parallel for schedule(static) collapse(2)
+#pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < this->rows; i++) {
     for (unsigned j = 0; j < this->cols; j++) {
       this->mat[i][j] -= rhs(i, j);
@@ -128,7 +128,7 @@ template<typename T>
 Matrix<T> Matrix<T>::operator*(const Matrix<T>& rhs) {
   Matrix result(this->rows, this->cols, 0.0);
 
-#pragma omp parallel for schedule(static) collapse(3)
+#pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < this->rows; i++) {
     for (unsigned j = 0; j < this->cols; j++) {
       for (unsigned k = 0; k < this->rows; k++) {
@@ -153,7 +153,7 @@ template<typename T>
 Matrix<T> Matrix<T>::transpose() {
   Matrix result(this->rows, this->cols, 0.0);
 
-#pragma omp parallel for schedule(static) collapse(2)
+#pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < this->rows; i++) {
     for (unsigned j = 0; j < this->cols; j++) {
       result(i, j) = this->mat[j][i];
@@ -166,7 +166,7 @@ Matrix<T> Matrix<T>::transpose() {
 // In-place matrix-scalar addition
 template<typename T>
 Matrix<T>& Matrix<T>::operator+=(const T& rhs) {
-#pragma omp parallel for schedule(static) collapse(2)
+#pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < this->rows; i++) {
     for (unsigned j = 0; j < this->cols; j++) {
       this->mat[i][j] += rhs;
@@ -179,7 +179,7 @@ Matrix<T>& Matrix<T>::operator+=(const T& rhs) {
 // In-place matrix-scalar subtraction
 template<typename T>
 Matrix<T>& Matrix<T>::operator-=(const T& rhs) {
-#pragma omp parallel for schedule(static) collapse(2)
+#pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < this->rows; i++) {
     for (unsigned j=0; j < this->cols; j++) {
       this->mat[i][j] -= rhs;
@@ -192,7 +192,7 @@ Matrix<T>& Matrix<T>::operator-=(const T& rhs) {
 // In-place matrix-scalar multiplication
 template<typename T>
 Matrix<T>& Matrix<T>::operator*=(const T& rhs) {
-#pragma omp parallel for schedule(static) collapse(2)
+#pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < this->rows; ++i) {
     for (unsigned j = 0; j < this->cols; ++j) {
       this->mat[i][j] *= rhs;
@@ -205,7 +205,7 @@ Matrix<T>& Matrix<T>::operator*=(const T& rhs) {
 // In-place matrix-scalar division
 template<typename T>
 Matrix<T>& Matrix<T>::operator/=(const T& rhs) {
-#pragma omp parallel for schedule(static) collapse(2)
+#pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < this->rows; ++i) {
     for (unsigned j = 0; j < this->cols; ++j) {
       this->mat[i][j] /= rhs;
@@ -220,7 +220,7 @@ template<typename T>
 std::vector<T> Matrix<T>::operator*(const std::vector<T>& rhs) {
   std::vector<T> result(rhs.size(), 0.0);
 
-#pragma omp parallel for schedule(static) collapse(2)
+#pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < rows; i++) {
     for (unsigned j = 0; j < cols; j++) {
       result[i] += this->mat[i][j] * rhs[j];
@@ -247,7 +247,7 @@ template<typename T>
 std::vector<double> Matrix<T>::operator*(const std::vector<long unsigned>& rhs) {
   std::vector<double> result(this->rows, 0.0);
 
-#pragma omp parallel for schedule(static) collapse(2)
+#pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < this->rows; i++) {
     for (unsigned j = 0; j < this->cols; j++) {
       result[i] += this->mat[i][j] * rhs[j];

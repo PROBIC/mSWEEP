@@ -15,27 +15,29 @@ Sample::Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::
   this->ec_configs = ec_configs_p;
 }
 
-Sample::Sample(KAlignment converted_aln) {
+Sample::Sample(CompressedAlignment aln) {
   this->cell_id = "";
-  this->ec_ids.resize(converted_aln.ecs.size());
-  this->ec_counts.resize(converted_aln.ecs.size());
-  //  this->ec_configs.resize(converted_aln.ecs.size());
-  this->counts_total = 0;
-  size_t i = 0;
-  for (auto kv : converted_aln.ecs) {
+  this->m_num_ecs = aln.ec_configs.size();
+  this->m_num_refs = aln.ec_configs[0].size();
+  this->ec_ids.resize(this->m_num_ecs, 0);
+  this->ec_counts = aln.ec_counts;
+  this->log_ec_counts.resize(this->m_num_ecs, 0.0);
+  this->ec_configs = aln.ec_configs;
+
+  uint32_t aln_counts_total = 0;
+#pragma omp parallel for schedule(static) reduction(+:aln_counts_total)
+  for (uint32_t i = 0; i < this->m_num_ecs; ++i) {
     this->ec_ids[i] = i;
-    this->ec_counts[i] = std::log(kv.second.count);
-    this->counts_total += kv.second.count;
-    //    this->ec_configs->insert(std::make_pair(i, kv.first));
-    ++i;
+    this->log_ec_counts[i] = std::log(aln.ec_counts[i]);
+    aln_counts_total += aln.ec_counts[i];
   }
+  this->counts_total = aln_counts_total;
 }
 
 std::vector<double> Sample::group_abundances() const {
   // Calculate the relative abundances of the
   // reference groups from the ec_probs matrix
   std::vector<double> thetas(this->ec_probs.get_rows(), 0.0);
-#pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < this->ec_probs.get_rows(); ++i) {
     for (unsigned j = 0; j < this->ec_probs.get_cols(); ++j) {
       thetas[i] += std::exp(this->ec_probs(i, j) + this->log_ec_counts[j]);

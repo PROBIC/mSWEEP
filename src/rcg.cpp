@@ -110,7 +110,7 @@ void revert_step(Matrix<double> &gamma_Z, const Matrix<double> &step, const std:
 }
 
 Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const Sample &sample, const std::vector<double> &alpha0, const double &tol, unsigned maxiters) {
-  unsigned short n_rows = sample.n_groups;
+  unsigned short n_rows = logl.get_rows();
   unsigned n_cols = sample.m_num_ecs;
   Matrix<double> gamma_Z(n_rows, n_cols, std::log(1.0/(double)n_rows)); // where gamma_Z is init at 1.0
   Matrix<double> oldstep(n_rows, n_cols, 0.0);

@@ -38,7 +38,7 @@ public:
 
   Sample() = default;
   Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<unsigned> ec_counts_p, unsigned counts_total_p, std::vector<std::vector<bool>> ec_configs_p);
-  Sample(KAlignment converted_aln);
+  Sample(CompressedAlignment aln);
 
   // Retrieve relative abundances from the ec_probs matrix.
   std::vector<double> group_abundances() const;
@@ -61,7 +61,7 @@ public:
   void resample_counts(std::mt19937_64 &rng);
 
   // Getters
-  unsigned num_ecs() const { return this->ec_ids.size(); };
+  unsigned num_ecs() const { return this->m_num_ecs; };
   const std::string &cell_name() const { return this->cell_id; };
   const unsigned &total_counts() const { return this->counts_total; };
 };

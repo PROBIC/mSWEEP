@@ -182,6 +182,6 @@ void ReadBitfield(const std::string &tinfile1, const std::string &tinfile2, cons
   std::vector<std::istream*> strands(2);
   strands.at(0) = new zstr::ifstream(tinfile1);
   strands.at(1) = new zstr::ifstream(tinfile2);
-  KAlignment kallisto = ReadAlignments(get_mode(themisto_mode), n_refs, &strands);
-  batch.emplace_back(Sample(kallisto));
+  const CompressedAlignment &aln = ThemistoToKallisto(get_mode(themisto_mode), n_refs, strands);
+  batch.emplace_back(Sample(aln));
 }

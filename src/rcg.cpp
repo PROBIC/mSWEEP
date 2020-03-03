@@ -50,7 +50,7 @@ std::vector<double> logsumexp(Matrix<double> &gamma_Z) {
   return m;
 }
 
-double mixt_negnatgrad(const Matrix<double> &gamma_Z, const std::vector<double> &N_k, const Matrix<double> &logl, Matrix<double> &dL_dphi) {
+double mixt_negnatgrad(const Matrix<double> &gamma_Z, const std::vector<double> &N_k, const Matrix<double> &logl, const std::vector<std::vector<short unsigned>> &counts, Matrix<double> &dL_dphi) {
   unsigned n_cols = gamma_Z.get_cols();
   unsigned short n_rows = gamma_Z.get_rows();
 
@@ -59,7 +59,7 @@ double mixt_negnatgrad(const Matrix<double> &gamma_Z, const std::vector<double> 
   for (unsigned short i = 0; i < n_rows; ++i) {
     double digamma_N_k = digamma(N_k[i]) - 1.0;
     for (unsigned j = 0; j < n_cols; ++j) {
-      dL_dphi(i, j) = logl(i, j);
+      dL_dphi(i, j) = logl(i, counts[i][j]);
       dL_dphi(i, j) += digamma_N_k - gamma_Z(i, j);
       colsums[j] += dL_dphi(i, j) * std::exp(gamma_Z(i, j));
     }
@@ -77,14 +77,13 @@ double mixt_negnatgrad(const Matrix<double> &gamma_Z, const std::vector<double> 
   return newnorm;
 }
 
-void ELBO_rcg_mat(const Matrix<double> &logl, const Matrix<double> &gamma_Z, const std::vector<double> &counts, const std::vector<double> &alpha0, const std::vector<double> &N_k, long double &bound) {
+void ELBO_rcg_mat(const Matrix<double> &logl, const Matrix<double> &gamma_Z, const std::vector<double> &counts, const std::vector<double> &alpha0, const std::vector<double> &N_k, long double &bound, const Sample &sample) {
   unsigned short n_rows = gamma_Z.get_rows();
   unsigned n_cols = gamma_Z.get_cols();
 #pragma omp parallel for schedule(static) reduction(+:bound)
   for (unsigned short i = 0; i < n_rows; ++i) {
     for (unsigned j = 0; j < n_cols; ++j) {
-      bound += std::exp(gamma_Z(i, j) + counts[j])*(logl(i, j) - gamma_Z(i, j));
-      //      bound += (std::exp(gamma_Z(i, j)) * (logl(i, j) - gamma_Z(i, j))) * counts[j];
+      bound += std::exp(gamma_Z(i, j) + counts[j])*(logl(i, sample.counts[i][j]) - gamma_Z(i, j));
     }
     bound -= std::lgamma(alpha0[i]) - std::lgamma(N_k[i]);
   }
@@ -102,8 +101,8 @@ void revert_step(Matrix<double> &gamma_Z, const Matrix<double> &step, const std:
 }
 
 Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const Sample &sample, const std::vector<double> &alpha0, const double &tol, unsigned maxiters) {
-  unsigned short n_rows = logl.get_rows();
-  unsigned n_cols = logl.get_cols();
+  unsigned short n_rows = sample.n_groups;
+  unsigned n_cols = sample.m_num_ecs;
   Matrix<double> gamma_Z(n_rows, n_cols, std::log(1.0/(double)n_rows)); // where gamma_Z is init at 1.0
   Matrix<double> oldstep(n_rows, n_cols, 0.0);
   Matrix<double> step(n_rows, n_cols, 0.0);
@@ -128,7 +127,7 @@ Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const Sample &sample, co
     }
 
   for (unsigned short k = 0; k < maxiters; ++k) {
-    double newnorm = mixt_negnatgrad(gamma_Z, N_k, logl, step);
+    double newnorm = mixt_negnatgrad(gamma_Z, N_k, logl, sample.counts, step);
     double beta_FR = newnorm/oldnorm;
     oldnorm = newnorm;
 
@@ -151,7 +150,7 @@ Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const Sample &sample, co
 
     long double oldbound = bound;
     bound = bound_const;
-    ELBO_rcg_mat(logl, gamma_Z, sample.ec_counts, alpha0, N_k, bound);
+    ELBO_rcg_mat(logl, gamma_Z, sample.ec_counts, alpha0, N_k, bound, sample);
 
     if (bound < oldbound) {
       didreset = true;
@@ -168,7 +167,7 @@ Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const Sample &sample, co
     }
 
       bound = bound_const;
-      ELBO_rcg_mat(logl, gamma_Z, sample.ec_counts, alpha0, N_k, bound);
+      ELBO_rcg_mat(logl, gamma_Z, sample.ec_counts, alpha0, N_k, bound, sample);
     } else {
       oldstep = step;
     }
@@ -213,7 +212,7 @@ Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const long unsigned &tot
   }
 
   for (unsigned short k = 0; k < maxiters; ++k) {
-    double newnorm = mixt_negnatgrad(gamma_Z, N_k, logl, step);
+    double newnorm = mixt_negnatgrad(gamma_Z, N_k, logl, std::vector<std::vector<short unsigned>>(), step);
     double beta_FR = newnorm/oldnorm;
     oldnorm = newnorm;
 
@@ -237,7 +236,7 @@ Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const long unsigned &tot
 
     long double oldbound = bound;
     bound = bound_const;
-    ELBO_rcg_mat(logl, gamma_new, ec_counts, alpha0, N_k, bound);
+    ELBO_rcg_mat(logl, gamma_new, ec_counts, alpha0, N_k, bound, Sample());
 
     if (bound < oldbound) {
       didreset = true;
@@ -255,7 +254,7 @@ Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const long unsigned &tot
       }
 
       bound = bound_const;
-      ELBO_rcg_mat(logl, gamma_Z, ec_counts, alpha0, N_k, bound);
+      ELBO_rcg_mat(logl, gamma_Z, ec_counts, alpha0, N_k, bound, Sample());
     } else {
       oldstep = step;
       gamma_Z = gamma_new;

@@ -122,8 +122,8 @@ void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sa
       }
       if (howmany > 0) {
 	(*current_sample).ec_ids.push_back(key);
-	(*current_sample).ec_counts.push_back(std::log(howmany));
-	(*current_sample).counts_total += howmany;
+	(*current_sample).ec_counts.push_back(std::log(howmany)); // these should be done afterwards in parallel to
+	(*current_sample).counts_total += howmany; // save up some time (we want to spend as little as possible in reading the stuff in)
       }
     }
     unsigned num_ecs = (*current_sample).ec_ids.size();

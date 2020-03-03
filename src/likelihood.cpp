@@ -32,17 +32,27 @@ Matrix<double> precalc_lls(const Grouping &grouping) {
   return lls;
 }
 
-Matrix<double> likelihood_array_mat(const Sample &sample, const Grouping &grouping) {
+Matrix<double> likelihood_array_mat(Sample &sample, const Grouping &grouping) {
   unsigned num_ecs = sample.num_ecs();
   const Matrix<double> &my_lls = precalc_lls(grouping);
   Matrix<double> log_likelihoods(grouping.n_groups, num_ecs, -4.60517);
 
+  //#pragma omp parallel for schedule(static)
+  // for (unsigned j = 0; j < num_ecs; ++j) {
+  //   const std::vector<short unsigned> &counts = sample.group_counts(grouping.indicators, j);
+  //   for (unsigned short i = 0; i < grouping.n_groups; ++i) {
+  //     log_likelihoods(i, j) = my_lls(i, counts[i]);
+  //   }
+  // }
+  sample.counts.resize(grouping.n_groups, std::vector<short unsigned>(sample.m_num_ecs, 0));
 #pragma omp parallel for schedule(static)
   for (unsigned j = 0; j < num_ecs; ++j) {
     const std::vector<short unsigned> &counts = sample.group_counts(grouping.indicators, j);
-    for (unsigned short i = 0; i < grouping.n_groups; ++i) {
-      log_likelihoods(i, j) = my_lls(i, counts[i]);
+    for (unsigned i = 0; i < grouping.n_groups; ++i) {
+      sample.counts[i][j] = counts[i];
     }
   }
-  return(log_likelihoods);
+
+  return my_lls;
+  //  return(log_likelihoods);
 }

@@ -31,7 +31,7 @@ public:
   Matrix<double> ec_probs = Matrix<double>(0, 0, 0.0);
   // Optional storage for likelihood, used in bootstrap
   Matrix<double> ll_mat = Matrix<double>(0, 0, 0.0);
-  std::vector<std::vector<short unsigned>> group_hitcounts;
+  std::vector<std::vector<short unsigned>> counts;
 
   // Bootstrap results
   std::unordered_map<unsigned, std::vector<double>> bootstrap_abundances;

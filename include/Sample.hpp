@@ -15,9 +15,8 @@
 
 class Sample {
 private:
-
   // Bootstrapping variables
-  std::discrete_distribution<long unsigned> ec_distribution;
+  std::discrete_distribution<unsigned> ec_distribution;
 
 public:
   short unsigned n_groups;
@@ -26,8 +25,9 @@ public:
   std::string cell_id;
   std::vector<std::vector<bool>> ec_configs;
   std::vector<long unsigned> ec_ids;
-  std::vector<double> ec_counts;
-  long unsigned counts_total;
+  std::vector<unsigned> ec_counts;
+  std::vector<double> log_ec_counts;
+  unsigned counts_total;
   Matrix<double> ec_probs = Matrix<double>(0, 0, 0.0);
   // Optional storage for likelihood, used in bootstrap
   Matrix<double> ll_mat = Matrix<double>(0, 0, 0.0);
@@ -37,7 +37,7 @@ public:
   std::unordered_map<unsigned, std::vector<double>> bootstrap_abundances;
 
   Sample() = default;
-  Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<double> ec_counts_p, long unsigned counts_total_p, std::vector<std::vector<bool>> ec_configs_p);
+  Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<unsigned> ec_counts_p, unsigned counts_total_p, std::vector<std::vector<bool>> ec_configs_p);
   Sample(KAlignment converted_aln);
 
   // Retrieve relative abundances from the ec_probs matrix.
@@ -63,7 +63,7 @@ public:
   // Getters
   unsigned num_ecs() const { return this->ec_ids.size(); };
   const std::string &cell_name() const { return this->cell_id; };
-  const long unsigned &total_counts() const { return this->counts_total; };
+  const unsigned &total_counts() const { return this->counts_total; };
 };
 
 struct BootstrapResults {

@@ -75,7 +75,7 @@ std::vector<std::string> ReadCellNames(std::istream &cells_file) {
   return reference.group_names;
 }
 
-void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sample> &batch, Reference &reference) {
+void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sample> &batch, Reference &reference, bool bootstrap_mode) {
   // Reads the alignment file for further analyses.
   // Args:
   //   kallisto_files: kallisto alignment files.
@@ -99,10 +99,10 @@ void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sa
     while (getline(*kallisto_files.tsv, line)) {
       std::string part;
       std::stringstream partition(line);
-      int key = 0;
-      int howmany = 0;
+      long unsigned key = 0;
+      unsigned howmany = 0;
       getline(partition, part, '\t');
-      key = std::stoi(part);
+      key = std::stoul(part);
       getline(partition, part, '\t');
       if (kallisto_files.batch_mode) {
       	int current_cell_id = std::stoi(part);
@@ -111,6 +111,7 @@ void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sa
       	  (*current_sample).ec_configs.resize(num_ecs, std::vector<bool>(reference.n_refs, false));
       	  (*current_sample).m_num_ecs = num_ecs;
       	  (*current_sample).cell_id = cell_id;
+	  (*current_sample).log_ec_counts.resize(num_ecs);
       	  batch.emplace_back(Sample());
       	  current_sample = &batch.back();
       	  (*current_sample).n_groups = reference.grouping.n_groups;
@@ -118,17 +119,20 @@ void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sa
       	  ++cell_id;
       	}
       	getline(partition, part, '\t');
-      	howmany = std::stoi(part);
+      	howmany = std::stoul(part);
       } else {
-	howmany = std::stoi(part);
+	howmany = std::stoul(part);
       }
       if (howmany > 0) {
 	(*current_sample).ec_ids.push_back(key);
 #if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
 	(*current_sample).ec_counts.push_back(howmany);
 #else
-	(*current_sample).ec_counts.push_back(std::log(howmany));
+	(*current_sample).log_ec_counts.push_back(std::log(howmany));
 	(*current_sample).counts_total += howmany;
+	if (bootstrap_mode) {
+	  (*current_sample).ec_counts.push_back(howmany);
+	}
 #endif
       }
     }
@@ -136,17 +140,21 @@ void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sa
     (*current_sample).ec_configs.resize(num_ecs, std::vector<bool>(reference.n_refs, false));
     (*current_sample).m_num_ecs = num_ecs;
     (*current_sample).cell_id = cell_id;
+    (*current_sample).log_ec_counts.resize(num_ecs);
   } else {
     throw std::runtime_error(".tsv file not found.");
   }
 #if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
-  long unsigned total = 0;
+  unsigned total = 0;
 #pragma omp parallel for schedule(static) reduction(+:total)
   for (unsigned i = 0; i < (*current_sample).m_num_ecs; ++i) {
     total += (*current_sample).ec_counts[i];
-    (*current_sample).ec_counts[i] = std::log((*current_sample).ec_counts[i]);
+    (*current_sample).log_ec_counts[i] = std::log((*current_sample).ec_counts[i]);
   }
   (*current_sample).counts_total = total;
+  if (!bootstrap_mode) {
+    (*current_sample).ec_counts.clear();
+  }
 #endif
   if (kallisto_files.ec->good()) {
     std::string line;

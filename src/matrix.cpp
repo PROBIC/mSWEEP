@@ -1,12 +1,12 @@
 #ifndef MATRIX_CPP
 #define MATRIX_CPP
-
 #include "matrix.hpp"
-#include <cmath>
 
+#include <cmath>
 
 #if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
 #include <omp.h>
+#include <algorithm>
 #pragma omp declare reduction(vec_double_plus : std::vector<double> :	\
                               std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<double>())) \
                     initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
@@ -66,7 +66,7 @@ Matrix<T>& Matrix<T>::operator=(const Matrix<T>& rhs) {
 
 // Matrix-matrix addition
 template<typename T>
-Matrix<T> Matrix<T>::operator+(const Matrix<T>& rhs) {
+Matrix<T> Matrix<T>::operator+(const Matrix<T>& rhs) const {
   Matrix result(this->rows, this->cols, 0.0);
 
 #pragma omp parallel for schedule(static)
@@ -105,7 +105,7 @@ void Matrix<T>::sum_fill(const Matrix<T>& rhs1, const Matrix<T>& rhs2) {
 
 // Matrix-matrix subtraction
 template<typename T>
-Matrix<T> Matrix<T>::operator-(const Matrix<T>& rhs) {
+Matrix<T> Matrix<T>::operator-(const Matrix<T>& rhs) const {
   Matrix result(this->rows, this->cols, 0.0);
 
 #pragma omp parallel for schedule(static)
@@ -133,7 +133,7 @@ Matrix<T>& Matrix<T>::operator-=(const Matrix<T>& rhs) {
 
 // Matrix-matrix left multiplication
 template<typename T>
-Matrix<T> Matrix<T>::operator*(const Matrix<T>& rhs) {
+Matrix<T> Matrix<T>::operator*(const Matrix<T>& rhs) const {
   Matrix result(this->rows, this->cols, 0.0);
 
 #pragma omp parallel for schedule(static)
@@ -158,7 +158,7 @@ Matrix<T>& Matrix<T>::operator*=(const Matrix<T>& rhs) {
 
 // Transpose matrix
 template<typename T>
-Matrix<T> Matrix<T>::transpose() {
+Matrix<T> Matrix<T>::transpose() const {
   Matrix result(this->rows, this->cols, 0.0);
 
 #pragma omp parallel for schedule(static)
@@ -225,7 +225,7 @@ Matrix<T>& Matrix<T>::operator/=(const T& rhs) {
 
 // Matrix-vector right multiplication
 template<typename T>
-std::vector<T> Matrix<T>::operator*(const std::vector<T>& rhs) {
+std::vector<T> Matrix<T>::operator*(const std::vector<T>& rhs) const {
   std::vector<T> result(rhs.size(), 0.0);
 
 #pragma omp parallel for schedule(static)
@@ -240,7 +240,7 @@ std::vector<T> Matrix<T>::operator*(const std::vector<T>& rhs) {
 
 // Matrix-vector right multiplication, store result in arg
 template<typename T>
-void Matrix<T>::right_multiply(const std::vector<long unsigned>& rhs, std::vector<T>& result) {
+void Matrix<T>::right_multiply(const std::vector<long unsigned>& rhs, std::vector<T>& result) const {
 #pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < this->rows; i++) {
     result[i] = 0.0;
@@ -250,9 +250,9 @@ void Matrix<T>::right_multiply(const std::vector<long unsigned>& rhs, std::vecto
   }
 }
 
-// Matrix-vector right multiplication, store result in arg
+// log-space Matrix-vector right multiplication, store result in arg
 template<typename T>
-void Matrix<T>::exp_right_multiply(const std::vector<T>& rhs, std::vector<T>& result) {
+void Matrix<T>::exp_right_multiply(const std::vector<T>& rhs, std::vector<T>& result) const {
   std::fill(result.begin(), result.end(), 0.0);
 #pragma omp parallel for schedule(static) reduction(vec_double_plus:result)
   for (unsigned i = 0; i < this->rows; i++) {
@@ -264,9 +264,9 @@ void Matrix<T>::exp_right_multiply(const std::vector<T>& rhs, std::vector<T>& re
 
 // Specialized matrix-vector right multiplication
 template<typename T>
-std::vector<double> Matrix<T>::operator*(const std::vector<long unsigned>& rhs) {
+std::vector<double> Matrix<T>::operator*(const std::vector<long unsigned>& rhs) const {
   std::vector<double> result(this->rows, 0.0);
-
+  
 #pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < this->rows; i++) {
     for (unsigned j = 0; j < this->cols; j++) {
@@ -291,13 +291,13 @@ const T& Matrix<T>::operator()(unsigned row, unsigned col) const {
 
 // Access rows
 template<typename T>
-std::vector<T>& Matrix<T>::get_row(unsigned row_id) {
+const std::vector<T>& Matrix<T>::get_row(unsigned row_id) const {
   return this->mat[row_id];
 } 
 
 // Access cols
 template<typename T>
-std::vector<T> Matrix<T>::get_col(unsigned col_id) {
+const std::vector<T>& Matrix<T>::get_col(unsigned col_id) const {
   std::vector<T> col(this->rows);
 #pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < this->rows; ++i) {
@@ -308,7 +308,7 @@ std::vector<T> Matrix<T>::get_col(unsigned col_id) {
 
 // LogSumExp a Matrix column
 template <typename T>
-T Matrix<T>::log_sum_exp_col(unsigned col_id) {
+T Matrix<T>::log_sum_exp_col(unsigned col_id) const {
   // Note: this function accesses the elements rather inefficiently so
   // it shouldn't be parallellised here. However, the caller can
   // parallellize logsumexping multiple cols.

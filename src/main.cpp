@@ -12,6 +12,8 @@
 #include "KallistoFiles.hpp"
 
 #include "zstr.hpp"
+#include <climits>
+
 
 int main (int argc, char *argv[]) {
   std::cerr << "mSWEEP-" << _BUILD_VERSION << " abundance estimation" << std::endl;
@@ -44,7 +46,7 @@ int main (int argc, char *argv[]) {
     if (!args.themisto_mode) {
       // Check that the number of reference sequences matches in the grouping and the alignment.
       VerifyGrouping(*args.infiles.run_info, reference.n_refs);
-      ReadBitfield(args.infiles, reference.n_refs, bitfields, reference);
+      ReadBitfield(args.infiles, reference.n_refs, bitfields, reference, args.bootstrap_mode);
     } else {
       ReadBitfield(args.tinfile1, args.tinfile2, args.themisto_merge_mode, reference.n_refs, bitfields);
     }

@@ -41,10 +41,10 @@ void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_strin
   }
 }
 
-std::vector<double> bootstrap_iter(Reference &reference, Sample &sample, std::vector<double> ec_counts, OptimizerArgs args) {
+std::vector<double> bootstrap_iter(Reference &reference, Sample &sample, OptimizerArgs args) {
   // Process pseudoalignments but return the abundances rather than writing.
   std::cerr << "Estimating relative abundances" << std::endl;
-  sample.ec_probs = rcg_optl_mat(sample.ll_mat, sample.total_counts(), ec_counts, args.alphas, args.tolerance, args.max_iters);
+  sample.ec_probs = rcg_optl_mat(sample.ll_mat, sample, args.alphas, args.tolerance, args.max_iters);
   const std::vector<double> &abundances = sample.group_abundances();
 
   return abundances;
@@ -77,9 +77,9 @@ BootstrapResults bootstrap_abundances(const std::vector<Sample> &bitfields, Refe
 	}
 	// Run the estimation multiple times without writing anything
 #if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 0
-	abus.emplace_back(pool.enqueue(&bootstrap_iter, reference, bitfield, bitfield.ec_counts, args.optimizer));
+	abus.emplace_back(pool.enqueue(&bootstrap_iter, reference, bitfield, args.optimizer));
 #else
-	abus.emplace_back(bootstrap_iter(reference, bitfield, bitfield.ec_counts, args.optimizer));
+	abus.emplace_back(bootstrap_iter(reference, bitfield, args.optimizer));
 #endif
 	// Resample the pseudoalignment counts (here because we want to include the original)
 	bitfield.resample_counts(gen);

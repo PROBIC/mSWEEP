@@ -3,10 +3,14 @@
 #include "likelihood.hpp"
 #include "version.h"
 
-Sample::Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<double> ec_counts_p, long unsigned counts_total_p, std::vector<std::vector<bool>> ec_configs_p) {
+Sample::Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<unsigned> ec_counts_p, unsigned counts_total_p, std::vector<std::vector<bool>> ec_configs_p) {
   this->cell_id = cell_id_p;
   this->ec_ids = ec_ids_p;
   this->ec_counts = ec_counts_p;
+#pragma omp parallel for schedule(static)
+  for (unsigned i = 0; i < this->ec_counts.size(); ++i) {
+    this->log_ec_counts[i] = std::log(this->ec_counts[i]);
+  }
   this->counts_total = counts_total_p;
   this->ec_configs = ec_configs_p;
 }
@@ -34,7 +38,7 @@ std::vector<double> Sample::group_abundances() const {
 #pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < this->ec_probs.get_rows(); ++i) {
     for (unsigned j = 0; j < this->ec_probs.get_cols(); ++j) {
-      thetas[i] += std::exp(this->ec_probs(i, j) + this->ec_counts[j]);
+      thetas[i] += std::exp(this->ec_probs(i, j) + this->log_ec_counts[j]);
     }
     thetas[i] /= this->counts_total;
   }
@@ -50,21 +54,20 @@ std::vector<unsigned short> Sample::group_counts(const std::vector<unsigned shor
 }
 
 void Sample::init_bootstrap(Grouping &grouping) {
-  this->ec_distribution = std::discrete_distribution<long unsigned>(this->ec_counts.begin(), this->ec_counts.end());
+  this->ec_distribution = std::discrete_distribution<unsigned>(this->ec_counts.begin(), this->ec_counts.end());
   this->ll_mat = likelihood_array_mat(*this, grouping);
 }
 
 void Sample::resample_counts(std::mt19937_64 &generator) {
-  std::vector<double> new_counts(this->ec_counts.size());
-  std::vector<long unsigned> tmp_counts(this->ec_counts.size());
-  for (long unsigned i = 0; i < this->counts_total; ++i) {
-    long unsigned ec_id = this->ec_distribution(generator);
+  std::vector<unsigned> tmp_counts(this->m_num_ecs);
+  for (unsigned i = 0; i < this->counts_total; ++i) {
+    unsigned ec_id = this->ec_distribution(generator);
     tmp_counts[ec_id] += 1;
   }
-  for (long unsigned i = 0; i < this->counts_total; ++i) {
-    new_counts[i] = std::log(tmp_counts[i]);
+#pragma omp parallel for schedule(static)
+  for (unsigned i = 0; i < this->m_num_ecs; ++i) {
+    this->log_ec_counts[i] = std::log(tmp_counts[i]);
   }
-  this->ec_counts = new_counts;
 }
 
 void Sample::write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, const bool gzip_probs, std::ostream &of) const {
@@ -78,7 +81,7 @@ void Sample::write_probabilities(const std::vector<std::string> &cluster_indicat
     for (unsigned i = 0; i < this->ec_probs.get_cols(); ++i) {
       of << this->ec_ids[i] << ',';
       for (unsigned j = 0; j < this->ec_probs.get_rows(); ++j) {
-	of << this->ec_probs(j, i);
+	of << std::exp(this->ec_probs(j, i));
 	of << (j < this->ec_probs.get_rows() - 1 ? ',' : '\n');
       }
     }

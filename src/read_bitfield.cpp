@@ -9,6 +9,8 @@
 
 #include "telescope/include/telescope.hpp"
 
+#include "openmp_config.hpp"
+
 void VerifyGrouping(std::istream &run_info, unsigned n_refs) {
   // Get the number of reference sequences in the pseudoalignment
   // contained in the 'n_targets' variable in run_info.json file.
@@ -122,8 +124,12 @@ void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sa
       }
       if (howmany > 0) {
 	(*current_sample).ec_ids.push_back(key);
-	(*current_sample).ec_counts.push_back(std::log(howmany)); // these should be done afterwards in parallel to
-	(*current_sample).counts_total += howmany; // save up some time (we want to spend as little as possible in reading the stuff in)
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
+	(*current_sample).ec_counts.push_back(howmany);
+#else
+	(*current_sample).ec_counts.push_back(std::log(howmany));
+	(*current_sample).counts_total += howmany;
+#endif
       }
     }
     unsigned num_ecs = (*current_sample).ec_ids.size();
@@ -133,6 +139,15 @@ void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sa
   } else {
     throw std::runtime_error(".tsv file not found.");
   }
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
+  long unsigned total = 0;
+#pragma omp parallel for schedule(static) reduction(+:total)
+  for (unsigned i = 0; i < (*current_sample).m_num_ecs; ++i) {
+    total += (*current_sample).ec_counts[i];
+    (*current_sample).ec_counts[i] = std::log((*current_sample).ec_counts[i]);
+  }
+  (*current_sample).counts_total = total;
+#endif
   if (kallisto_files.ec->good()) {
     std::string line;
     unsigned current_id = 0;

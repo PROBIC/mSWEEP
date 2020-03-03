@@ -4,6 +4,14 @@
 #include "matrix.hpp"
 #include <cmath>
 
+
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
+#include <omp.h>
+#pragma omp declare reduction(vec_double_plus : std::vector<double> :	\
+                              std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<double>())) \
+                    initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
+#endif
+
 // Parameter Constructor
 template<typename T>
 Matrix<T>::Matrix(unsigned _rows, unsigned _cols, const T& _initial) {
@@ -238,6 +246,18 @@ void Matrix<T>::right_multiply(const std::vector<long unsigned>& rhs, std::vecto
     result[i] = 0.0;
     for (unsigned j = 0; j < this->cols; j++) {
       result[i] += this->mat[i][j] * rhs[j];
+    }
+  }
+}
+
+// Matrix-vector right multiplication, store result in arg
+template<typename T>
+void Matrix<T>::exp_right_multiply(const std::vector<T>& rhs, std::vector<T>& result) {
+  std::fill(result.begin(), result.end(), 0.0);
+#pragma omp parallel for schedule(static) reduction(vec_double_plus:result)
+  for (unsigned i = 0; i < this->rows; i++) {
+    for (unsigned j = 0; j < this->cols; j++) {
+      result[i] += std::exp(this->mat[i][j] + rhs[j]);
     }
   }
 }

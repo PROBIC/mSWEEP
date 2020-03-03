@@ -26,7 +26,7 @@ public:
   std::string cell_id;
   std::vector<std::vector<bool>> ec_configs;
   std::vector<long unsigned> ec_ids;
-  std::vector<long unsigned> ec_counts;
+  std::vector<double> ec_counts;
   long unsigned counts_total;
   Matrix<double> ec_probs = Matrix<double>(0, 0, 0.0);
   // Optional storage for likelihood, used in bootstrap
@@ -37,7 +37,7 @@ public:
   std::unordered_map<unsigned, std::vector<double>> bootstrap_abundances;
 
   Sample() = default;
-  Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<long unsigned> ec_counts_p, long unsigned counts_total_p, std::vector<std::vector<bool>> ec_configs_p);
+  Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<double> ec_counts_p, long unsigned counts_total_p, std::vector<std::vector<bool>> ec_configs_p);
   Sample(KAlignment converted_aln);
 
   // Retrieve relative abundances from the ec_probs matrix.

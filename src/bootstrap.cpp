@@ -41,7 +41,7 @@ void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_strin
   }
 }
 
-std::vector<double> bootstrap_iter(Reference &reference, Sample &sample, std::vector<long unsigned> ec_counts, OptimizerArgs args) {
+std::vector<double> bootstrap_iter(Reference &reference, Sample &sample, std::vector<double> ec_counts, OptimizerArgs args) {
   // Process pseudoalignments but return the abundances rather than writing.
   std::cerr << "Estimating relative abundances" << std::endl;
   sample.ec_probs = rcg_optl_mat(sample.ll_mat, sample.total_counts(), ec_counts, args.alphas, args.tolerance, args.max_iters);

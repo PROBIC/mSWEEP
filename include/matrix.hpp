@@ -44,6 +44,7 @@ template <typename T> class Matrix {
 
   // Matrix-vector right multiplication, store result in arg
   void right_multiply(const std::vector<long unsigned>& rhs, std::vector<T>& result);
+  void exp_right_multiply(const std::vector<T>& rhs, std::vector<T>& result);
 
   // Access elements
   T& operator()(unsigned row, unsigned col);

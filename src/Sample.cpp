@@ -3,7 +3,7 @@
 #include "likelihood.hpp"
 #include "version.h"
 
-Sample::Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<long unsigned> ec_counts_p, long unsigned counts_total_p, std::vector<std::vector<bool>> ec_configs_p) {
+Sample::Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<double> ec_counts_p, long unsigned counts_total_p, std::vector<std::vector<bool>> ec_configs_p) {
   this->cell_id = cell_id_p;
   this->ec_ids = ec_ids_p;
   this->ec_counts = ec_counts_p;
@@ -20,7 +20,7 @@ Sample::Sample(KAlignment converted_aln) {
   size_t i = 0;
   for (auto kv : converted_aln.ecs) {
     this->ec_ids[i] = i;
-    this->ec_counts[i] = kv.second.count;
+    this->ec_counts[i] = std::log(kv.second.count);
     this->counts_total += kv.second.count;
     //    this->ec_configs->insert(std::make_pair(i, kv.first));
     ++i;
@@ -34,7 +34,7 @@ std::vector<double> Sample::group_abundances() const {
 #pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < this->ec_probs.get_rows(); ++i) {
     for (unsigned j = 0; j < this->ec_probs.get_cols(); ++j) {
-      thetas[i] += this->ec_probs(i, j) * this->ec_counts[j];
+      thetas[i] += std::exp(this->ec_probs(i, j) + this->ec_counts[j]);
     }
     thetas[i] /= this->counts_total;
   }
@@ -55,10 +55,14 @@ void Sample::init_bootstrap(Grouping &grouping) {
 }
 
 void Sample::resample_counts(std::mt19937_64 &generator) {
-  std::vector<long unsigned> new_counts(this->ec_counts.size());
+  std::vector<double> new_counts(this->ec_counts.size());
+  std::vector<long unsigned> tmp_counts(this->ec_counts.size());
   for (long unsigned i = 0; i < this->counts_total; ++i) {
     long unsigned ec_id = this->ec_distribution(generator);
-    new_counts[ec_id] += 1;
+    tmp_counts[ec_id] += 1;
+  }
+  for (long unsigned i = 0; i < this->counts_total; ++i) {
+    new_counts[i] = std::log(tmp_counts[i]);
   }
   this->ec_counts = new_counts;
 }

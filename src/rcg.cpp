@@ -31,7 +31,7 @@ double digamma(double x) {
   return result;
 }
 
-void logsumexp(Matrix<double> &gamma_Z) {
+std::vector<double> logsumexp(Matrix<double> &gamma_Z) {
   unsigned n_cols = gamma_Z.get_cols();
   unsigned short n_rows = gamma_Z.get_rows();
 
@@ -47,6 +47,7 @@ void logsumexp(Matrix<double> &gamma_Z) {
       gamma_Z(i, j) -= m[j];
     }
   }
+  return m;
 }
 
 double mixt_negnatgrad(const Matrix<double> &gamma_Z, const std::vector<double> &N_k, const Matrix<double> &logl, Matrix<double> &dL_dphi) {
@@ -89,11 +90,21 @@ void ELBO_rcg_mat(const Matrix<double> &logl, const Matrix<double> &gamma_Z, con
   }
 }
 
+void revert_step(Matrix<double> &gamma_Z, const Matrix<double> &step, const std::vector<double> &oldm) {
+  short unsigned n_rows = gamma_Z.get_rows();
+  unsigned n_cols = gamma_Z.get_cols();
+#pragma omp parallel for schedule(static)
+  for (short unsigned i = 0; i < n_rows; ++i) {
+    for (unsigned j = 0; j < n_cols; ++j) {
+      gamma_Z(i, j) += oldm[j];
+    }
+  }
+}
+
 Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const Sample &sample, const std::vector<double> &alpha0, const double &tol, unsigned maxiters) {
   unsigned short n_rows = logl.get_rows();
   unsigned n_cols = logl.get_cols();
   Matrix<double> gamma_Z(n_rows, n_cols, std::log(1.0/(double)n_rows)); // where gamma_Z is init at 1.0
-  Matrix<double> gamma_new(n_rows, n_cols, 0.0);
   Matrix<double> oldstep(n_rows, n_cols, 0.0);
   Matrix<double> step(n_rows, n_cols, 0.0);
   double oldnorm = 1.0;
@@ -128,10 +139,10 @@ Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const Sample &sample, co
       step += oldstep;
     }
     didreset = false;
-    
-    gamma_new.sum_fill(gamma_Z, step); // gamma_new = gamma_Z + step
-    logsumexp(gamma_new);
-    gamma_new.exp_right_multiply(sample.ec_counts, N_k);
+
+    gamma_Z += step;
+    const std::vector<double> &oldm = logsumexp(gamma_Z);
+    gamma_Z.exp_right_multiply(sample.ec_counts, N_k);
 
     #pragma omp parallel for schedule(static)
     for (unsigned short i = 0; i < n_rows; ++i) {
@@ -140,11 +151,11 @@ Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const Sample &sample, co
 
     long double oldbound = bound;
     bound = bound_const;
-    ELBO_rcg_mat(logl, gamma_new, sample.ec_counts, alpha0, N_k, bound);
+    ELBO_rcg_mat(logl, gamma_Z, sample.ec_counts, alpha0, N_k, bound);
 
     if (bound < oldbound) {
       didreset = true;
-      gamma_Z += step;
+      revert_step(gamma_Z, step, oldm);
       if (beta_FR > 0) {
 	gamma_Z -= oldstep;
       }
@@ -160,29 +171,16 @@ Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const Sample &sample, co
       ELBO_rcg_mat(logl, gamma_Z, sample.ec_counts, alpha0, N_k, bound);
     } else {
       oldstep = step;
-      gamma_Z = gamma_new;
     }
     if (k % 5 == 0) {
       std::cerr << "  " <<  "iter: " << k << ", bound: " << bound << ", |g|: " << newnorm << std::endl;
     }
     if (bound - oldbound < tol && !didreset) {
       logsumexp(gamma_Z);
-// #pragma omp parallel for schedule(static)
-//       for (unsigned short i = 0; i < n_rows; ++i) {
-// 	for (unsigned j = 0; j < n_cols; ++j) {
-// 	  gamma_Z(i, j) = std::exp(gamma_Z(i, j));
-// 	}
-//       }
       return(gamma_Z);
     }
   }
   logsumexp(gamma_Z);
-// #pragma omp parallel for schedule(static)
-//       for (unsigned short i = 0; i < n_rows; ++i) {
-// 	for (unsigned j = 0; j < n_cols; ++j) {
-// 	  gamma_Z(i, j) = std::exp(gamma_Z(i, j));
-// 	}
-//       }
   return(gamma_Z);
 }
 

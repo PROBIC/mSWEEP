@@ -7,10 +7,6 @@
 #include <unordered_set>
 #include <exception>
 
-#include "telescope/include/telescope.hpp"
-
-#include "openmp_config.hpp"
-
 void VerifyGrouping(std::istream &run_info, unsigned n_refs) {
   // Get the number of reference sequences in the pseudoalignment
   // contained in the 'n_targets' variable in run_info.json file.
@@ -77,12 +73,11 @@ std::vector<std::string> ReadCellNames(std::istream &cells_file) {
 
 void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sample> &batch, Reference &reference, bool bootstrap_mode) {
   if (bootstrap_mode) {
-    batch.emplace_back(SampleBS());
+    batch.emplace_back(BootstrapSample());
   } else {
     batch.emplace_back(Sample());
   }
-  ReadKallisto(n_refs, *kallisto_files.ec, *kallisto_files.tsv, batch.back().access_aln());
-  batch.back().process_aln(bootstrap_mode);
+  batch.back().read_kallisto(n_refs, *kallisto_files.ec, *kallisto_files.tsv);
 }
 
 void ReadBitfield(const std::string &tinfile1, const std::string &tinfile2, const std::string &themisto_mode, const unsigned n_refs, std::vector<Sample> &batch) {
@@ -91,6 +86,5 @@ void ReadBitfield(const std::string &tinfile1, const std::string &tinfile2, cons
   strands.at(1) = new zstr::ifstream(tinfile2);
 
   batch.emplace_back(Sample());
-  ReadThemisto(get_mode(themisto_mode), n_refs, strands, batch.back().access_aln()->access_aln());
-  batch.back().process_aln(false);
+  batch.back().read_themisto(get_mode(themisto_mode), n_refs, strands);
 }

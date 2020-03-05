@@ -1,4 +1,4 @@
-#include "openmp_config.hpp"
+#include "bootstrap.hpp"
 
 #include <fstream>
 #include <iostream>
@@ -10,6 +10,7 @@
 #include "thread_pool.hpp"
 #include "rcg.hpp"
 #include "version.h"
+#include "openmp_config.hpp"
 
 void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, const std::vector<std::vector<double>> &abundances, std::string &outfile, unsigned iters, unsigned counts_total) {
   // Write relative abundances to a file,
@@ -44,7 +45,7 @@ void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_strin
 std::vector<double> bootstrap_iter(Reference &reference, Sample &sample, OptimizerArgs args) {
   // Process pseudoalignments but return the abundances rather than writing.
   std::cerr << "Estimating relative abundances" << std::endl;
-  sample.ec_probs = rcg_optl_mat(sample.ll_mat, sample, args.alphas, args.tolerance, args.max_iters);
+  sample.ec_probs = rcg_optl_mat(static_cast<SampleBS*>(&sample)->ll_mat, sample, args.alphas, args.tolerance, args.max_iters);
   const std::vector<double> &abundances = sample.group_abundances();
 
   return abundances;
@@ -69,7 +70,8 @@ BootstrapResults bootstrap_abundances(const std::vector<Sample> &bitfields, Refe
 #endif
       // Init the bootstrap variables
       std::cerr << "Building log-likelihood array" << std::endl;
-      bitfield.init_bootstrap(reference.grouping);
+      static_cast<SampleBS*>(&bitfield)->init_bootstrap(reference.grouping);
+      //bitfield_bs.init_bootstrap(reference.grouping);
       for (unsigned i = 0; i <= args.iters; ++i) {
 	if (i > 0) {
 	  std::cout << "Bootstrapping alignment counts" << '\n';
@@ -82,7 +84,7 @@ BootstrapResults bootstrap_abundances(const std::vector<Sample> &bitfields, Refe
 	abus.emplace_back(bootstrap_iter(reference, bitfield, args.optimizer));
 #endif
 	// Resample the pseudoalignment counts (here because we want to include the original)
-	bitfield.resample_counts(gen);
+	static_cast<SampleBS*>(&bitfield)->resample_counts(gen);
       }
       //      results.insert(std::make_pair(name, std::vector<std::vector<double>>()));
       results.insert(name, bitfield.total_counts(), std::vector<std::vector<double>>());

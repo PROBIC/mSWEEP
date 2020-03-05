@@ -39,11 +39,11 @@ Matrix<double> likelihood_array_mat(Sample &sample, const Grouping &grouping) {
   sample.counts.resize(grouping.n_groups, std::vector<short unsigned>(sample.m_num_ecs, 0));
 #pragma omp parallel for schedule(static)
   for (unsigned j = 0; j < num_ecs; ++j) {
-    const std::vector<short unsigned> &counts = sample.group_counts(grouping.indicators, j);
+    const std::vector<short unsigned> &counts = sample.group_counts(grouping.indicators, j, grouping.n_groups);
     for (unsigned i = 0; i < grouping.n_groups; ++i) {
       sample.counts[i][j] = counts[i];
     }
   }
-  sample.ec_configs.clear();
+  sample.clear_configs();
   return my_lls;
 }

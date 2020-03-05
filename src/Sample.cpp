@@ -3,35 +3,28 @@
 #include "likelihood.hpp"
 #include "version.h"
 
-Sample::Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<unsigned> ec_counts_p, unsigned counts_total_p, std::vector<std::vector<bool>> ec_configs_p) {
-  this->cell_id = cell_id_p;
-  this->ec_ids = ec_ids_p;
-  this->ec_counts = ec_counts_p;
-#pragma omp parallel for schedule(static)
-  for (unsigned i = 0; i < this->ec_counts.size(); ++i) {
-    this->log_ec_counts[i] = std::log(this->ec_counts[i]);
-  }
-  this->counts_total = counts_total_p;
-  this->ec_configs = ec_configs_p;
-}
+void Sample::process_aln(const bool create_ids) {
+  cell_id = "";
+  m_num_ecs = aln.size();
+  m_num_refs = aln.n_targets();
 
-Sample::Sample(CompressedAlignment aln) {
-  this->cell_id = "";
-  this->m_num_ecs = aln.ec_configs.size();
-  this->m_num_refs = aln.ec_configs[0].size();
-  this->ec_ids.resize(this->m_num_ecs, 0);
-  this->ec_counts = aln.ec_counts;
-  this->log_ec_counts.resize(this->m_num_ecs, 0.0);
-  this->ec_configs = aln.ec_configs;
+  log_ec_counts.resize(m_num_ecs, 0.0);
+  if (create_ids) {
+    aln.access_ec_ids()->resize(m_num_ecs, 0);
+  }
 
   uint32_t aln_counts_total = 0;
 #pragma omp parallel for schedule(static) reduction(+:aln_counts_total)
-  for (uint32_t i = 0; i < this->m_num_ecs; ++i) {
-    this->ec_ids[i] = i;
-    this->log_ec_counts[i] = std::log(aln.ec_counts[i]);
-    aln_counts_total += aln.ec_counts[i];
+  for (uint32_t i = 0; i < m_num_ecs; ++i) {
+    log_ec_counts[i] = std::log(aln.get_ec_counts()[i]);
+    if (create_ids) {
+      (*aln.access_ec_ids())[i] = i;
+    }
+    aln_counts_total += aln.get_ec_counts()[i];
   }
-  this->counts_total = aln_counts_total;
+  clear_counts();
+  clear_ids();
+  counts_total = aln_counts_total;
 }
 
 std::vector<double> Sample::group_abundances() const {
@@ -47,20 +40,20 @@ std::vector<double> Sample::group_abundances() const {
   return thetas;
 }
 
-std::vector<unsigned short> Sample::group_counts(const std::vector<unsigned short> indicators, const unsigned ec_id) const {
+std::vector<unsigned short> Sample::group_counts(const std::vector<unsigned short> indicators, const unsigned ec_id, const uint16_t n_groups) const {
   std::vector<unsigned short> read_hitcounts(n_groups);
   for (unsigned short j = 0; j < m_num_refs; ++j) {
-    read_hitcounts[indicators[j]] += ec_configs[ec_id][j];
+    read_hitcounts[indicators[j]] += aln.get_ec_configs()[ec_id][j];
   }
   return read_hitcounts;
 }
 
-void Sample::init_bootstrap(Grouping &grouping) {
-  this->ec_distribution = std::discrete_distribution<unsigned>(this->ec_counts.begin(), this->ec_counts.end());
-  this->ll_mat = likelihood_array_mat(*this, grouping);
+void SampleBS::init_bootstrap(Grouping &grouping) {
+  ec_distribution = std::discrete_distribution<unsigned>(aln.get_ec_counts().begin(), aln.get_ec_counts().end());
+  ll_mat = likelihood_array_mat(*this, grouping);
 }
 
-void Sample::resample_counts(std::mt19937_64 &generator) {
+void SampleBS::resample_counts(std::mt19937_64 &generator) {
   std::vector<unsigned> tmp_counts(this->m_num_ecs);
   for (unsigned i = 0; i < this->counts_total; ++i) {
     unsigned ec_id = this->ec_distribution(generator);
@@ -81,7 +74,7 @@ void Sample::write_probabilities(const std::vector<std::string> &cluster_indicat
       of << (i < this->ec_probs.get_rows() - 1 ? ',' : '\n');
     }
     for (unsigned i = 0; i < this->ec_probs.get_cols(); ++i) {
-      of << this->ec_ids[i] << ',';
+      of << this->aln.get_ec_ids()[i] << ',';
       for (unsigned j = 0; j < this->ec_probs.get_rows(); ++j) {
 	of << std::exp(this->ec_probs(j, i));
 	of << (j < this->ec_probs.get_rows() - 1 ? ',' : '\n');
@@ -118,7 +111,7 @@ void Sample::write_abundances(const std::vector<std::string> &cluster_indicators
   }
 }
 
-void Sample::write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile, unsigned iters) {
+void SampleBS::write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile, unsigned iters) {
   // Write relative abundances to a file,
   // outputs to std::cout if outfile is empty.
   std::streambuf *buf;

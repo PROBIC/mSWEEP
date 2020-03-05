@@ -76,112 +76,21 @@ std::vector<std::string> ReadCellNames(std::istream &cells_file) {
 }
 
 void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sample> &batch, Reference &reference, bool bootstrap_mode) {
-  // Reads the alignment file for further analyses.
-  // Args:
-  //   kallisto_files: kallisto alignment files.
-  //   n_refs: number of reference sequences.
-  //   batch: alignments for the sample will be appended to this vector
-  std::vector<std::string> batch_cells;
-  if (kallisto_files.batch_mode) {
-    batch_cells = ReadCellNames(*kallisto_files.cells);
+  if (bootstrap_mode) {
+    batch.emplace_back(SampleBS());
   } else {
-    batch_cells.emplace_back("sample");
+    batch.emplace_back(Sample());
   }
-
-  batch.emplace_back(Sample());
-  Sample *current_sample = &batch.back();
-  (*current_sample).n_groups = reference.grouping.n_groups;
-  (*current_sample).m_num_refs = reference.n_refs;
-  if (kallisto_files.tsv->good()) {
-    std::string line;
-    int cell_id = 0;
-    
-    while (getline(*kallisto_files.tsv, line)) {
-      std::string part;
-      std::stringstream partition(line);
-      long unsigned key = 0;
-      unsigned howmany = 0;
-      getline(partition, part, '\t');
-      key = std::stoul(part);
-      getline(partition, part, '\t');
-      if (kallisto_files.batch_mode) {
-      	int current_cell_id = std::stoi(part);
-      	if (current_cell_id != cell_id) {
-      	  unsigned num_ecs = (*current_sample).ec_ids.size();
-      	  (*current_sample).ec_configs.resize(num_ecs, std::vector<bool>(reference.n_refs, false));
-      	  (*current_sample).m_num_ecs = num_ecs;
-      	  (*current_sample).cell_id = cell_id;
-	  (*current_sample).log_ec_counts.resize(num_ecs);
-      	  batch.emplace_back(Sample());
-      	  current_sample = &batch.back();
-      	  (*current_sample).n_groups = reference.grouping.n_groups;
-      	  (*current_sample).m_num_refs = reference.n_refs;
-      	  ++cell_id;
-      	}
-      	getline(partition, part, '\t');
-      	howmany = std::stoul(part);
-      } else {
-	howmany = std::stoul(part);
-      }
-      if (howmany > 0) {
-	(*current_sample).ec_ids.push_back(key);
-#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
-	(*current_sample).ec_counts.push_back(howmany);
-#else
-	(*current_sample).log_ec_counts.push_back(std::log(howmany));
-	(*current_sample).counts_total += howmany;
-	if (bootstrap_mode) {
-	  (*current_sample).ec_counts.push_back(howmany);
-	}
-#endif
-      }
-    }
-    unsigned num_ecs = (*current_sample).ec_ids.size();
-    (*current_sample).ec_configs.resize(num_ecs, std::vector<bool>(reference.n_refs, false));
-    (*current_sample).m_num_ecs = num_ecs;
-    (*current_sample).cell_id = cell_id;
-    (*current_sample).log_ec_counts.resize(num_ecs);
-  } else {
-    throw std::runtime_error(".tsv file not found.");
-  }
-#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
-  unsigned total = 0;
-#pragma omp parallel for schedule(static) reduction(+:total)
-  for (unsigned i = 0; i < (*current_sample).m_num_ecs; ++i) {
-    total += (*current_sample).ec_counts[i];
-    (*current_sample).log_ec_counts[i] = std::log((*current_sample).ec_counts[i]);
-  }
-  (*current_sample).counts_total = total;
-  if (!bootstrap_mode) {
-    (*current_sample).ec_counts.clear();
-  }
-#endif
-  if (kallisto_files.ec->good()) {
-    std::string line;
-    unsigned current_id = 0;
-    while (getline(*kallisto_files.ec, line)) {
-      std::string part;
-      std::stringstream partition(line);
-      getline(partition, part, '\t');
-      while (getline(partition, part, '\t')) {
-	std::string one;
-	std::stringstream ones(part);
-	while (getline(ones, one, ',')) {
-	  unsigned short makeone = std::stoi(one);
-	  batch.back().ec_configs[current_id][makeone] = true;
-	}
-      }
-      ++current_id;
-    }
-  } else {
-    throw std::runtime_error(".ec file not found.");
-  }
+  ReadKallisto(n_refs, *kallisto_files.ec, *kallisto_files.tsv, batch.back().access_aln());
+  batch.back().process_aln(bootstrap_mode);
 }
 
 void ReadBitfield(const std::string &tinfile1, const std::string &tinfile2, const std::string &themisto_mode, const unsigned n_refs, std::vector<Sample> &batch) {
   std::vector<std::istream*> strands(2);
   strands.at(0) = new zstr::ifstream(tinfile1);
   strands.at(1) = new zstr::ifstream(tinfile2);
-  const CompressedAlignment &aln = ThemistoToKallisto(get_mode(themisto_mode), n_refs, strands);
-  batch.emplace_back(Sample(aln));
+
+  batch.emplace_back(Sample());
+  ReadThemisto(get_mode(themisto_mode), n_refs, strands, batch.back().access_aln()->access_aln());
+  batch.back().process_aln(false);
 }

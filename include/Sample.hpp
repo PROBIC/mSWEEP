@@ -14,31 +14,27 @@
 #include "Reference.hpp"
 
 class Sample {
-private:
-  // Bootstrapping variables
-  std::discrete_distribution<unsigned> ec_distribution;
-
+protected:
+  KallistoAlignment aln;
 public:
-  short unsigned n_groups;
   unsigned m_num_ecs;
   short unsigned m_num_refs;
   std::string cell_id;
-  std::vector<std::vector<bool>> ec_configs;
-  std::vector<long unsigned> ec_ids;
-  std::vector<unsigned> ec_counts;
+  //  std::vector<std::vector<bool>> ec_configs;
+  //  std::vector<long unsigned> ec_ids;
+  //  std::vector<unsigned> ec_counts;
   std::vector<double> log_ec_counts;
   unsigned counts_total;
-  Matrix<double> ec_probs = Matrix<double>(0, 0, 0.0);
-  // Optional storage for likelihood, used in bootstrap
-  Matrix<double> ll_mat = Matrix<double>(0, 0, 0.0);
+  Matrix<double> ec_probs;
   std::vector<std::vector<short unsigned>> counts;
 
-  // Bootstrap results
-  std::unordered_map<unsigned, std::vector<double>> bootstrap_abundances;
-
   Sample() = default;
-  Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<unsigned> ec_counts_p, unsigned counts_total_p, std::vector<std::vector<bool>> ec_configs_p);
-  Sample(CompressedAlignment aln);
+  ~Sample() = default;
+  Sample(const Sample &sample) = default;
+  Sample& operator=(const Sample &t) = default;
+
+  // Parse the ec_configs and ec_counts after they've been filled.
+  void process_aln(const bool create_ids);
 
   // Retrieve relative abundances from the ec_probs matrix.
   std::vector<double> group_abundances() const;
@@ -46,33 +42,34 @@ public:
   // Writer functions for the contents.
   void write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, const bool gzip_probs, std::ostream &outfile) const;
   void write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile) const;
-  void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile, unsigned iters);
 
   // Count the number of pseudoalignments in groups defined by the given indicators.
-  std::vector<short unsigned> group_counts(const std::vector<unsigned short> indicators, unsigned ec_id) const;
-  // Return the number of pseudoalignments in a given group
-  std::vector<bool> group_counts(unsigned ec_id_pos) const { return this->ec_configs[ec_id_pos]; };
+  std::vector<short unsigned> group_counts(const std::vector<unsigned short> indicators, const unsigned ec_id, const uint16_t n_groups) const;
 
-  short unsigned group_counts(unsigned ec_id_pos, unsigned group_id) const { return this->ec_configs[ec_id_pos][group_id]; }
-
-  // Initialize bootstrapping variables
-  void init_bootstrap(Grouping &grouping);
-  // Resample the pseudoalignment counts
-  void resample_counts(std::mt19937_64 &rng);
+  void clear_configs() { access_aln()->access_aln()->ec_configs.clear(); }
+  void clear_counts() { access_aln()->access_aln()->ec_counts.clear(); }
+  void clear_ids() { aln.clear_ids(); }
 
   // Getters
-  unsigned num_ecs() const { return this->m_num_ecs; };
-  const std::string &cell_name() const { return this->cell_id; };
-  const unsigned &total_counts() const { return this->counts_total; };
+  unsigned num_ecs() const { return m_num_ecs; };
+  const std::string &cell_name() const { return cell_id; };
+  const unsigned &total_counts() const { return counts_total; };
+  const std::vector<std::vector<bool>> &ec_configs() const { return aln.get_ec_configs(); }
+  const std::vector<uint32_t> &ec_ids() const { return aln.get_ec_ids(); }
+  const std::vector<uint32_t> &ec_counts() const { return aln.get_ec_counts(); }
+
+  KallistoAlignment* access_aln() { return &aln; }
 };
 
-struct BootstrapResults {
-  std::unordered_map<std::string, std::pair<unsigned, std::vector<std::vector<double>>>> results;
-
-  //  void at(std::string key) { return this->results.at(key); };
-  void insert(std::string key, unsigned counts, std::vector<std::vector<double>> abundances) { this->results.insert(std::make_pair(key, std::make_pair(counts, abundances))); };
-  void insert_iter(std::string key, std::vector<double> iter) { this->results.at(key).second.emplace_back(iter); };
-  std::unordered_map<std::string, std::pair<unsigned, std::vector<std::vector<double>>>> get() const { return this->results; };
+class SampleBS : public Sample {
+private:
+  std::discrete_distribution<unsigned> ec_distribution;
+public:
+  Matrix<double> ll_mat = Matrix<double>(0, 0, 0.0);
+  void init_bootstrap(Grouping &grouping);
+  void resample_counts(std::mt19937_64 &rng);
+  void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile, unsigned iters);
+  std::unordered_map<unsigned, std::vector<double>> bootstrap_abundances;
 };
 
 #endif

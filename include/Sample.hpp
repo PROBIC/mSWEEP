@@ -49,7 +49,7 @@ public:
   // Count the number of pseudoalignments in groups defined by the given indicators.
   std::vector<uint16_t> group_counts(const std::vector<uint32_t> indicators, const uint32_t ec_id, const uint32_t n_groups) const;
 
-  void clear_configs() { pseudos.aln.ec_configs.clear(); }
+  void clear_configs() { pseudos.ec_configs.clear(); }
   // Getters
   uint32_t num_ecs() const { return m_num_ecs; };
   const std::string &cell_name() const { return cell_id; };

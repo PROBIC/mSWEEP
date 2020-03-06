@@ -13,15 +13,15 @@ void Sample::process_aln() {
   uint32_t aln_counts_total = 0;
 #pragma omp parallel for schedule(static) reduction(+:aln_counts_total)
   for (uint32_t i = 0; i < m_num_ecs; ++i) {
-    log_ec_counts[i] = std::log(pseudos.aln.ec_counts[i]);
-    aln_counts_total += pseudos.aln.ec_counts[i];
+    log_ec_counts[i] = std::log(pseudos.ec_counts[i]);
+    aln_counts_total += pseudos.ec_counts[i];
   }
   counts_total = aln_counts_total;
-  pseudos.aln.ec_counts.clear();
+  pseudos.ec_counts.clear();
 }
 
 void Sample::read_themisto(const Mode &mode, const uint32_t n_refs, std::vector<std::istream*> &strands) {
-  ReadThemisto(mode, n_refs, strands, &pseudos.aln);
+  ReadThemisto(mode, n_refs, strands, &pseudos);
   process_aln();
 }
 
@@ -46,7 +46,7 @@ std::vector<double> Sample::group_abundances() const {
 std::vector<uint16_t> Sample::group_counts(const std::vector<uint32_t> indicators, const uint32_t ec_id, const uint32_t n_groups) const {
   std::vector<uint16_t> read_hitcounts(n_groups);
   for (uint32_t j = 0; j < m_num_refs; ++j) {
-    read_hitcounts[indicators[j]] += pseudos.aln.ec_configs[ec_id][j];
+    read_hitcounts[indicators[j]] += pseudos.ec_configs[ec_id][j];
   }
   return read_hitcounts;
 }

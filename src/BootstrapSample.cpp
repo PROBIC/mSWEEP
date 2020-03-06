@@ -3,7 +3,7 @@
 #include "likelihood.hpp"
 
 void BootstrapSample::init_bootstrap(Grouping &grouping) {
-  ec_distribution = std::discrete_distribution<uint32_t>(pseudos.aln.ec_counts.begin(), pseudos.aln.ec_counts.end());
+  ec_distribution = std::discrete_distribution<uint32_t>(pseudos.ec_counts.begin(), pseudos.ec_counts.end());
   ll_mat = likelihood_array_mat(*this, grouping);
 }
 

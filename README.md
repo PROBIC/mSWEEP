@@ -268,7 +268,7 @@ mSWEEP accepts the following flags:
 	How many threads to use. (default: 1)
 
 	--themisto-mode <PairedEndMergeMode>
-	How to merge Themisto pseudoalignments for paired-end reads	(default: union).
+	How to merge Themisto pseudoalignments for paired-end reads	(default: intersection).
 	--iters <nrIterations>
 	Number of times to rerun estimation with bootstrapped alignments (default: 1)
 

@@ -26,7 +26,7 @@ void PrintHelpMessage() {
 	    << "\tHow many threads to use. (default: 1)\n"
 	    << "\n"
 	    << "\t--themisto-mode <PairedEndMergeMode>\n"
-	    << "\tHow to merge Themisto pseudoalignments for paired-end reads	(default: union).\n"
+	    << "\tHow to merge Themisto pseudoalignments for paired-end reads	(default: intersection).\n"
     	    << "\t--iters <nrIterations>\n"
 	    << "\tNumber of times to rerun estimation with bootstrapped alignments (default: 1)\n"
 	    << "\n"
@@ -99,7 +99,8 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     args.themisto_mode = true;
     if (CmdOptionPresent(argv, argv+argc, "--themisto-mode")) {
       args.themisto_merge_mode = std::string(GetCmdOption(argv, argv+argc, "--themisto-mode"));
-    }
+    } else {
+      args.themisto_merge_mode = std::string("intersection");
   } else {
     throw std::runtime_error("infile not found.");
   }

@@ -9,6 +9,7 @@ elseif(CMAKE_BUILD_TYPE MATCHES Debug)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -g")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -g")
 endif()
+
 if(CMAKE_BUILD_TYPE MATCHES Release)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -xHost -fp-model fast=2 -no-prec-div -fimf-use-svml=true -ipo -m64")
@@ -82,14 +83,38 @@ else()
   set(ZLIB ZLIB::ZLIB)
 endif()
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/external/telescope
-                 ${CMAKE_BINARY_DIR}/external/telescope/build)
-set_target_properties(telescope PROPERTIES EXCLUDE_FROM_ALL 1)
+file(GLOB SOURCES "src/*.cpp")
+add_executable(mSWEEP ${SOURCES})
+
+## Check dependencies and download them if not given
+## telescope
+if (DEFINED CMAKE_TELESCOPE_LIBRARY AND DEFINED CMAKE_TELESCOPE_HEADERS)
+  find_library(TELESCOPE NAMES telescope HINTS ${CMAKE_TELESCOPE_LIBRARY})
+  target_link_libraries(mSWEEP ${TELESCOPE})
+  include_directories("${CMAKE_TELESCOPE_HEADERS}")
+else()
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-telescope.txt.in ${CMAKE_BINARY_DIR}/external/telescope-download/CMakeLists.txt)
+  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/telescope-download )
+  if(result)
+    message(FATAL_ERROR "CMake step for telescope failed: ${result}")
+  endif()
+  execute_process(COMMAND ${CMAKE_COMMAND} --build .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/telescope-download )
+  if(result)
+    message(FATAL_ERROR "Build step for telescope failed: ${result}")
+  endif()
+  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/external/telescope
+                   ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/build)
+  include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/telescope/include)
+  set_target_properties(telescope PROPERTIES EXCLUDE_FROM_ALL 1)
+  target_link_libraries(mSWEEP libtelescope)
+endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include ${CMAKE_SOURCE_DIR}/external/zstr ${CMAKE_SOURCE_DIR}/external ${CMAKE_SOURCE_DIR}/include/tools)
-file(GLOB SOURCES "src/*.cpp")
 
-add_executable(mSWEEP ${SOURCES})
 add_executable(matchfasta ${CMAKE_SOURCE_DIR}/src/tools/matchfasta.cpp)
 
 ## Handle compiling zlib from source
@@ -103,7 +128,7 @@ if(CMAKE_BUILD_ZLIB)
 endif()
 
 # Link libraries
-target_link_libraries(mSWEEP Threads::Threads ${ZLIB} libtelescope)
+target_link_libraries(mSWEEP Threads::Threads ${ZLIB})
 if (OPENMP_FOUND)
   target_link_libraries(mSWEEP OpenMP::OpenMP_CXX)
   target_link_libraries(matchfasta OpenMP::OpenMP_CXX)

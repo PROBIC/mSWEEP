@@ -1,7 +1,5 @@
 #include "Sample.hpp"
 
-#include "telescope/include/telescope.hpp"
-
 #include "likelihood.hpp"
 #include "version.h"
 

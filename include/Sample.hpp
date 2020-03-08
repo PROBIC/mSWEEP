@@ -8,7 +8,7 @@
 #include <iostream>
 #include <random>
 
-#include "telescope/include/telescope.hpp"
+#include "telescope.hpp"
 
 #include "matrix.hpp"
 #include "Reference.hpp"

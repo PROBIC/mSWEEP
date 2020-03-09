@@ -12,27 +12,28 @@
 
 #include "matrix.hpp"
 #include "Reference.hpp"
+#include "parse_arguments.hpp"
 
 class Sample {
 private:
-  std::string cell_id;
   uint32_t m_num_refs;
 
   // Calculate log_ec_counts and counts_total.
   void process_aln();
 protected:
+  std::string cell_id;
+  // Note the following two should be member variables in BootstrapSample, todo.
+  std::vector<std::vector<double>> relative_abundances;
+  std::discrete_distribution<uint32_t> ec_distribution;
+
   KallistoAlignment pseudos;
   uint32_t counts_total;
   uint32_t m_num_ecs;
 public:
+  Matrix<double> ll_mat;
   Matrix<double> ec_probs;
   std::vector<std::vector<uint16_t>> counts;
   std::vector<double> log_ec_counts;
-
-  Sample() = default;
-  ~Sample() = default;
-  Sample(const Sample &sample) = default;
-  Sample& operator=(const Sample &t) = default;
 
   // Read Themisto or kallisto pseudoalignments
   void read_themisto(const Mode &mode, const uint32_t n_refs, std::vector<std::istream*> &strands);
@@ -58,13 +59,15 @@ public:
 
 class BootstrapSample : public Sample {
 private:
-  std::discrete_distribution<uint32_t> ec_distribution;
-public:
-  Matrix<double> ll_mat = Matrix<double>(0, 0, 0.0);
+  // Run estimation and add results to relative_abundances
+  void BootstrapIter(const std::vector<double> &alpha0, const double tolerance, const uint16_t max_iters);
   // Initialize ec_distributino and ll_mat for bootstrapping
-  void init_bootstrap(Grouping &grouping);
+  void InitBootstrap(Grouping &grouping);
   // Resample the equivalence class counts
-  void resample_counts(std::mt19937_64 &rng);
+  void ResampleCounts(std::mt19937_64 &rng);
+public:
+  void BootstrapAbundances(Reference &reference, Arguments &args);
+  void WriteBootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string &outfile, const unsigned iters, const bool batch_mode);
 };
 
 #endif

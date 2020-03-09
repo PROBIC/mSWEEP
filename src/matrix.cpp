@@ -45,13 +45,8 @@ Matrix<T>& Matrix<T>::operator=(const Matrix<T>& rhs) {
   unsigned new_rows = rhs.get_rows();
   unsigned new_cols = rhs.get_cols();
   if (new_rows != this->rows) {
-    mat.resize(new_rows);
-#pragma omp parallel for schedule(static)
-    for (unsigned i = 0; i < new_rows; ++i) {
-      mat[i].resize(new_cols);
-    }
+    mat = std::vector<std::vector<T>>(new_rows, std::vector<T>(new_cols));
   }
-
 #pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < new_rows; i++) {
     for (unsigned j = 0; j < new_cols; j++) {

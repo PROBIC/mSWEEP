@@ -11,11 +11,11 @@
 
 template <typename T> class Matrix {
  private:
+ public:
   std::vector<std::vector<T> > mat;
   unsigned rows;
   unsigned cols;
 
- public:
   Matrix() = default;
   Matrix(unsigned _rows, unsigned _cols, const T& _initial);
   Matrix(const Matrix<T>& rhs);

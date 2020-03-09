@@ -15,7 +15,7 @@ void Sample::process_aln() {
     aln_counts_total += pseudos.ec_counts[i];
   }
   counts_total = aln_counts_total;
-  pseudos.ec_counts.clear();
+  //  pseudos.ec_counts.clear();
 }
 
 void Sample::read_themisto(const Mode &mode, const uint32_t n_refs, std::vector<std::istream*> &strands) {

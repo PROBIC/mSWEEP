@@ -72,11 +72,7 @@ std::vector<std::string> ReadCellNames(std::istream &cells_file) {
 }
 
 void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sample> &batch, Reference &reference, bool bootstrap_mode) {
-  if (bootstrap_mode) {
-    batch.emplace_back(BootstrapSample());
-  } else {
-    batch.emplace_back(Sample());
-  }
+  batch.emplace_back(Sample());
   batch.back().read_kallisto(n_refs, *kallisto_files.ec, *kallisto_files.tsv);
 }
 

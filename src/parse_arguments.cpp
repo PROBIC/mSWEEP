@@ -101,6 +101,7 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
       args.themisto_merge_mode = std::string(GetCmdOption(argv, argv+argc, "--themisto-mode"));
     } else {
       args.themisto_merge_mode = std::string("intersection");
+    }
   } else {
     throw std::runtime_error("infile not found.");
   }

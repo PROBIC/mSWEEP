@@ -3,6 +3,8 @@
 #include <exception>
 #include <set>
 
+#include "zstr.hpp"
+
 #include "parse_arguments.hpp"
 #include "read_bitfield.hpp"
 #include "process_reads.hpp"
@@ -10,9 +12,11 @@
 #include "Reference.hpp"
 #include "version.h"
 #include "KallistoFiles.hpp"
+#include "openmp_config.hpp"
 
-#include "zstr.hpp"
-#include <climits>
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
+#include <omp.h>
+#endif
 
 
 int main (int argc, char *argv[]) {
@@ -32,6 +36,10 @@ int main (int argc, char *argv[]) {
     PrintHelpMessage();
     return 0;
   }
+
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
+  omp_set_num_threads(args.optimizer.nr_threads);
+#endif
 
   std::vector<Sample> bitfields;
   Reference reference;

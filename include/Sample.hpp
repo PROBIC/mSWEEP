@@ -64,7 +64,7 @@ private:
   // Initialize ec_distributino and ll_mat for bootstrapping
   void InitBootstrap(Grouping &grouping);
   // Resample the equivalence class counts
-  void ResampleCounts(std::mt19937_64 &rng);
+  void ResampleCounts(const uint32_t how_many, std::mt19937_64 &rng);
 public:
   void BootstrapAbundances(Reference &reference, Arguments &args);
   void WriteBootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string &outfile, const unsigned iters, const bool batch_mode);

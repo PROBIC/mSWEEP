@@ -7,7 +7,7 @@
 #include "KallistoFiles.hpp"
 
 struct OptimizerArgs {
-  unsigned max_iters = 5000;
+  uint16_t max_iters = 5000;
   double tolerance = 1e-06;
 
   std::vector<double> alphas;
@@ -37,6 +37,8 @@ struct Arguments {
   std::string themisto_merge_mode = "union";
 
   unsigned iters = 1;
+  uint32_t bootstrap_count = 0;
+  int32_t seed = -1;
   double params[2] = { 0.65, 0.01 };
 
   // 0 = single sample, 1 = batch input, 2 = bootstrap single sample

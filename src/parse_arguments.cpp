@@ -29,6 +29,10 @@ void PrintHelpMessage() {
 	    << "\tHow to merge Themisto pseudoalignments for paired-end reads	(default: intersection).\n"
     	    << "\t--iters <nrIterations>\n"
 	    << "\tNumber of times to rerun estimation with bootstrapped alignments (default: 1)\n"
+    	    << "\t--bootstrap-count <nrBootstrapCount>\n"
+	    << "\tHow many reads to resample when bootstrapping (integer, default: all)\n"
+    	    << "\t--seed <BootstrapSeed>\n"
+	    << "\tSeed for the random generator used in bootstrapping (default: random)\n"    
 	    << "\n"
             << "\t--write-probs\n"
             << "\tIf specified, write the read equivalence class probabilities in a .csv matrix\n"
@@ -145,6 +149,24 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
       throw std::runtime_error("number of iterations must be greater or equal to 1");
     } else {
       args.iters = nr_iters_given;
+    }
+  }
+
+  if (CmdOptionPresent(argv, argv+argc, "--seed")) {
+    int32_t seed_given = std::stoi(std::string(GetCmdOption(argv, argv+argc, "--seed")));
+    if (seed_given < 1) {
+      throw std::runtime_error("seed must be greater or equal to 1");
+    } else {
+      args.seed = seed_given;
+    }
+  }
+
+  if (CmdOptionPresent(argv, argv+argc, "--bootstrap-count")) {
+    signed bootstrap_count_given = std::stoi(std::string(GetCmdOption(argv, argv+argc, "--bootstrap-count")));
+    if (bootstrap_count_given < 1) {
+      throw std::runtime_error("bootstrap-count must be greater or equal to 1");
+    } else {
+      args.bootstrap_count = bootstrap_count_given;
     }
   }
 

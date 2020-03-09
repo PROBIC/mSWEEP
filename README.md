@@ -267,11 +267,15 @@ mSWEEP accepts the following flags:
 	-t <nrThreads>
 	How many threads to use. (default: 1)
 
-	--themisto-mode <PairedEndMergeMode>
-	How to merge Themisto pseudoalignments for paired-end reads	(default: intersection).
-	--iters <nrIterations>
+    --iters <nrIterations>
 	Number of times to rerun estimation with bootstrapped alignments (default: 1)
+	--bootstrap-count <nrBootstrapCount>
+	How many reads to resample when bootstrapping (integer, default: all)
+    --seed <BootstrapSeed>
+    Seed for the random generator used in bootstrapping (default: random)
 
+    --themisto-mode <PairedEndMergeMode>
+	How to merge Themisto pseudoalignments for paired-end reads	(intersection or union, default: intersection).
 	--write-probs
 	If specified, write the read equivalence class probabilities in a .csv matrix
 	--print-probs

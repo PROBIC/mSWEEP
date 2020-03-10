@@ -1,5 +1,5 @@
-#ifndef REFERENCE_H
-#define REFERENCE_H
+#ifndef MSWEEP_REFERENCE_HPP
+#define MSWEEP_REFERENCE_HPP
 
 #include <vector>
 #include <array>

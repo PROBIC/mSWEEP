@@ -21,7 +21,7 @@
 
 
 int main (int argc, char *argv[]) {
-  std::cerr << "mSWEEP-" << _BUILD_VERSION << " abundance estimation" << std::endl;
+  std::cerr << "mSWEEP-" << MSWEEP_BUILD_VERSION << " abundance estimation" << std::endl;
   Arguments args;
   try {
     ParseArguments(argc, argv, args);

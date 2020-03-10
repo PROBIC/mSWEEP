@@ -85,7 +85,7 @@ void Sample::write_abundances(const std::vector<std::string> &cluster_indicators
     buf = of.rdbuf();
   }
   std::ostream out(buf);
-  out << "#mSWEEP_version:" << '\t' << _BUILD_VERSION << '\n';
+  out << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
   out << "#total_hits:" << '\t' << this->counts_total << '\n';
   out << "#c_id" << '\t' << "mean_theta" << '\n';
   for (size_t i = 0; i < abundances.size(); ++i) {

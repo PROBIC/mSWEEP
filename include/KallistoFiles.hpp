@@ -1,5 +1,5 @@
-#ifndef MSWEEP_KALLISTO_FILES_H
-#define MSWEEP_KALLISTO_FILES_H
+#ifndef MSWEEP_KALLISTO_FILES_HPP
+#define MSWEEP_KALLISTO_FILES_HPP
 
 #include <sys/stat.h>
 

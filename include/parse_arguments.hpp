@@ -36,7 +36,7 @@ struct Arguments {
 
   std::string themisto_merge_mode = "union";
 
-  unsigned iters = 1;
+  uint16_t iters = 1;
   uint32_t bootstrap_count = 0;
   int32_t seed = -1;
   double params[2] = { 0.65, 0.01 };

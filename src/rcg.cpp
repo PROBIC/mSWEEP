@@ -109,7 +109,7 @@ void revert_step(Matrix<double> &gamma_Z, const Matrix<double> &step, const std:
   }
 }
 
-Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const Sample &sample, const std::vector<double> &alpha0, const double &tol, unsigned maxiters) {
+Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const Sample &sample, const std::vector<double> &alpha0, const double &tol, uint16_t maxiters) {
   unsigned short n_rows = logl.get_rows();
   unsigned n_cols = sample.num_ecs();
   Matrix<double> gamma_Z(n_rows, n_cols, std::log(1.0/(double)n_rows)); // where gamma_Z is init at 1.0
@@ -136,7 +136,7 @@ Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const Sample &sample, co
     N_k[i] += alpha0[i];
   }
   
-  for (unsigned short k = 0; k < maxiters; ++k) {
+  for (uint16_t k = 0; k < maxiters; ++k) {
     double newnorm = mixt_negnatgrad(gamma_Z, N_k, logl, sample.counts, step);
     double beta_FR = newnorm/oldnorm;
     oldnorm = newnorm;

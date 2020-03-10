@@ -1,5 +1,5 @@
-#ifndef MATRIX_H
-#define MATRIX_H
+#ifndef MSWEEP_MATRIX_HPP
+#define MSWEEP_MATRIX_HPP
 
 #include <vector>
 

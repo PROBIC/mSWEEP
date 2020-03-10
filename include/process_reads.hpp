@@ -1,5 +1,5 @@
-#ifndef PROCESS_READS_H
-#define PROCESS_READS_H
+#ifndef MSWEEP_PROCESS_READS_HPP
+#define MSWEEP_PROCESS_READS_HPP
 
 #include <string>
 #include <memory>

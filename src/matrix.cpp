@@ -36,6 +36,24 @@ Matrix<T>::Matrix(const Matrix<T>& rhs) {
 template<typename T>
 Matrix<T>::~Matrix() {}
 
+// Resize a matrix
+template<typename T>
+void Matrix<T>::resize(const uint32_t new_rows, const uint32_t new_cols, const T initial) {
+  if (new_rows != rows) {
+    mat.resize(new_rows, std::vector<T>(new_cols, initial));
+    rows = new_rows;
+    cols = new_cols;
+  }
+  if (new_cols != cols) {
+#pragma omp parallel for schedule(static)
+    for (uint32_t i = 0; i < new_rows; ++i) {
+      mat[i].resize(new_cols, initial);
+    }
+    cols = new_cols;
+  }
+}
+
+
 // Assignment Operator
 template<typename T>
 Matrix<T>& Matrix<T>::operator=(const Matrix<T>& rhs) {
@@ -44,8 +62,8 @@ Matrix<T>& Matrix<T>::operator=(const Matrix<T>& rhs) {
 
   unsigned new_rows = rhs.get_rows();
   unsigned new_cols = rhs.get_cols();
-  if (new_rows != this->rows) {
-    mat = std::vector<std::vector<T>>(new_rows, std::vector<T>(new_cols));
+  if (new_rows != rows || new_cols != cols) {
+    resize(new_rows, new_cols, (T)0);
   }
 #pragma omp parallel for schedule(static)
   for (unsigned i = 0; i < new_rows; i++) {
@@ -53,9 +71,6 @@ Matrix<T>& Matrix<T>::operator=(const Matrix<T>& rhs) {
       mat[i][j] = rhs(i, j);
     }
   }
-
-  rows = new_rows;
-  cols = new_cols;
   return *this;
 }
 

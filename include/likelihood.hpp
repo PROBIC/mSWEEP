@@ -5,6 +5,6 @@
 #include "Sample.hpp"
 #include "Reference.hpp"
 
-void likelihood_array_mat(Sample &sample, const Grouping &grouping);
+void precalc_lls(const Grouping &grouping, Matrix<double> *ll_mat);
 
 #endif

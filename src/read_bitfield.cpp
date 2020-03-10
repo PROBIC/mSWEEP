@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <exception>
+#include <memory>
 
 void VerifyGrouping(std::istream &run_info, unsigned n_refs) {
   // Get the number of reference sequences in the pseudoalignment
@@ -71,16 +72,25 @@ std::vector<std::string> ReadCellNames(std::istream &cells_file) {
   return reference.group_names;
 }
 
-void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<Sample> &batch, Reference &reference, bool bootstrap_mode) {
-  batch.emplace_back(Sample());
-  batch.back().read_kallisto(n_refs, *kallisto_files.ec, *kallisto_files.tsv);
+void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<std::unique_ptr<Sample>> &batch, Reference &reference, bool bootstrap_mode) {
+  if (bootstrap_mode) {
+    batch.emplace_back(new BootstrapSample());
+  } else {
+    batch.emplace_back(new Sample());
+  }
+  batch.back()->read_kallisto(n_refs, *kallisto_files.ec, *kallisto_files.tsv);
 }
 
-void ReadBitfield(const std::string &tinfile1, const std::string &tinfile2, const std::string &themisto_mode, const unsigned n_refs, std::vector<Sample> &batch) {
+void ReadBitfield(const std::string &tinfile1, const std::string &tinfile2, const std::string &themisto_mode, const bool bootstrap_mode, const unsigned n_refs, std::vector<std::unique_ptr<Sample>> &batch) {
   std::vector<std::istream*> strands(2);
   strands.at(0) = new zstr::ifstream(tinfile1);
   strands.at(1) = new zstr::ifstream(tinfile2);
 
-  batch.emplace_back(Sample());
-  batch.back().read_themisto(get_mode(themisto_mode), n_refs, strands);
+  if (bootstrap_mode) {
+    batch.emplace_back(new BootstrapSample());
+  } else {
+    batch.emplace_back(new Sample());
+  }
+
+  batch.back()->read_themisto(get_mode(themisto_mode), n_refs, strands);
 }

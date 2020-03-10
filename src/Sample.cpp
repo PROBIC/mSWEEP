@@ -15,17 +15,18 @@ void Sample::process_aln() {
     aln_counts_total += pseudos.ec_counts[i];
   }
   counts_total = aln_counts_total;
-  //  pseudos.ec_counts.clear();
 }
 
 void Sample::read_themisto(const Mode &mode, const uint32_t n_refs, std::vector<std::istream*> &strands) {
   ReadThemisto(mode, n_refs, strands, &pseudos);
   process_aln();
+  pseudos.ec_counts.clear();
 }
 
 void Sample::read_kallisto(const uint32_t n_refs, std::istream &ec_file, std::istream &tsv_file) {
   ReadKallisto(n_refs, ec_file, tsv_file, &pseudos);
   process_aln();
+  pseudos.ec_counts.clear();
 }
 
 std::vector<double> Sample::group_abundances() const {
@@ -93,4 +94,18 @@ void Sample::write_abundances(const std::vector<std::string> &cluster_indicators
   if (!outfile.empty()) {
     of.close();
   }
+}
+
+void Sample::CalcLikelihood(const Grouping &grouping) {
+  precalc_lls(grouping, &ll_mat);
+
+  counts.resize(grouping.n_groups, std::vector<uint16_t>(m_num_ecs, 0));
+#pragma omp parallel for schedule(static)
+  for (uint32_t j = 0; j < m_num_ecs; ++j) {
+    const std::vector<uint16_t> &groupcounts = group_counts(grouping.indicators, j, grouping.n_groups);
+    for (uint32_t i = 0; i < grouping.n_groups; ++i) {
+      counts[i][j] = groupcounts[i];
+    }
+  }
+  clear_configs();
 }

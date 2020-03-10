@@ -4,19 +4,19 @@
 #include "rcg.hpp"
 #include "version.h"
 
-void BootstrapSample::InitBootstrap(Grouping &grouping) {
+void BootstrapSample::InitBootstrap(const Grouping &grouping) {
   ec_distribution = std::discrete_distribution<uint32_t>(pseudos.ec_counts.begin(), pseudos.ec_counts.end());
-  likelihood_array_mat(*this, grouping);
+  CalcLikelihood(grouping);
 }
 
 void BootstrapSample::ResampleCounts(const uint32_t how_many, std::mt19937_64 &generator) {
-  std::vector<uint32_t> tmp_counts(m_num_ecs);
+  std::vector<uint32_t> tmp_counts(num_ecs());
   for (uint32_t i = 0; i < how_many; ++i) {
     uint32_t ec_id = ec_distribution(generator);
     tmp_counts[ec_id] += 1;
   }
 #pragma omp parallel for schedule(static)
-  for (uint32_t i = 0; i < m_num_ecs; ++i) {
+  for (uint32_t i = 0; i < num_ecs(); ++i) {
     log_ec_counts[i] = std::log(tmp_counts[i]);
   }
   counts_total = how_many;
@@ -28,7 +28,7 @@ void BootstrapSample::BootstrapIter(const std::vector<double> &alpha0, const dou
   this->relative_abundances.emplace_back(group_abundances());
 }
 
-void BootstrapSample::BootstrapAbundances(Reference &reference, Arguments &args) {
+void BootstrapSample::BootstrapAbundances(const Reference &reference, const Arguments &args) {
   std::mt19937_64 gen;
   if (args.seed == -1) {
     std::random_device rd;
@@ -38,7 +38,7 @@ void BootstrapSample::BootstrapAbundances(Reference &reference, Arguments &args)
   }
   std::cerr << "Running estimation with " << args.iters << " bootstrap iterations" << '\n';
   // Which sample are we processing?
-  std::string name = (args.batch_mode ? this->cell_id : "0");
+  std::string name = (args.batch_mode ? cell_name() : "0");
   std::cout << "Processing " << (args.batch_mode ? name : "the sample") << std::endl;
   // Init the bootstrap variables
   InitBootstrap(reference.grouping);
@@ -71,10 +71,10 @@ void BootstrapSample::BootstrapAbundances(Reference &reference, Arguments &args)
 }
 
 
-void BootstrapSample::WriteBootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string &outfile, const unsigned iters, const bool batch_mode) {
+void BootstrapSample::WriteBootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string &outfile, const unsigned iters, const bool batch_mode) const {
   // Write relative abundances to a file,
   // outputs to std::cout if outfile is empty.
-  outfile = (outfile.empty() || !batch_mode ? outfile : outfile + '/' + cell_id);
+  outfile = (outfile.empty() || !batch_mode ? outfile : outfile + '/' + cell_name());
   std::streambuf *buf;
   std::ofstream of;
   if (outfile.empty()) {
@@ -101,3 +101,14 @@ void BootstrapSample::WriteBootstrap(const std::vector<std::string> &cluster_ind
     of.close();
   }
 }
+
+void BootstrapSample::read_themisto(const Mode &mode, const uint32_t n_refs, std::vector<std::istream*> &strands) {
+  ReadThemisto(mode, n_refs, strands, &pseudos);
+  process_aln();
+}
+
+void BootstrapSample::read_kallisto(const uint32_t n_refs, std::istream &ec_file, std::istream &tsv_file) {
+  ReadKallisto(n_refs, ec_file, tsv_file, &pseudos);
+  process_aln();
+}
+

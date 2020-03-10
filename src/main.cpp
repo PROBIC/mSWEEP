@@ -2,6 +2,7 @@
 #include <vector>
 #include <exception>
 #include <set>
+#include <memory>
 
 #include "zstr.hpp"
 
@@ -41,7 +42,7 @@ int main (int argc, char *argv[]) {
   omp_set_num_threads(args.optimizer.nr_threads);
 #endif
 
-  std::vector<Sample> bitfields;
+  std::vector<std::unique_ptr<Sample>> bitfields;
   Reference reference;
   try {
     std::cerr << "Reading the input files" << '\n';
@@ -56,10 +57,10 @@ int main (int argc, char *argv[]) {
       VerifyGrouping(*args.infiles.run_info, reference.n_refs);
       ReadBitfield(args.infiles, reference.n_refs, bitfields, reference, args.bootstrap_mode);
     } else {
-      ReadBitfield(args.tinfile1, args.tinfile2, args.themisto_merge_mode, reference.n_refs, bitfields);
+      ReadBitfield(args.tinfile1, args.tinfile2, args.themisto_merge_mode, args.bootstrap_mode, reference.n_refs, bitfields);
     }
 
-    std::cerr << "  read " << (args.batch_mode ? bitfields.size() : bitfields[0].num_ecs()) << (args.batch_mode ? " samples from the batch" : " unique alignments") << std::endl;
+    std::cerr << "  read " << (args.batch_mode ? bitfields.size() : bitfields[0]->num_ecs()) << (args.batch_mode ? " samples from the batch" : " unique alignments") << std::endl;
   } catch (std::runtime_error &e) {
     std::cerr << "Reading pseudoalignments failed:\n  ";
     std::cerr << e.what();
@@ -75,7 +76,7 @@ int main (int argc, char *argv[]) {
 
   // Process the reads accordingly
   switch(args.run_mode()) {
-  case 0: ProcessReads(reference, args.outfile, bitfields[0], args.optimizer); break;
+  case 0: ProcessReads(reference, args.outfile, *bitfields[0], args.optimizer); break;
   case 1: ProcessBatch(reference, args, bitfields); break;
   case 2: ProcessBootstrap(reference, args, bitfields); break;
   case 3: ProcessBootstrap(reference, args, bitfields); break; // Same function for batch and single files

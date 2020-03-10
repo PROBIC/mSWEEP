@@ -11,15 +11,18 @@
 
 template <typename T> class Matrix {
  private:
- public:
   std::vector<std::vector<T> > mat;
   unsigned rows;
   unsigned cols;
 
+ public:
   Matrix() = default;
   Matrix(unsigned _rows, unsigned _cols, const T& _initial);
   Matrix(const Matrix<T>& rhs);
   virtual ~Matrix();
+
+  // Resize a matrix
+  void resize(const uint32_t new_rows, const uint32_t new_cols, const T initial);
 
   // Operator overloading
   Matrix<T>& operator=(const Matrix<T>& rhs);

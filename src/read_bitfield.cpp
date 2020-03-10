@@ -4,7 +4,10 @@
 #include <unordered_map>
 #include <exception>
 
-void VerifyGrouping(std::istream &run_info, unsigned n_refs) {
+#include "bxzstr.hpp"
+#include "file.hpp"
+
+void VerifyGrouping(const unsigned n_refs, std::istream &run_info) {
   // Get the number of reference sequences in the pseudoalignment
   // contained in the 'n_targets' variable in run_info.json file.
   short unsigned line_nr = 0; // number of reference seqs is on line 2 (kallisto v0.43)
@@ -35,6 +38,24 @@ void VerifyGrouping(std::istream &run_info, unsigned n_refs) {
     }
   } else {
     throw std::runtime_error("Could not read run_info.json found.");
+  }
+}
+
+uint32_t CountLines (std::istream &stream) {
+  uint32_t n_lines = 0;
+  std::string line;
+  while (std::getline(stream, line)) {
+    n_lines += 1;
+  }
+  return n_lines;
+}
+
+void VerifyThemistoGrouping(const unsigned n_refs, std::istream &themisto_index) {
+  uint32_t lines_in_grouping = CountLines(themisto_index);
+  if (lines_in_grouping > n_refs) {
+    throw std::runtime_error("pseudoalignment has more reference sequences than the grouping.");
+  } else if (lines_in_grouping < n_refs) {
+    throw std::runtime_error("grouping has more reference sequences than the pseudoalignment.");
   }
 }
 
@@ -79,8 +100,10 @@ void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<st
 
 void ReadBitfield(const std::string &tinfile1, const std::string &tinfile2, const std::string &themisto_mode, const bool bootstrap_mode, const unsigned n_refs, std::vector<std::unique_ptr<Sample>> &batch) {
   std::vector<std::istream*> strands(2);
-  strands.at(0) = new zstr::ifstream(tinfile1);
-  strands.at(1) = new zstr::ifstream(tinfile2);
+  File::In check_strand_1(tinfile1);
+  File::In check_strand_2(tinfile2);
+  strands.at(0) = new bxz::ifstream(tinfile1);
+  strands.at(1) = new bxz::ifstream(tinfile2);
 
   if (bootstrap_mode) {
     batch.emplace_back(new BootstrapSample());

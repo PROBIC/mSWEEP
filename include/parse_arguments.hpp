@@ -27,6 +27,7 @@ struct Arguments {
   std::string outfile;
   std::string tinfile1;
   std::string tinfile2;
+  std::string themisto_index_path;
   std::vector<std::string> kallisto_files;
 
   bool batch_mode = false;

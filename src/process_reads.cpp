@@ -1,7 +1,7 @@
 #include "process_reads.hpp"
 
 #include "rcg.hpp"
-#include "zstr.hpp"
+#include "bxzstr.hpp"
 
 void ProcessReads(const Reference &reference, std::string outfile, Sample &sample, OptimizerArgs args) {
   // Process pseudoalignments from kallisto.
@@ -17,7 +17,7 @@ void ProcessReads(const Reference &reference, std::string outfile, Sample &sampl
     std::unique_ptr<std::ostream> of;
     if (args.gzip_probs) {
       outfile += "_probs.csv.gz";
-      of = std::unique_ptr<std::ostream>(new zstr::ofstream(outfile));
+      of = std::unique_ptr<std::ostream>(new bxz::ofstream(outfile));
     } else {
       outfile += "_probs.csv";
       of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));

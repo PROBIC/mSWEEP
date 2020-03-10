@@ -3,7 +3,8 @@
 #include <exception>
 #include <memory>
 
-#include "zstr.hpp"
+#include "bxzstr.hpp"
+#include "file.hpp"
 
 #include "parse_arguments.hpp"
 #include "read_bitfield.hpp"
@@ -16,7 +17,6 @@
 #if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
 #include <omp.h>
 #endif
-
 
 int main (int argc, char *argv[]) {
   std::cerr << "mSWEEP-" << MSWEEP_BUILD_VERSION << " abundance estimation" << std::endl;
@@ -45,16 +45,20 @@ int main (int argc, char *argv[]) {
   try {
     std::cerr << "Reading the input files" << '\n';
     std::cerr << "  reading group indicators" << '\n';
-    zstr::ifstream indicators_file(args.indicators_file);
-    ReadClusterIndicators(indicators_file, reference);
+    File::In indicators_file(args.indicators_file);
+    ReadClusterIndicators(indicators_file.stream(), reference);
     std::cerr << "  read " << reference.n_refs << " group indicators" << std::endl;
 
     std::cerr << "  reading pseudoalignments" << '\n';
     if (!args.themisto_mode) {
       // Check that the number of reference sequences matches in the grouping and the alignment.
-      VerifyGrouping(*args.infiles.run_info, reference.n_refs);
+      VerifyGrouping(reference.n_refs, *args.infiles.run_info);
       ReadBitfield(args.infiles, reference.n_refs, bitfields, reference, args.bootstrap_mode);
     } else {
+      if (!args.themisto_index_path.empty()) {
+	File::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
+	VerifyThemistoGrouping(reference.n_refs, themisto_index.stream());
+      }
       ReadBitfield(args.tinfile1, args.tinfile2, args.themisto_merge_mode, args.bootstrap_mode, reference.n_refs, bitfields);
     }
 

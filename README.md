@@ -125,15 +125,19 @@ pseudoalign --query-file 215_1.fastq.gz --outfile 215_1_alignment.txt --rc --ind
 pseudoalign --query-file 215_2.fastq.gz --outfile 215_2_alignment.txt --rc --index-dir themisto_index --temp-dir tmp --n-threads 2
 ```
 
-Next, run mSWEEP on the alignemnt files (the -t option controls the
+Next, run mSWEEP on the alignment files (the -t option controls the
 number of threads used in the estimation.)
 ```
 ## Run mSWEEP with 2 threads
-mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -i clustering.txt -t 2 -o 215
+mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -i clustering.txt -t 2 -o 215 --themisto-index themisto_index
 ```
 This will write the relateve abundances to the "215_abundances.txt"
 file in the folder mSWEEP was run in. If the '-o' option is not
 specified, the abundances will print to cout.
+
+Note that supplying the --themisto-index is optional but highly
+recommended (running mSWEEP without this option will *not* validate
+the input 'clustering.txt' and may cause undefined behaviour).
 
 ### Experimental usage
 #### Bootstrapping confidence intervals
@@ -306,7 +310,9 @@ mSWEEP accepts the following flags:
 
     --themisto-mode <PairedEndMergeMode>
 	How to merge Themisto pseudoalignments for paired-end reads	(intersection or union, default: intersection).
-	--write-probs
+    --themisto-index <ThemistoIndex>
+    Path to the Themisto index the pseudoalignment was performed against (optional).
+    --write-probs
 	If specified, write the read equivalence class probabilities in a .csv matrix
 	--print-probs
 	Print the equivalence class probabilities rather than writing when using --write-probs

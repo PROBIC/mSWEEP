@@ -4,6 +4,8 @@
 #include "rcg.hpp"
 #include "version.h"
 
+#include "bxzstr.hpp"
+
 void BootstrapSample::InitBootstrap(const Grouping &grouping) {
   ec_distribution = std::discrete_distribution<uint32_t>(pseudos.ec_counts.begin(), pseudos.ec_counts.end());
   CalcLikelihood(grouping);
@@ -57,7 +59,7 @@ void BootstrapSample::BootstrapAbundances(const Reference &reference, const Argu
 	std::unique_ptr<std::ostream> of;
 	if (args.optimizer.gzip_probs) {
 	  outfile += "_probs.csv.gz";
-	  of = std::unique_ptr<std::ostream>(new zstr::ofstream(outfile));
+	  of = std::unique_ptr<std::ostream>(new bxz::ofstream(outfile));
 	} else {
 	  outfile += "_probs.csv";
 	  of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));

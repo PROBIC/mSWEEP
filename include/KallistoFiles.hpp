@@ -1,26 +1,25 @@
 #ifndef MSWEEP_KALLISTO_FILES_HPP
 #define MSWEEP_KALLISTO_FILES_HPP
 
-#include <sys/stat.h>
-
 #include <memory>
 #include <fstream>
 #include <string>
 
-#include "zstr.hpp"
+#include "bxzstr.hpp"
+#include "file.hpp"
 
 class KallistoFiles {
  private:
   bool file_exists (const std::string& name) const {
-    struct stat buffer;   
-    return (stat (name.c_str(), &buffer) == 0); 
+    File::In test(name);
+    return (!test.stream().fail()); 
   }
 
   void open_file(const std::string &path, std::unique_ptr<std::istream> &ptr) const {
     if (!file_exists(path)) {
       throw std::runtime_error("File: " + path + " does not exist.");
     }
-    ptr.reset(new zstr::ifstream(path));
+    ptr.reset(new bxz::ifstream(path));
     if (!ptr->good()) {
       throw std::runtime_error("Cannot read from file: " + path + ".");
     }

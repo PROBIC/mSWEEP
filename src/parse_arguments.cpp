@@ -1,5 +1,7 @@
 #include "parse_arguments.hpp"
 
+#include <dirent.h>
+
 #include <algorithm>
 #include <iostream>
 #include <exception>
@@ -27,7 +29,9 @@ void PrintHelpMessage() {
 	    << "\n"
 	    << "\t--themisto-mode <PairedEndMergeMode>\n"
 	    << "\tHow to merge Themisto pseudoalignments for paired-end reads	(default: intersection).\n"
-    	    << "\t--iters <nrIterations>\n"
+    	    << "\t--themisto-index <ThemistoIndex>\n"
+	    << "\tPath to the Themisto index the pseudoalignment was performed against (optional).\n"
+	    << "\t--iters <nrIterations>\n"
 	    << "\tNumber of times to rerun estimation with bootstrapped alignments (default: 1)\n"
     	    << "\t--bootstrap-count <nrBootstrapCount>\n"
 	    << "\tHow many reads to resample when bootstrapping (integer, default: all)\n"
@@ -53,6 +57,15 @@ void PrintHelpMessage() {
 	    << "\t-e <dispersionTerm>\n"
 	    << "\tCalibration term in the likelihood function."
 	    << " (default: 0.01)" << std::endl;
+}
+
+void CheckDirExists(const std::string &dir_path) {
+  DIR* dir = opendir(dir_path.c_str());
+  if (dir) {
+    closedir(dir);
+  } else {
+    throw std::runtime_error("Directory " + dir_path + " does not seem to exist.");
+  }
 }
 
 char* GetCmdOption(char **begin, char **end, const std::string &option) {
@@ -106,6 +119,10 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     } else {
       args.themisto_merge_mode = std::string("intersection");
     }
+    if (CmdOptionPresent(argv, argv+argc, "--themisto-index")) {
+      args.themisto_index_path = std::string(GetCmdOption(argv, argv+argc, "--themisto-index"));
+      CheckDirExists(args.themisto_index_path);
+    }
   } else {
     throw std::runtime_error("infile not found.");
   }
@@ -140,6 +157,11 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
 
   if (CmdOptionPresent(argv, argv+argc, "-o")) {
     args.outfile = std::string(GetCmdOption(argv, argv+argc, "-o"));
+    if (args.outfile.find("/") != std::string::npos) {
+      std::string outfile_dir = args.outfile;
+      outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size());
+      CheckDirExists(outfile_dir);
+    }
   }
 
   if (CmdOptionPresent(argv, argv+argc, "--iters")) {

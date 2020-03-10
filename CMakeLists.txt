@@ -32,7 +32,6 @@ if (OPENMP_FOUND)
 else()
   set(MSWEEP_OPENMP_SUPPORT 0)
 endif()
-find_package(ZLIB)
 set (CMAKE_CXX_STANDARD 11)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -60,6 +59,26 @@ string(TIMESTAMP _BUILD_TIMESTAMP)
 configure_file(include/version.h.in ${CMAKE_BINARY_DIR}/include/version.h @ONLY)
 configure_file(include/openmp_config.hpp.in ${CMAKE_BINARY_DIR}/include/openmp_config.hpp @ONLY)
 
+file(GLOB SOURCES "src/*.cpp")
+add_executable(mSWEEP ${SOURCES})
+
+## Check supported compression types
+find_package(BZip2)
+if (BZIP2_FOUND)
+  include_directories(${BZIP2_INCLUDE_DIRS})
+  target_link_libraries(mSWEEP ${BZIP2_LIBRARIES})
+endif()    
+find_package(LibLZMA)
+if (LIBLZMA_FOUND)
+  include_directories(${LIBLZMA_INCLUDE_DIRS})
+  target_link_libraries(mSWEEP ${LIBLZMA_LIBRARIES})
+endif()
+find_package(ZLIB)
+if (ZLIB_FOUND)
+  include_directories(${ZLIB_INCLUDE_DIRS})
+  target_link_libraries(mSWEEP ${ZLIB_LIBRARIES})
+endif()
+
 if(NOT ZLIB_FOUND OR CMAKE_BUILD_ZLIB)
   configure_file(CMakeLists.txt.in ${CMAKE_BINARY_DIR}/external/zlib-download/CMakeLists.txt)
   execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
@@ -78,9 +97,6 @@ if(NOT ZLIB_FOUND OR CMAKE_BUILD_ZLIB)
 else()
   set(ZLIB ZLIB::ZLIB)
 endif()
-
-file(GLOB SOURCES "src/*.cpp")
-add_executable(mSWEEP ${SOURCES})
 
 ## Check dependencies and download them if not given
 ## telescope
@@ -109,7 +125,33 @@ else()
   target_link_libraries(mSWEEP libtelescope)
 endif()
 
-include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include ${CMAKE_SOURCE_DIR}/external/zstr ${CMAKE_SOURCE_DIR}/external ${CMAKE_SOURCE_DIR}/include/tools)
+## bxzstr
+if (DEFINED CMAKE_BXZSTR_LIBRARY AND DEFINED CMAKE_BXZSTR_HEADERS)
+  find_library(BXZSTR NAMES telescope HINTS ${CMAKE_BXZSTR_LIBRARY})
+  include_directories("${CMAKE_BXZSTR_HEADERS}")
+else()
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-bxzstr.txt.in ${CMAKE_BINARY_DIR}/external/bxzstr-download/CMakeLists.txt)
+  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/bxzstr-download )
+  if(result)
+    message(FATAL_ERROR "CMake step for bxzstr failed: ${result}")
+  endif()
+  execute_process(COMMAND ${CMAKE_COMMAND} --build .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/bxzstr-download )
+  if(result)
+    message(FATAL_ERROR "Build step for bxzstr failed: ${result}")
+  endif()
+  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/external/bxzstr
+                   ${CMAKE_CURRENT_BINARY_DIR}/external/bxzstr/build)
+  include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/bxzstr/include)
+endif()
+
+include_directories(${CMAKE_SOURCE_DIR}/include
+${CMAKE_SOURCE_DIR}/external ${CMAKE_SOURCE_DIR}/include/tools
+${CMAKE_SOURCE_DIR}/external/cxxio
+${CMAKE_CURRENT_BINARY_DIR}/include)
 
 add_executable(matchfasta ${CMAKE_SOURCE_DIR}/src/tools/matchfasta.cpp)
 

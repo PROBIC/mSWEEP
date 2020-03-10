@@ -1,6 +1,5 @@
 #include "process_reads.hpp"
 
-#include "likelihood.hpp"
 #include "rcg.hpp"
 #include "zstr.hpp"
 

@@ -10,13 +10,6 @@
 
 #include "openmp_config.hpp"
 
-#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
-#include <omp.h>
-#pragma omp declare reduction(vec_double_plus : std::vector<double> : \
-                              std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<double>())) \
-                    initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
-#endif
-
 double digamma(double x) {
   double result = 0, xx, xx2, xx4;
   assert(x > 0);

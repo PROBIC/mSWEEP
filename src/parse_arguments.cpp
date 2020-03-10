@@ -1,8 +1,8 @@
+#include "parse_arguments.hpp"
+
 #include <algorithm>
 #include <iostream>
 #include <exception>
-
-#include "parse_arguments.hpp"
 
 void PrintHelpMessage() {
   std::cerr << "Usage: mSWEEP -f <pseudomappingFile> -i <clusterIndicators> [OPTIONS]\n"

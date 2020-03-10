@@ -1,7 +1,6 @@
 #include <iostream>
 #include <vector>
 #include <exception>
-#include <set>
 #include <memory>
 
 #include "zstr.hpp"
@@ -12,7 +11,6 @@
 #include "Sample.hpp"
 #include "Reference.hpp"
 #include "version.h"
-#include "KallistoFiles.hpp"
 #include "openmp_config.hpp"
 
 #if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1

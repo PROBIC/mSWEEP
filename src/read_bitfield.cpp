@@ -1,12 +1,8 @@
 #include "read_bitfield.hpp"
 
-#include <string>
 #include <sstream>
-#include <vector>
 #include <unordered_map>
-#include <unordered_set>
 #include <exception>
-#include <memory>
 
 void VerifyGrouping(std::istream &run_info, unsigned n_refs) {
   // Get the number of reference sequences in the pseudoalignment

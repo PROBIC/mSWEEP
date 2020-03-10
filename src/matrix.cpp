@@ -4,13 +4,7 @@
 
 #include <cmath>
 
-#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
-#include <omp.h>
-#include <algorithm>
-#pragma omp declare reduction(vec_double_plus : std::vector<double> :	\
-                              std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<double>())) \
-                    initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
-#endif
+#include "openmp_config.hpp"
 
 // Parameter Constructor
 template<typename T>

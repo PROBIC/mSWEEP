@@ -1,9 +1,9 @@
 #ifndef MSWEEP_READ_BITFIELD_HPP
 #define MSWEEP_READ_BITFIELD_HPP
 
+#include <vector>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <fstream>
 
 #include "matrix.hpp"

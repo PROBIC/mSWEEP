@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <exception>
+#include <algorithm>
 
 namespace mSWEEP {
 namespace tools {

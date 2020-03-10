@@ -7,13 +7,14 @@
 #include "KallistoFiles.hpp"
 
 struct OptimizerArgs {
-  unsigned max_iters = 5000;
+  uint16_t max_iters = 5000;
   double tolerance = 1e-06;
 
   std::vector<double> alphas;
   bool write_probs;
   bool gzip_probs;
   bool print_probs;
+  unsigned nr_threads = 1;
 };
 
 struct Arguments {
@@ -26,7 +27,12 @@ struct Arguments {
   std::string outfile;
   std::string tinfile1;
   std::string tinfile2;
+  std::string themisto_index_path;
   std::vector<std::string> kallisto_files;
+
+  std::string fasta_file;
+  std::string groups_list_file;
+  char groups_list_delimiter = '\t';
 
   bool batch_mode = false;
   bool bootstrap_mode = false;
@@ -35,8 +41,9 @@ struct Arguments {
 
   std::string themisto_merge_mode = "union";
 
-  unsigned nr_threads = 1;
-  unsigned iters = 1;
+  uint16_t iters = 1;
+  uint32_t bootstrap_count = 0;
+  int32_t seed = -1;
   double params[2] = { 0.65, 0.01 };
 
   // 0 = single sample, 1 = batch input, 2 = bootstrap single sample

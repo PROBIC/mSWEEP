@@ -1,3 +1,0 @@
-[submodule "external/telescope"]
-	path = external/telescope
-	url = https://github.com/tmaklin/telescope.git

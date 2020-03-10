@@ -1,8 +1,10 @@
+#include "parse_arguments.hpp"
+
+#include <dirent.h>
+
 #include <algorithm>
 #include <iostream>
 #include <exception>
-
-#include "parse_arguments.hpp"
 
 void PrintHelpMessage() {
   std::cerr << "Usage: mSWEEP -f <pseudomappingFile> -i <clusterIndicators> [OPTIONS]\n"
@@ -23,12 +25,26 @@ void PrintHelpMessage() {
 	    << "\t-o <outputFile>\n"
 	    << "\tOutput file (folder when estimating from a batch) to write results in.\n"
     	    << "\t-t <nrThreads>\n"
-	    << "\tHow many threads to use when processing a batch matrix (default: 1)\n"
+	    << "\tHow many threads to use. (default: 1)\n"
 	    << "\n"
 	    << "\t--themisto-mode <PairedEndMergeMode>\n"
-	    << "\tHow to merge Themisto pseudoalignments for paired-end reads	(default: union).\n"
-    	    << "\t--iters <nrIterations>\n"
+	    << "\tHow to merge Themisto pseudoalignments for paired-end reads	(default: intersection).\n"
+    	    << "\t--themisto-index <ThemistoIndex>\n"
+	    << "\tPath to the Themisto index the pseudoalignment was performed against (optional).\n"
+	    << "\n"
+    	    << "\t--fasta <ReferenceSequences>\n"
+	    << "\tPath to the reference sequences the pseudoalignment index was constructed from (optional)\n"
+    	    << "\t--groups-list <groupIndicatorsList>\n"
+	    << "\tTable containing names of the reference sequences (1st column) and their group assignments (2nd column) (optional)\n"
+    	    << "\t--groups-delimiter <groupIndicatorsListDelimiter>\n"
+	    << "\tDelimiter character for the --groups option (optional, default: tab)\n"
+	    << "\n"
+	    << "\t--iters <nrIterations>\n"
 	    << "\tNumber of times to rerun estimation with bootstrapped alignments (default: 1)\n"
+    	    << "\t--bootstrap-count <nrBootstrapCount>\n"
+	    << "\tHow many reads to resample when bootstrapping (integer, default: all)\n"
+    	    << "\t--seed <BootstrapSeed>\n"
+	    << "\tSeed for the random generator used in bootstrapping (default: random)\n"    
 	    << "\n"
             << "\t--write-probs\n"
             << "\tIf specified, write the read equivalence class probabilities in a .csv matrix\n"
@@ -49,6 +65,15 @@ void PrintHelpMessage() {
 	    << "\t-e <dispersionTerm>\n"
 	    << "\tCalibration term in the likelihood function."
 	    << " (default: 0.01)" << std::endl;
+}
+
+void CheckDirExists(const std::string &dir_path) {
+  DIR* dir = opendir(dir_path.c_str());
+  if (dir) {
+    closedir(dir);
+  } else {
+    throw std::runtime_error("Directory " + dir_path + " does not seem to exist.");
+  }
 }
 
 char* GetCmdOption(char **begin, char **end, const std::string &option) {
@@ -99,6 +124,12 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     args.themisto_mode = true;
     if (CmdOptionPresent(argv, argv+argc, "--themisto-mode")) {
       args.themisto_merge_mode = std::string(GetCmdOption(argv, argv+argc, "--themisto-mode"));
+    } else {
+      args.themisto_merge_mode = std::string("intersection");
+    }
+    if (CmdOptionPresent(argv, argv+argc, "--themisto-index")) {
+      args.themisto_index_path = std::string(GetCmdOption(argv, argv+argc, "--themisto-index"));
+      CheckDirExists(args.themisto_index_path);
     }
   } else {
     throw std::runtime_error("infile not found.");
@@ -128,12 +159,17 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     args.indicators_file = std::string(GetCmdOption(argv, argv+argc, "-i"));
   } else if (CmdOptionPresent(argv, argv+argc, "--indicators")) {
     args.indicators_file = std::string(GetCmdOption(argv, argv+argc, "--indicators"));
-  } else {
+  } else if (!CmdOptionPresent(argv, argv+argc, "--fasta") || !CmdOptionPresent(argv, argv+argc, "--groups-list")) {
     throw std::runtime_error("group indicator file not found.");
   }
 
   if (CmdOptionPresent(argv, argv+argc, "-o")) {
     args.outfile = std::string(GetCmdOption(argv, argv+argc, "-o"));
+    if (args.outfile.find("/") != std::string::npos) {
+      std::string outfile_dir = args.outfile;
+      outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size());
+      CheckDirExists(outfile_dir);
+    }
   }
 
   if (CmdOptionPresent(argv, argv+argc, "--iters")) {
@@ -146,20 +182,49 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     }
   }
 
-  if (CmdOptionPresent(argv, argv+argc, "-t")) {
-    if (!CmdOptionPresent(argv, argv+argc, "-b") && args.iters == 1) {
-      std::cerr << "  parallel processing a single sample is not supported" << std::endl;
-      args.nr_threads = 1;
+  if (CmdOptionPresent(argv, argv+argc, "--seed")) {
+    int32_t seed_given = std::stoi(std::string(GetCmdOption(argv, argv+argc, "--seed")));
+    if (seed_given < 1) {
+      throw std::runtime_error("seed must be greater or equal to 1");
     } else {
-      signed nr_threads_given = std::stoi(std::string(GetCmdOption(argv, argv+argc, "-t")));
-      if (nr_threads_given < 1) {
-	throw std::runtime_error("number of threads must be strictly positive");
+      args.seed = seed_given;
+    }
+  }
+
+  if (CmdOptionPresent(argv, argv+argc, "--fasta") || CmdOptionPresent(argv, argv+argc, "--groups-list") || CmdOptionPresent(argv, argv+argc, "--groups-delimiter")) {
+    if ((!CmdOptionPresent(argv, argv+argc, "--fasta") || !CmdOptionPresent(argv, argv+argc, "--groups-list"))) {
+      throw std::runtime_error("--fasta and --groups-list must both be specified if either is present.");
+    }
+    args.fasta_file = std::string(GetCmdOption(argv, argv+argc, "--fasta"));
+    args.groups_list_file = std::string(GetCmdOption(argv, argv+argc, "--groups-list"));
+    if (CmdOptionPresent(argv, argv+argc, "--groups-delimiter")) {
+      std::string groups_list_delimiter = std::string(GetCmdOption(argv, argv+argc, "--groups-delimiter"));
+      if (groups_list_delimiter.size() > 1) {
+	throw std::runtime_error("--groups-delimiter must be a single character");
       } else {
-	args.nr_threads = nr_threads_given;
+	args.groups_list_delimiter = groups_list_delimiter.at(0);
       }
     }
+  }
+
+  if (CmdOptionPresent(argv, argv+argc, "--bootstrap-count")) {
+    signed bootstrap_count_given = std::stoi(std::string(GetCmdOption(argv, argv+argc, "--bootstrap-count")));
+    if (bootstrap_count_given < 1) {
+      throw std::runtime_error("bootstrap-count must be greater or equal to 1");
+    } else {
+      args.bootstrap_count = bootstrap_count_given;
+    }
+  }
+
+  if (CmdOptionPresent(argv, argv+argc, "-t")) {
+    signed nr_threads_given = std::stoi(std::string(GetCmdOption(argv, argv+argc, "-t")));
+    if (nr_threads_given < 1) {
+      throw std::runtime_error("number of threads must be strictly positive");
+    } else {
+      args.optimizer.nr_threads = nr_threads_given;
+    }
   } else {
-    args.nr_threads = 1;
+    args.optimizer.nr_threads = 1;
   }
 
   if (CmdOptionPresent(argv, argv+argc, "--tol")) {

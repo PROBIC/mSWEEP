@@ -1,10 +1,9 @@
-#ifndef LIKELIHOOD_H
-#define LIKELIHOOD_H
+#ifndef MSWEEP_LIKELIHOOD_HPP
+#define MSWEEP_LIKELIHOOD_HPP
 
 #include "matrix.hpp"
-#include "Sample.hpp"
 #include "Reference.hpp"
 
-Matrix<double> likelihood_array_mat(const Sample &sample, Grouping grouping);
+void precalc_lls(const Grouping &grouping, Matrix<double> *ll_mat);
 
 #endif

@@ -3,68 +3,83 @@
 
 #include <string>
 #include <vector>
-#include <unordered_map>
-#include <memory>
 #include <fstream>
-#include <iostream>
 #include <random>
 
-#include "telescope/include/telescope.hpp"
+#include "telescope.hpp"
 
 #include "matrix.hpp"
 #include "Reference.hpp"
+#include "parse_arguments.hpp"
 
-class Sample {
+class VSample {
+public:
+  virtual void read_themisto(const Mode &mode, const uint32_t n_refs, std::vector<std::istream*> &strands) =0;
+  virtual void read_kallisto(const uint32_t n_refs, std::istream &tsv_file, std::istream &ec_file) =0;
+};
+
+class Sample : public VSample{
 private:
-  std::vector<long unsigned> ec_ids;
-  std::shared_ptr<std::unordered_map<long unsigned, std::vector<bool>>> ec_configs;
+  uint32_t m_num_refs;
+  uint32_t m_num_ecs;
   std::string cell_id;
-  long unsigned counts_total;
 
-  // Bootstrapping variables
-  std::discrete_distribution<long unsigned> ec_distribution;
+  // Count the number of pseudoalignments in groups defined by the given indicators.
+  std::vector<uint16_t> group_counts(const std::vector<uint32_t> indicators, const uint32_t ec_id, const uint32_t n_groups) const;
+
+  // Free the memory taken by ec_configs
+  void clear_configs() { pseudos.ec_configs.clear(); }
+
+protected:
+  // Calculate log_ec_counts and counts_total.
+  void process_aln();
+
+  KallistoAlignment pseudos;
+  uint32_t counts_total;
 
 public:
-  std::vector<long unsigned> ec_counts;
-  Matrix<double> ec_probs = Matrix<double>(0, 0, 0.0);
-  // Optional storage for likelihood, used in bootstrap
-  Matrix<double> ll_mat = Matrix<double>(0, 0, 0.0);
-
-  // Bootstrap results
-  std::unordered_map<unsigned, std::vector<double>> bootstrap_abundances;
-
-  Sample(std::string cell_id_p, std::vector<long unsigned> ec_ids_p, std::vector<long unsigned> ec_counts_p, long unsigned counts_total_p, std::shared_ptr<std::unordered_map<long unsigned, std::vector<bool>>> ec_configs_p);
-  Sample(KAlignment converted_aln);
+  Matrix<double> ec_probs;
+  Matrix<double> ll_mat;
+  std::vector<std::vector<uint16_t>> counts;
+  std::vector<double> log_ec_counts;
 
   // Retrieve relative abundances from the ec_probs matrix.
   std::vector<double> group_abundances() const;
-
-  // Writer functions for the contents.
-  void write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, const bool gzip_probs, std::ostream &outfile) const;
+  // Write estimated relative abundances
   void write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile) const;
-  void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile, unsigned iters);
-
-  // Count the number of pseudoalignments in groups defined by the given indicators.
-  std::vector<unsigned> group_counts(const std::vector<signed> &indicators, unsigned n_groups, unsigned ec_id_pos) const;
-
-  // Initialize bootstrapping variables
-  void init_bootstrap(Grouping &grouping);
-  // Resample the pseudoalignment counts
-  void resample_counts(std::mt19937_64 &rng);
-
+  // Write estimated read-reference posterior probabilities (gamma_Z)
+  void write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, const bool gzip_probs, std::ostream &outfile) const;
   // Getters
-  unsigned num_ecs() const { return this->ec_ids.size(); };
-  const std::string &cell_name() const { return this->cell_id; };
-  const long unsigned &total_counts() const { return this->counts_total; };
+  std::string cell_name() const { return cell_id; };
+  uint32_t num_ecs() const { return m_num_ecs; };
+  uint32_t total_counts() const { return counts_total; };
+
+  // Read Themisto or kallisto pseudoalignments
+  void read_themisto(const Mode &mode, const uint32_t n_refs, std::vector<std::istream*> &strands) override;
+  void read_kallisto(const uint32_t n_refs, std::istream &tsv_file, std::istream &ec_file) override;
+  // Fill the likelihood matrix
+  void CalcLikelihood(const Grouping &grouping);
 };
 
-struct BootstrapResults {
-  std::unordered_map<std::string, std::pair<unsigned, std::vector<std::vector<double>>>> results;
+class BootstrapSample : public Sample {
+private:
+  std::discrete_distribution<uint32_t> ec_distribution;
+  std::vector<std::vector<double>> relative_abundances;
 
-  //  void at(std::string key) { return this->results.at(key); };
-  void insert(std::string key, unsigned counts, std::vector<std::vector<double>> abundances) { this->results.insert(std::make_pair(key, std::make_pair(counts, abundances))); };
-  void insert_iter(std::string key, std::vector<double> iter) { this->results.at(key).second.emplace_back(iter); };
-  std::unordered_map<std::string, std::pair<unsigned, std::vector<std::vector<double>>>> get() const { return this->results; };
+  // Run estimation and add results to relative_abundances
+  void BootstrapIter(const std::vector<double> &alpha0, const double tolerance, const uint16_t max_iters);
+  // Initialize ec_distributino and ll_mat for bootstrapping
+  void InitBootstrap(const Grouping &grouping);
+  // Resample the equivalence class counts
+  void ResampleCounts(const uint32_t how_many, std::mt19937_64 &rng);
+
+public:
+  void WriteBootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string &outfile, const unsigned iters, const bool batch_mode) const;
+  void BootstrapAbundances(const Reference &reference, const Arguments &args);
+
+  // Read in pseudoalignments but do not free the memory used by storing the equivalence class counts.
+  void read_themisto(const Mode &mode, const uint32_t n_refs, std::vector<std::istream*> &strands) override;
+  void read_kallisto(const uint32_t n_refs, std::istream &tsv_file, std::istream &ec_file) override;
 };
 
 #endif

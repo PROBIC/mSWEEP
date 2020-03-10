@@ -1,10 +1,10 @@
-#ifndef VERSION_H
-#define VERSION_H
+#ifndef MSWEEP_VERSION_HPP
+#define MSWEEP_VERSION_HPP
 // *DON'T MODIFY MANUALLY*, CMake automatically updates this file!
 // Defines variables containing the build version and timestamp
 
-#define _BUILD_VERSION "@_BUILD_VERSION@"
-#define _BUILD_TIMESTAMP "@_BUILD_TIMESTAMP@"
+#define MSWEEP_BUILD_VERSION "@_BUILD_VERSION@"
+#define MSWEEP_BUILD_TIMESTAMP "@_BUILD_TIMESTAMP@"
 
 #endif
 

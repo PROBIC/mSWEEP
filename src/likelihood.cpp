@@ -7,32 +7,25 @@ inline double lbeta(double x, double y) {
   return(std::lgamma(x) + std::lgamma(y) - std::lgamma(x + y));
 }
 
-inline double log_bin_coeff(unsigned n, unsigned k) {
+inline double log_bin_coeff(uint16_t n, uint16_t k) {
   return (std::lgamma(n + 1) - std::lgamma(k + 1) - std::lgamma(n - k + 1));
 }
 
-inline double ldbb_scaled(unsigned k, unsigned n, double alpha, double beta) {
+inline double ldbb_scaled(uint16_t k, uint16_t n, double alpha, double beta) {
   return (log_bin_coeff(n, k) + lbeta(k + alpha, n - k + beta) - lbeta(n + alpha, beta));
 }
 
-Matrix<double> likelihood_array_mat(const Sample &sample, Grouping grouping) {
-  // Pass grouping by copy since multiple threads accessing the values
-  // (which they often do) by reference slow things down somewhat.
-  unsigned num_ecs = sample.num_ecs();
-  Matrix<double> log_likelihoods(grouping.n_groups, num_ecs, 0.0);
+void precalc_lls(const Grouping &grouping, Matrix<double> *ll_mat) {
+  uint16_t max_size = 0;
+  for (uint32_t i = 0; i < grouping.n_groups; ++i) {
+    max_size = (grouping.sizes[i] > max_size ? grouping.sizes[i] : max_size);
+  }
 
-  for (unsigned i = 0; i < num_ecs; ++i) {
-    std::vector<unsigned> read_hitcounts = sample.group_counts(grouping.indicators, grouping.n_groups, i);
-    for (size_t j = 0; j < grouping.n_groups; ++j) {
-      unsigned cluster_hits = read_hitcounts[j];
-      if (cluster_hits == 0) {
-	log_likelihoods(j, i) = -4.60517; //log(0.01)
-      } else if (grouping.sizes[j] == 1) {
-	log_likelihoods(j, i) = 0.0;
-      } else {
-	log_likelihoods(j, i) = ldbb_scaled(cluster_hits, grouping.sizes[j], grouping.bb_params[j][0], grouping.bb_params[j][1]);
-      }
+  ll_mat->resize(grouping.n_groups, max_size + 1, -4.60517);
+#pragma omp parallel for schedule(static)
+  for (uint32_t i = 0; i < grouping.n_groups; ++i) {
+    for (uint16_t j = 1; j <= max_size; ++j) {
+      (*ll_mat)(i, j) = ldbb_scaled(j, grouping.sizes[i], grouping.bb_params[i][0], grouping.bb_params[i][1]) - 0.01005034; // log(0.99) = -0.01005034
     }
   }
-  return(log_likelihoods);
 }

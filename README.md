@@ -14,8 +14,8 @@ If you use our method, please cite us as Mäklin T, Kallonen T, David S
 
 # Installation
 mSWEEP can be obtained either in the form of a precompiled binary
-* [Linux 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.3.2/mSWEEP_linux-v1.3.2.tar.gz)
-* [macOS 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.3.2/mSWEEP_macOS-v1.3.2.tar.gz)
+* [Linux 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.4.0/mSWEEP_linux-v1.4.0.tar.gz)
+* [macOS 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.4.0/mSWEEP_macOS-v1.4.0.tar.gz)
 or by following the instructions below for compiling mSWEEP from source.
 
 In addition to mSWEEP, you will need to install either [Themisto
@@ -26,19 +26,19 @@ pseudoalignment.
 ## Compiling from source
 ### Requirements
 - C++11 compliant compiler.
-- cmake
+- cmake (v3.0 or newer)
 
 ### Optional
 - Compiler with OpenMP support.
 
-If your compiler does not support OpenMP, only limited parts of mSWEEP
-will benefit from parallellization. The prebuilt binaries are compiled
-with OpenMP support and support parallellization.
+If your compiler does not support OpenMP, mSWEEP can only be run in
+single-threaded mode. The prebuilt binaries are compiled with OpenMP
+support and allow parallellization.
 
 ### Compilation
-Clone the mSWEEP repository (note the --recursive option in git clone!)
+Clone the mSWEEP repository
 ```
-git clone --recursive https://github.com/PROBIC/mSWEEP.git
+git clone https://github.com/PROBIC/mSWEEP.git
 ```
 enter the directory and run
 ```
@@ -87,10 +87,18 @@ for constructing the custom database might proceed as follows
 taxonomic profiling tools like [MetaFlow](https://doi.org/10.1007/978-3-319-31957-5_8) or
 [MetaPhlAn2](https://doi.org/10.1038/nmeth.3589) to identify the
 species in your sample if you are unsure
-what sequences to include.
+what sequences to include, or suspect that our samples contain
+sequencing data from contaminating species.
 
-2. Provide a grouping for the assemblies (e.g. sequence types, clonal
-   complexes, or the output of some clustering algorithm.)
+2. a) Provide a grouping for the assemblies (e.g. sequence types, clonal
+   complexes, or the output of some clustering algorithm.). If your
+   species have an established multi-locus sequence typing scheme, the
+   [mlst software](https://github.com/tseemann/mlst) is a good
+   candidate for producing the grouping.
+
+2. b) (Optional) Filter out reference sequences that cannot be reliably assigned
+   to a group (eg. the sequence type cannot be determined) and perform
+   other appropriate quality control measures.
 
 3. If an assembly contains multiple contigs, merge them into a
    single contig. Do this for all assemblies.
@@ -100,23 +108,63 @@ what sequences to include.
 
 ## Toy data (Themisto)
 (Recommended) Enter the toy data directory (example/) and run the
-build_index and pseudoalign commands from Themisto
+build_index and pseudoalign commands from Themisto. The --mem-megas
+option controls the maximum amount of RAM used in constructing the
+index (if the limit is exceeded, Themisto will use disk storage), and
+--n-threads the number of threads to use.
 ```
 ## Build the Themisto index without clustering
 mkdir themisto_index
 mkdir tmp
 
-build_index --k 31 --input-file example.fasta --auto-colors --index-dir themisto_index --temp-dir tmp
+## Index using at most 2048 megabytes of memory and 2 threads.
+build_index --k 31 --input-file example.fasta --auto-colors --index-dir themisto_index --temp-dir tmp --mem-megas 2048 --n-threads 2
 
-## Pseudoalign reads
-pseudoalign --query-file 215_1.fastq.gz --outfile 215_1_alignment.txt --rc --index-dir themisto_index --temp-dir tmp
-pseudoalign --query-file 215_2.fastq.gz --outfile 215_2_alignment.txt --rc --index-dir themisto_index --temp-dir tmp
-
-## Run mSWEEP
-mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -i clustering.txt
+## Pseudoalign reads using 2 threads
+pseudoalign --query-file 215_1.fastq.gz --outfile 215_1_alignment.txt --rc --index-dir themisto_index --temp-dir tmp --n-threads 2
+pseudoalign --query-file 215_2.fastq.gz --outfile 215_2_alignment.txt --rc --index-dir themisto_index --temp-dir tmp --n-threads 2
 ```
 
-(Experimental) Alternatively, it is possible to embed the grouping
+Next, run mSWEEP on the alignemnt files (the -t option controls the
+number of threads used in the estimation.)
+```
+## Run mSWEEP with 2 threads
+mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -i clustering.txt -t 2 -o 215
+```
+This will write the relateve abundances to the "215_abundances.txt"
+file in the folder mSWEEP was run in. If the '-o' option is not
+specified, the abundances will print to cout.
+
+### Experimental usage
+#### Bootstrapping confidence intervals
+mSWEEP can be used to produce confidence intervals for the abundance
+estimates by bootstrapping the pseudoalignment counts and rerunning
+the abundance estimation a number of times. This can be done
+automatically by adding the '--iters' option to running mSWEEP:
+```
+> mSWEEP --themisto-1 215_1_alignment_1.txt --themisto-2 215_2_alignment_2.txt -i cluster_indicators.txt -t 2 -o 215 --iters 100
+```
+
+The bootstrapped abundance estimates will be appended to the output
+file '215_abundances.txt' as new columns and can be used to calculate
+confidence intervals for each of the abundance estimates.
+
+Bootstrapping in mSWEEP by default resamples from all input pseudoalignments. If
+you wish to resample fewer pseudoalignments, supply the
+'--bootstrap-count <positive integer>' option with the number of resamples to perform
+```
+> mSWEEP --themisto-1 215_1_alignment_1.txt --themisto-2
+215_2_alignment_2.txt -i cluster_indicators.txt -t 2 -o 215 --iters 100 --bootstrap-count 1000
+```
+This will result in wider confidence intervals because the bootstrap
+iterations have less data available to them.
+
+It is also possible to set the initial random seed with the '--seed
+<positive integer>' option, which enables replicating the bootstrap
+results across multiple runs.
+
+#### Embedding colors in the Themisto index
+Alternatively, it is possible to embed the grouping
 information in Themisto's index, effectively treating any pseudoalignment in the
 group as if the read aligned to all sequences in the group. This
 approach will in most cases produce different results than the recommended one, but will
@@ -154,7 +202,7 @@ You should see that roughly 90% of the reads are assigned to group "clust2".
 
 # General pipeline
 ## Preprocessing
-- Obtain a set of reference sequences.
+- Obtain a set of reference sequences. (See the steps under Usage -> Reference data)
 - Index the reference sequences for pseudoalignment with Themisto:
 > build_index --k 31 --input-file reference_sequences.fasta --auto-colors --index-dir themisto_index --temp-dir tmp
 - ... or with kallisto
@@ -205,11 +253,13 @@ pseudoalign --index-dir themisto_index --query-file reads_2.fastq.gz --outfile r
 ```
 
 - Use mSWEEP to estimate cluster abundances from a single file with 2 threads:
-> mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -i clustering.txt -t 2
+```
+mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -i clustering.txt -t 2
+```
 
-Themisto can utilize multiple threads in the mapping phase. You can
+Themisto can also utilize multiple threads in the mapping phase. You can
 run Themisto on multiple threads by specifying the number of threads
-with e.g. the '--threads 8' flag.
+with the '--n-threads 8' flag.
 
 ## Analysing reads (with kallisto)
 - Pseudomap paired-end reads:
@@ -225,26 +275,6 @@ with e.g. the '--threads 8' flag.
 
 kallisto can utilize multiple threads in the mapping phase. You can run kallisto on multiple threads by specifying the number of threads with the '-t' flag.
 When estimating samples submitted in a kallisto batch, mSWEEP can estimate multiple samples in parallel by specifying the number of threads with the '-t' flag.
-
-## Bootstrapping confidence intervals (experimental)
-mSWEEP can be used to produce confidence intervals for the abundance
-estimates by bootstrapping the pseudoalignment counts and rerunning
-the abundance estimation a number of times. This can be done
-automatically by adding the '--iters' option to running mSWEEP:
-```
-> mSWEEP --themisto-1 alignment_1.txt --themisto-2 alignment_2.txt -i cluster_indicators.txt --iters 100 -o abundances.txt
-```
-or with kallisto
-```
-> mSWEEP -f kallisto_out_folder -i cluster_indicators.txt --iters 100 -o abundances.txt
-```
-The bootstrapped abundance estimates will be appended to the output
-file as new columns and can be used to calculate confidence intervals
-for each of the abundance estimates.
-
-Bootstrapping can be performed on multiple threads by adding the '-t
-4' option (NOTE: running the bootstrapping on multiple threads hasn't
-been optimised and may use large amounts of memory).
 
 # Running mSWEEP
 mSWEEP accepts the following flags:

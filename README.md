@@ -330,7 +330,7 @@ mSWEEP accepts the following flags:
 	--seed <BootstrapSeed>
 	Seed for the random generator used in bootstrapping (default: random)
 
-    --write-probs
+	--write-probs
 	If specified, write the read equivalence class probabilities in a .csv matrix
 	--print-probs
 	Print the equivalence class probabilities rather than writing when using --write-probs

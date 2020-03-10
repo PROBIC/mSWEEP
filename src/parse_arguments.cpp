@@ -31,6 +31,14 @@ void PrintHelpMessage() {
 	    << "\tHow to merge Themisto pseudoalignments for paired-end reads	(default: intersection).\n"
     	    << "\t--themisto-index <ThemistoIndex>\n"
 	    << "\tPath to the Themisto index the pseudoalignment was performed against (optional).\n"
+	    << "\n"
+    	    << "\t--fasta <ReferenceSequences>\n"
+	    << "\tPath to the reference sequences the pseudoalignment index was constructed from (optional)\n"
+    	    << "\t--groups-list <groupIndicatorsList>\n"
+	    << "\tTable containing names of the reference sequences (1st column) and their group assignments (2nd column) (optional)\n"
+    	    << "\t--groups-delimiter <groupIndicatorsListDelimiter>\n"
+	    << "\tDelimiter character for the --groups option (optional, default: tab)\n"
+	    << "\n"
 	    << "\t--iters <nrIterations>\n"
 	    << "\tNumber of times to rerun estimation with bootstrapped alignments (default: 1)\n"
     	    << "\t--bootstrap-count <nrBootstrapCount>\n"
@@ -151,7 +159,7 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     args.indicators_file = std::string(GetCmdOption(argv, argv+argc, "-i"));
   } else if (CmdOptionPresent(argv, argv+argc, "--indicators")) {
     args.indicators_file = std::string(GetCmdOption(argv, argv+argc, "--indicators"));
-  } else {
+  } else if (!CmdOptionPresent(argv, argv+argc, "--fasta") || !CmdOptionPresent(argv, argv+argc, "--groups-list")) {
     throw std::runtime_error("group indicator file not found.");
   }
 
@@ -180,6 +188,22 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
       throw std::runtime_error("seed must be greater or equal to 1");
     } else {
       args.seed = seed_given;
+    }
+  }
+
+  if (CmdOptionPresent(argv, argv+argc, "--fasta") || CmdOptionPresent(argv, argv+argc, "--groups-list") || CmdOptionPresent(argv, argv+argc, "--groups-delimiter")) {
+    if ((!CmdOptionPresent(argv, argv+argc, "--fasta") || !CmdOptionPresent(argv, argv+argc, "--groups-list"))) {
+      throw std::runtime_error("--fasta and --groups-list must both be specified if either is present.");
+    }
+    args.fasta_file = std::string(GetCmdOption(argv, argv+argc, "--fasta"));
+    args.groups_list_file = std::string(GetCmdOption(argv, argv+argc, "--groups-list"));
+    if (CmdOptionPresent(argv, argv+argc, "--groups-delimiter")) {
+      std::string groups_list_delimiter = std::string(GetCmdOption(argv, argv+argc, "--groups-delimiter"));
+      if (groups_list_delimiter.size() > 1) {
+	throw std::runtime_error("--groups-delimiter must be a single character");
+      } else {
+	args.groups_list_delimiter = groups_list_delimiter.at(0);
+      }
     }
   }
 

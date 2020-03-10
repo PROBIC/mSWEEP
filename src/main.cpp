@@ -45,8 +45,17 @@ int main (int argc, char *argv[]) {
   try {
     std::cerr << "Reading the input files" << '\n';
     std::cerr << "  reading group indicators" << '\n';
-    File::In indicators_file(args.indicators_file);
-    ReadClusterIndicators(indicators_file.stream(), reference);
+    if (args.fasta_file.empty()) {
+      File::In indicators_file(args.indicators_file);
+      ReadClusterIndicators(indicators_file.stream(), reference);
+    } else {
+      File::In groups_file(args.groups_list_file);
+      File::In fasta_file(args.fasta_file);
+      MatchClusterIndicators(args.groups_list_delimiter, groups_file.stream(), fasta_file.stream(), reference);
+    }
+    if (reference.n_refs == 0) {
+      throw std::runtime_error("The grouping contains 0 reference sequences");
+    }
     std::cerr << "  read " << reference.n_refs << " group indicators" << std::endl;
 
     std::cerr << "  reading pseudoalignments" << '\n';
@@ -64,7 +73,7 @@ int main (int argc, char *argv[]) {
 
     std::cerr << "  read " << (args.batch_mode ? bitfields.size() : bitfields[0]->num_ecs()) << (args.batch_mode ? " samples from the batch" : " unique alignments") << std::endl;
   } catch (std::runtime_error &e) {
-    std::cerr << "Reading pseudoalignments failed:\n  ";
+    std::cerr << "Reading the input files failed:\n  ";
     std::cerr << e.what();
     std::cerr << "\nexiting" << std::endl;
     return 1;

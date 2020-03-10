@@ -59,8 +59,17 @@ string(TIMESTAMP _BUILD_TIMESTAMP)
 configure_file(include/version.h.in ${CMAKE_BINARY_DIR}/include/version.h @ONLY)
 configure_file(include/openmp_config.hpp.in ${CMAKE_BINARY_DIR}/include/openmp_config.hpp @ONLY)
 
-file(GLOB SOURCES "src/*.cpp")
-add_executable(mSWEEP ${SOURCES})
+add_executable(mSWEEP
+${CMAKE_SOURCE_DIR}/src/BootstrapSample.cpp
+${CMAKE_SOURCE_DIR}/src/Reference.cpp
+${CMAKE_SOURCE_DIR}/src/Sample.cpp
+${CMAKE_SOURCE_DIR}/src/likelihood.cpp
+${CMAKE_SOURCE_DIR}/src/main.cpp
+${CMAKE_SOURCE_DIR}/src/matrix.cpp
+${CMAKE_SOURCE_DIR}/src/parse_arguments.cpp
+${CMAKE_SOURCE_DIR}/src/process_reads.cpp
+${CMAKE_SOURCE_DIR}/src/rcg.cpp
+${CMAKE_SOURCE_DIR}/src/read_bitfield.cpp)
 
 ## Check supported compression types
 find_package(BZip2)
@@ -153,8 +162,6 @@ ${CMAKE_SOURCE_DIR}/external ${CMAKE_SOURCE_DIR}/include/tools
 ${CMAKE_SOURCE_DIR}/external/cxxio
 ${CMAKE_CURRENT_BINARY_DIR}/include)
 
-add_executable(matchfasta ${CMAKE_SOURCE_DIR}/src/tools/matchfasta.cpp)
-
 ## Handle compiling zlib from source
 if(CMAKE_BUILD_ZLIB)
   add_subdirectory(${CMAKE_BINARY_DIR}/external/zlib
@@ -165,9 +172,14 @@ if(CMAKE_BUILD_ZLIB)
   add_dependencies(mSWEEP zlibstatic)
 endif()
 
+add_library(msweeptools ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/matchfasta.cpp)
+add_executable(matchfasta ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/main.cpp)
+
 # Link libraries
-target_link_libraries(mSWEEP ${ZLIB})
+target_link_libraries(mSWEEP ${ZLIB} msweeptools)
+target_link_libraries(matchfasta msweeptools)
 if (OPENMP_FOUND)
   target_link_libraries(mSWEEP OpenMP::OpenMP_CXX)
   target_link_libraries(matchfasta OpenMP::OpenMP_CXX)
+  target_link_libraries(msweeptools OpenMP::OpenMP_CXX)
 endif()

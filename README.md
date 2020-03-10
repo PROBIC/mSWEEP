@@ -220,15 +220,15 @@ cluster1
 ```
 The grouping identifiers must be in the same order as their
 corresponding sequences appear in the reference file. Alternatively,
-you can use the 'matchfasta' utility to reorder the indicators.
+you can use supply the reference sequences and a table containing the
+groups to reorder the indicators.
 
 ### Reordering identifiers
 If your grouping identifiers are not in the same order as in the fasta
-file, you can use the 'matchfasta' utility tool supplied
-with mSWEEP to reorder them based on the fasta file. matchfasta takes
-as input a tab-separated table where the first column contains the name of the
-sequence as it appears in the fasta file and the second column
-contains the group:
+file, you mSWEEP can reorder them based on the fasta file. In this
+case, mSWEEP requires as input a tab-separated table where the first
+column contains the name of the sequence as it appears in the fasta
+file and the second column contains the group:
 ```
 seq_156	group2
 seq_157	group1
@@ -239,14 +239,24 @@ seq_43	group2
 seq_44	group1
 seq_5	group3
 ```
-and the fasta file. Running
-> matchfasta --fasta sequences.fasta --groups groups_table.tsv > clustering_reordered.txt
+and the fasta file. If the above table is contained in the
+'groups_list.tsv" file, running
+```
+mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -t 2 --fasta example.fasta --groups-list groups_list.tsv
+```
+will instruct mSWEEP to extract the identifiers from the table in the
+correct order.
 
-will save the identifiers in the correct order to the
-'clustering_reordered.txt' file. It is also possible to use a table
-separated by a character different from tab, e. g. ',', by specifying the
-separator with the '-d' argument:
-> matchfasta --fasta sequences.fasta --groups groups_table.csv > clustering_reordered.txt -d ,
+It is also possible to use a table
+separated by a character different than tab, e. g. ',', by specifying the
+separator with the '--groups-delimiter' argument:
+```
+mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -t 2 --fasta example.fasta --groups-list groups_list.tsv --groups-delimiter ,
+```
+
+Should you require the reordered identifiers written to a file
+(e. g. for running mSWEEP on multiple input files), please refer to
+the 'matchfasta' utility shipped alongside mSWEEP which performs the reordering.
 
 ## Analysing reads (with Themisto)
 - Pseudomap paired-end reads:
@@ -301,6 +311,18 @@ mSWEEP accepts the following flags:
 	-t <nrThreads>
 	How many threads to use. (default: 1)
 
+    --themisto-mode <PairedEndMergeMode>
+	How to merge Themisto pseudoalignments for paired-end reads	(intersection or union, default: intersection).
+    --themisto-index <ThemistoIndex>
+    Path to the Themisto index the pseudoalignment was performed against (optional).
+
+	--fasta <ReferenceSequences>
+	Path to the reference sequences the pseudoalignment index was constructed from (optional)
+    --groups-list <groupIndicatorsList>
+    Table containing names of the reference sequences (1st column) and their group assignments (2nd column) (optional)
+    --groups-delimiter <groupIndicatorsListDelimiter>
+    Delimiter character for the --groups option (optional, default: tab)
+
     --iters <nrIterations>
 	Number of times to rerun estimation with bootstrapped alignments (default: 1)
 	--bootstrap-count <nrBootstrapCount>
@@ -308,10 +330,6 @@ mSWEEP accepts the following flags:
     --seed <BootstrapSeed>
     Seed for the random generator used in bootstrapping (default: random)
 
-    --themisto-mode <PairedEndMergeMode>
-	How to merge Themisto pseudoalignments for paired-end reads	(intersection or union, default: intersection).
-    --themisto-index <ThemistoIndex>
-    Path to the Themisto index the pseudoalignment was performed against (optional).
     --write-probs
 	If specified, write the read equivalence class probabilities in a .csv matrix
 	--print-probs

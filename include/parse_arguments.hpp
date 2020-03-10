@@ -30,6 +30,10 @@ struct Arguments {
   std::string themisto_index_path;
   std::vector<std::string> kallisto_files;
 
+  std::string fasta_file;
+  std::string groups_list_file;
+  char groups_list_delimiter = '\t';
+
   bool batch_mode = false;
   bool bootstrap_mode = false;
   bool compressed_input = false;

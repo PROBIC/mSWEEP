@@ -311,24 +311,24 @@ mSWEEP accepts the following flags:
 	-t <nrThreads>
 	How many threads to use. (default: 1)
 
-    --themisto-mode <PairedEndMergeMode>
+	--themisto-mode <PairedEndMergeMode>
 	How to merge Themisto pseudoalignments for paired-end reads	(intersection or union, default: intersection).
-    --themisto-index <ThemistoIndex>
-    Path to the Themisto index the pseudoalignment was performed against (optional).
+	--themisto-index <ThemistoIndex>
+	Path to the Themisto index the pseudoalignment was performed against (optional).
 
 	--fasta <ReferenceSequences>
 	Path to the reference sequences the pseudoalignment index was constructed from (optional)
-    --groups-list <groupIndicatorsList>
-    Table containing names of the reference sequences (1st column) and their group assignments (2nd column) (optional)
-    --groups-delimiter <groupIndicatorsListDelimiter>
-    Delimiter character for the --groups option (optional, default: tab)
+	--groups-list <groupIndicatorsList>
+	Table containing names of the reference sequences (1st column) and their group assignments (2nd column) (optional)
+	--groups-delimiter <groupIndicatorsListDelimiter>
+	Delimiter character for the --groups option (optional, default: tab)
 
-    --iters <nrIterations>
+	--iters <nrIterations>
 	Number of times to rerun estimation with bootstrapped alignments (default: 1)
 	--bootstrap-count <nrBootstrapCount>
 	How many reads to resample when bootstrapping (integer, default: all)
-    --seed <BootstrapSeed>
-    Seed for the random generator used in bootstrapping (default: random)
+	--seed <BootstrapSeed>
+	Seed for the random generator used in bootstrapping (default: random)
 
     --write-probs
 	If specified, write the read equivalence class probabilities in a .csv matrix

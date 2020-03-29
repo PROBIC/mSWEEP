@@ -19,7 +19,7 @@ mSWEEP can be obtained either in the form of a precompiled binary
 or by following the instructions below for compiling mSWEEP from source.
 
 In addition to mSWEEP, you will need to install either [Themisto
-(recommended)](https://github.com/jnalanko/Themisto) or
+(recommended)](https://github.com/algbio/themisto) or
 [kallisto](https://github.com/pachterlab/kallisto) for
 pseudoalignment.
 

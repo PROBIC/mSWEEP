@@ -121,8 +121,8 @@ mkdir tmp
 build_index --k 31 --input-file example.fasta --auto-colors --index-dir themisto_index --temp-dir tmp --mem-megas 2048 --n-threads 2
 
 ## Pseudoalign reads using 2 threads
-pseudoalign --query-file 215_1.fastq.gz --outfile 215_1_alignment.txt --rc --index-dir themisto_index --temp-dir tmp --n-threads 2
-pseudoalign --query-file 215_2.fastq.gz --outfile 215_2_alignment.txt --rc --index-dir themisto_index --temp-dir tmp --n-threads 2
+pseudoalign --query-file 215_1.fastq.gz --outfile 215_1_alignment.txt --rc --index-dir themisto_index --temp-dir tmp --n-threads 2 --sort-output
+pseudoalign --query-file 215_2.fastq.gz --outfile 215_2_alignment.txt --rc --index-dir themisto_index --temp-dir tmp --n-threads 2 --sort-output
 ```
 
 Next, run mSWEEP on the alignment files (the -t option controls the
@@ -181,8 +181,8 @@ mkdir tmp
 build_index --k 31 --input-file example.fasta --color-file clustering.txt --index-dir themisto_grouped_index --temp-dir tmp
 
 ## Pseudoalign reads
-pseudoalign --query-file 215_1.fastq.gz --outfile 215_1_alignment.txt --rc --index-dir themisto_grouped_index --temp-dir tmp
-pseudoalign --query-file 215_2.fastq.gz --outfile 215_2_alignment.txt --rc --index-dir themisto_grouped_index --temp-dir tmp
+pseudoalign --query-file 215_1.fastq.gz --outfile 215_1_alignment.txt --rc --index-dir themisto_grouped_index --temp-dir tmp --sort-output
+pseudoalign --query-file 215_2.fastq.gz --outfile 215_2_alignment.txt --rc --index-dir themisto_grouped_index --temp-dir tmp --sort-output
 
 ## Extract unique cluster indicators from the clustering.txt file
 awk '!seen[$0]++' clustering.txt > unique_clusters.txt
@@ -262,8 +262,8 @@ the 'matchfasta' utility shipped alongside mSWEEP which performs the reordering.
 - Pseudomap paired-end reads:
 ```
 mkdir tmp
-pseudoalign --index-dir themisto_index --query-file reads_1.fastq.gz --outfile reads_1_out.txt --temp-dir tmp --rc
-pseudoalign --index-dir themisto_index --query-file reads_2.fastq.gz --outfile reads_2_out.txt --temp-dir tmp --rc
+pseudoalign --index-dir themisto_index --query-file reads_1.fastq.gz --outfile reads_1_out.txt --temp-dir tmp --rc --sort-output
+pseudoalign --index-dir themisto_index --query-file reads_2.fastq.gz --outfile reads_2_out.txt --temp-dir tmp --rc --sort-output
 ```
 
 - Use mSWEEP to estimate cluster abundances from a single file with 2 threads:

@@ -90,11 +90,13 @@ species in your sample if you are unsure
 what sequences to include, or suspect that our samples contain
 sequencing data from contaminating species.
 
-2. a) Provide a grouping for the assemblies (e.g. sequence types, clonal
-   complexes, or the output of some clustering algorithm.). If your
-   species have an established multi-locus sequence typing scheme, the
-   [mlst software](https://github.com/tseemann/mlst) is a good
-   candidate for producing the grouping.
+2. a) Provide a grouping for the assemblies (e.g. sequence types,
+   clonal complexes, or the output of some clustering algorithm.). If
+   your species have an established multi-locus sequence typing
+   scheme, the [mlst software](https://github.com/tseemann/mlst) is a
+   good candidate for producing the grouping. Alternatively,
+   [PopPUNK](https://github.com/johnlees/PopPUNK) can be used to
+   cluster the sequences.
 
 2. b) (Optional) Filter out reference sequences that cannot be reliably assigned
    to a group (eg. the sequence type cannot be determined) and perform

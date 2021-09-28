@@ -114,7 +114,7 @@ void Sample::write_likelihood(const uint32_t n_groups, std::string outfile) cons
     buf = of.rdbuf();
   }
   std::ostream out(buf);
-  out << "# Ntotal " << 120000 << '\n';
+  out << "# Ntotal " << this->counts_total << '\n';
   out << "# Nmap " << this->counts_total << '\n';
   out << "# M " << n_groups << '\n';
   out << "# LOGFORMAT (probabilities saved on log scale.)" << '\n';

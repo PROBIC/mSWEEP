@@ -9,20 +9,29 @@ void ProcessReads(const Reference &reference, std::string outfile, Sample &sampl
 
   sample.CalcLikelihood(reference.grouping);
 
-  std::cerr << "Estimating relative abundances" << std::endl;
-  sample.ec_probs = rcg_optl_mat(sample.ll_mat, sample, args.alphas, args.tolerance, args.max_iters);
+  if (args.write_likelihood) {
+    std::cerr << "Writing likelihood matrix" << std::endl;
+    sample.write_likelihood(reference.grouping.n_groups, outfile);
+  }
 
-  sample.write_abundances(reference.group_names, outfile);  
-  if (args.write_probs && !outfile.empty()) {
-    std::unique_ptr<std::ostream> of;
-    if (args.gzip_probs) {
-      outfile += "_probs.csv.gz";
-      of = std::unique_ptr<std::ostream>(new bxz::ofstream(outfile));
-    } else {
-      outfile += "_probs.csv";
-      of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));
+  if (!args.no_fit_model) {
+    std::cerr << "Skipping relative abundance estimation (--no-fit-model toggled)" << std::endl;
+  } else {
+    std::cerr << "Estimating relative abundances" << std::endl;
+    sample.ec_probs = rcg_optl_mat(sample.ll_mat, sample, args.alphas, args.tolerance, args.max_iters);
+
+    sample.write_abundances(reference.group_names, outfile);  
+    if (args.write_probs && !outfile.empty()) {
+      std::unique_ptr<std::ostream> of;
+      if (args.gzip_probs) {
+	outfile += "_probs.csv.gz";
+	of = std::unique_ptr<std::ostream>(new bxz::ofstream(outfile));
+      } else {
+	outfile += "_probs.csv";
+	of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));
+      }
+      sample.write_probabilities(reference.group_names, args.gzip_probs, (args.print_probs ? std::cout : *of));
     }
-    sample.write_probabilities(reference.group_names, args.gzip_probs, (args.print_probs ? std::cout : *of));
   }
 }
 

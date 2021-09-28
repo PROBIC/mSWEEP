@@ -1,5 +1,7 @@
 #include "Sample.hpp"
 
+#include <cmath>
+
 #include "likelihood.hpp"
 #include "version.h"
 
@@ -90,6 +92,46 @@ void Sample::write_abundances(const std::vector<std::string> &cluster_indicators
   out << "#c_id" << '\t' << "mean_theta" << '\n';
   for (size_t i = 0; i < abundances.size(); ++i) {
     out << cluster_indicators_to_string[i] << '\t' << abundances[i] << '\n';
+  }
+  if (!outfile.empty()) {
+    of.close();
+  }
+}
+
+void Sample::write_likelihood(const uint32_t n_groups, std::string outfile) const {
+  // Write likelihoods to a file
+  // *Note*: will write in BitSeq format!
+  //
+  // TODO: write in plain format
+
+  std::streambuf *buf;
+  std::ofstream of;
+  if (outfile.empty()) {
+    buf = std::cout.rdbuf();
+  } else {
+    outfile += "_likelihoods.txt";
+    of.open(outfile);
+    buf = of.rdbuf();
+  }
+  std::ostream out(buf);
+  out << "# Ntotal " << 120000 << '\n';
+  out << "# Nmap " << this->counts_total << '\n';
+  out << "# M " << n_groups << '\n';
+  out << "# LOGFORMAT (probabilities saved on log scale.)" << '\n';
+  out << "# r_name num_alignments (tr_id prob )^*{num_alignments}" << '\n';
+
+  uint32_t read_id = 1;
+  for (uint32_t i = 0; i < this->m_num_ecs; ++i) {
+    uint32_t ec_hit_count = std::round(std::exp(this->log_ec_counts[i]));
+    for (uint32_t k = 0; k < ec_hit_count; ++k) {
+      out << read_id << ' ';
+      out << n_groups + 1 << ' ';
+      for (uint32_t j = 0; j < n_groups; ++j) {
+	out << j + 1 << ' ' << this->ll_mat(j, this->counts[j][i]) << ' ';
+      }
+      out << 0 << ' ' << "-10000.00" << '\n';
+      ++read_id;
+    }
   }
   if (!outfile.empty()) {
     of.close();

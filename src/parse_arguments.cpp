@@ -108,7 +108,10 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
   args.optimizer.write_probs = CmdOptionPresent(argv, argv+argc, "--write-probs");
   args.optimizer.gzip_probs = CmdOptionPresent(argv, argv+argc, "--gzip-probs");
   args.optimizer.print_probs = CmdOptionPresent(argv, argv+argc, "--print-probs");
-  
+
+  args.optimizer.write_likelihood = CmdOptionPresent(argv, argv+argc, "--write-likelihood");
+  args.optimizer.no_fit_model = CmdOptionPresent(argv, argv+argc, "--no-fit-model");
+
   if ((CmdOptionPresent(argv, argv+argc, "-f") || CmdOptionPresent(argv, argv+argc, "--file"))  && CmdOptionPresent(argv, argv+argc, "-b")) {
     throw std::runtime_error("infile and batchfile found, specify only one");
   } else if (CmdOptionPresent(argv, argv+argc, "-f")) {

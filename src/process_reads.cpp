@@ -14,7 +14,7 @@ void ProcessReads(const Reference &reference, std::string outfile, Sample &sampl
     sample.write_likelihood(reference.grouping.n_groups, outfile);
   }
 
-  if (!args.no_fit_model) {
+  if (args.no_fit_model) {
     std::cerr << "Skipping relative abundance estimation (--no-fit-model toggled)" << std::endl;
   } else {
     std::cerr << "Estimating relative abundances" << std::endl;

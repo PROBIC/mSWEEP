@@ -98,7 +98,6 @@ void BootstrapSample::WriteBootstrap(const std::vector<std::string> &cluster_ind
       out << relative_abundances[j][i] << (j == iters ? '\n' : '\t');
     }
   }
-  out << std::endl;
   if (!outfile.empty()) {
     of.close();
   }

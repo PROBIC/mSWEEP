@@ -52,6 +52,8 @@ void PrintHelpMessage() {
             << "\tPrint the equivalence class probabilities rather than writing when using --write-probs\n"
             << "\t--write-likelihood\n"
             << "\tWrite the likelihood matrix to a file if -o option is specified, print to cout if -o is not.\n"
+            << "\t--write-likelihood-bitseq\n"
+            << "\tWrite the likelihoods in a format can be parsed by BitSeq's (https://github.com/bitseq/bitseq) functions.\n"
             << "\t--gzip-probs\n"
             << "\tGzip the .csv matrix output from --write-probs and the likelihoods from --write-likelihood.\n"
 	    << "\t--help\n"
@@ -114,6 +116,7 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
   args.optimizer.print_probs = CmdOptionPresent(argv, argv+argc, "--print-probs");
 
   args.optimizer.write_likelihood = CmdOptionPresent(argv, argv+argc, "--write-likelihood");
+  args.optimizer.write_likelihood_bitseq = CmdOptionPresent(argv, argv+argc, "--write-likelihood-bitseq");
   args.optimizer.no_fit_model = CmdOptionPresent(argv, argv+argc, "--no-fit-model");
 
   if ((CmdOptionPresent(argv, argv+argc, "-f") || CmdOptionPresent(argv, argv+argc, "--file"))  && CmdOptionPresent(argv, argv+argc, "-b")) {

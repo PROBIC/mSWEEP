@@ -100,11 +100,6 @@ void Sample::write_abundances(const std::vector<std::string> &cluster_indicators
 
 void Sample::write_likelihood(const bool gzip_output, const uint32_t n_groups, std::string outfile) const {
   // Write likelihoods to a file
-  // *Note*: will write in BitSeq format!
-  //
-  // TODO: write in plain format
-
-  //sample.write_probabilities(reference.group_names, args.gzip_probs, (args.print_probs ? std::cout : *of));
 
   std::streambuf *buf;
   std::unique_ptr<std::ostream> of;
@@ -112,6 +107,44 @@ void Sample::write_likelihood(const bool gzip_output, const uint32_t n_groups, s
     buf = std::cout.rdbuf();
   } else {
     outfile += "_likelihoods.txt";
+    switch(gzip_output) { // might want to use other compressions in the future
+    case 1:
+      outfile += ".gz";
+      of = std::unique_ptr<std::ostream>(new bxz::ofstream(outfile));
+      break;
+    default:
+      of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));
+      break;
+    }
+    buf = of->rdbuf();
+  }
+  std::ostream out(buf);
+
+  for (uint32_t i = 0; i < this->m_num_ecs; ++i){
+    uint32_t ec_hit_count = std::round(std::exp(this->log_ec_counts[i]));
+    for (uint32_t k = 0; k < ec_hit_count; ++k) {
+      for (uint32_t j = 0; j < n_groups; ++j) {
+	out << this->ll_mat(j, this->counts[j][i]);
+	out << (j == n_groups - 1 ? '\n' : '\t');
+      }
+    }
+  }
+  if (!outfile.empty()) {
+    of->flush();
+  }
+}
+
+void Sample::write_likelihood_bitseq(const bool gzip_output, const uint32_t n_groups, std::string outfile) const {
+  // Write likelihoods to a file
+  // *Note*: will write in BitSeq format!
+  // Use Sample::write_likelihoods if tab-separated matrix format is needed.
+
+  std::streambuf *buf;
+  std::unique_ptr<std::ostream> of;
+  if (outfile.empty()) {
+    buf = std::cout.rdbuf();
+  } else {
+    outfile += "_bitseq_likelihoods.txt";
     switch(gzip_output) { // might want to use other compressions in the future
     case 1:
       outfile += ".gz";

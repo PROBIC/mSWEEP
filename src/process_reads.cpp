@@ -9,9 +9,14 @@ void ProcessReads(const Reference &reference, std::string outfile, Sample &sampl
 
   sample.CalcLikelihood(reference.grouping);
 
-  if (args.write_likelihood) {
+  if (args.write_likelihood || args.write_likelihood_bitseq) {
     std::cerr << "Writing likelihood matrix" << std::endl;
-    sample.write_likelihood(args.gzip_probs, reference.grouping.n_groups, outfile);
+    if (args.write_likelihood) {
+      sample.write_likelihood(args.gzip_probs, reference.grouping.n_groups, outfile);
+    }
+    if (args.write_likelihood_bitseq) {
+      sample.write_likelihood_bitseq(args.gzip_probs, reference.grouping.n_groups, outfile);
+    }
   }
 
   if (args.no_fit_model) {

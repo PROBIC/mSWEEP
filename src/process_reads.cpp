@@ -11,7 +11,7 @@ void ProcessReads(const Reference &reference, std::string outfile, Sample &sampl
 
   if (args.write_likelihood) {
     std::cerr << "Writing likelihood matrix" << std::endl;
-    sample.write_likelihood(reference.grouping.n_groups, outfile);
+    sample.write_likelihood(args.gzip_probs, reference.grouping.n_groups, outfile);
   }
 
   if (args.no_fit_model) {

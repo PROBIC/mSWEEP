@@ -98,20 +98,30 @@ void Sample::write_abundances(const std::vector<std::string> &cluster_indicators
   }
 }
 
-void Sample::write_likelihood(const uint32_t n_groups, std::string outfile) const {
+void Sample::write_likelihood(const bool gzip_output, const uint32_t n_groups, std::string outfile) const {
   // Write likelihoods to a file
   // *Note*: will write in BitSeq format!
   //
   // TODO: write in plain format
 
+  //sample.write_probabilities(reference.group_names, args.gzip_probs, (args.print_probs ? std::cout : *of));
+
   std::streambuf *buf;
-  std::ofstream of;
+  std::unique_ptr<std::ostream> of;
   if (outfile.empty()) {
     buf = std::cout.rdbuf();
   } else {
     outfile += "_likelihoods.txt";
-    of.open(outfile);
-    buf = of.rdbuf();
+    switch(gzip_output) { // might want to use other compressions in the future
+    case 1:
+      outfile += ".gz";
+      of = std::unique_ptr<std::ostream>(new bxz::ofstream(outfile));
+      break;
+    default:
+      of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));
+      break;
+    }
+    buf = of->rdbuf();
   }
   std::ostream out(buf);
   out << "# Ntotal " << this->counts_total << '\n';
@@ -134,7 +144,7 @@ void Sample::write_likelihood(const uint32_t n_groups, std::string outfile) cons
     }
   }
   if (!outfile.empty()) {
-    of.close();
+    of->flush();
   }
 }
 

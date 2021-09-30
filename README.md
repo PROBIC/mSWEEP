@@ -336,12 +336,16 @@ mSWEEP accepts the following flags:
 	If specified, write the read equivalence class probabilities in a .csv matrix
 	--print-probs
 	Print the equivalence class probabilities rather than writing when using --write-probs
+	--write-likelihood
+	Write the likelihood matrix to a file if -o option is specified, print to cout if -o is not.
 	--gzip-probs
-	Gzip the .csv matrix output from --write-probs
+	Gzip the .csv matrix output from --write-probs and the likelihoods from --write-likelihood.
 	--help
 	Print this message.
 
-	ELBO optimization and modeling (these seldom need to be changed)
+	ELBO optimization and modeling
+	--no-fit-model
+	Skip fitting the model entirely. Useful if only the likelihood matrix is required.
 	--tol <tolerance>
 	Optimization has converged when the bound changes less than the given tolerance.
 	--max-iters

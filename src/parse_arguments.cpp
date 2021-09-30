@@ -55,7 +55,7 @@ void PrintHelpMessage() {
             << "\t--write-likelihood-bitseq\n"
             << "\tWrite the likelihoods in a format can be parsed by BitSeq's (https://github.com/bitseq/bitseq) functions.\n"
             << "\t--gzip-probs\n"
-            << "\tGzip the .csv matrix output from --write-probs and the likelihoods from --write-likelihood.\n"
+            << "\tGzip the .csv matrix output from --write-probs and the likelihoods from --write-likelihood or --write-likelihood-bitseq.\n"
 	    << "\t--help\n"
 	    << "\tPrint this message.\n"
 	    << "\n\tELBO optimization and modeling\n"

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <array>
+#include <string>
 
 struct Grouping {
   std::vector<uint32_t> indicators;

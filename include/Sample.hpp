@@ -49,6 +49,9 @@ public:
   void write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile) const;
   // Write estimated read-reference posterior probabilities (gamma_Z)
   void write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, const bool gzip_probs, std::ostream &outfile) const;
+  // Write likelihoods
+  void write_likelihood(const bool gzip_output, const uint32_t n_groups, std::string outfile) const;
+  void write_likelihood_bitseq(const bool gzip_output, const uint32_t n_groups, std::string outfile) const;
   // Getters
   std::string cell_name() const { return cell_id; };
   uint32_t num_ecs() const { return m_num_ecs; };

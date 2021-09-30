@@ -12,6 +12,9 @@ struct OptimizerArgs {
 
   std::vector<double> alphas;
   bool write_probs;
+  bool write_likelihood;
+  bool write_likelihood_bitseq;
+  bool no_fit_model;
   bool gzip_probs;
   bool print_probs;
   unsigned nr_threads = 1;

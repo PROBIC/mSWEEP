@@ -25,7 +25,7 @@ void ProcessReads(const Reference &reference, std::string outfile, Sample &sampl
     std::cerr << "Estimating relative abundances" << std::endl;
     sample.ec_probs = rcg_optl_mat(sample.ll_mat, sample, args.alphas, args.tolerance, args.max_iters);
 
-    sample.write_abundances(reference.group_names, outfile);  
+    sample.write_abundances(reference.grouping.names, outfile);  
     if (args.write_probs && !outfile.empty()) {
       std::unique_ptr<std::ostream> of;
       if (args.gzip_probs) {
@@ -35,7 +35,7 @@ void ProcessReads(const Reference &reference, std::string outfile, Sample &sampl
 	outfile += "_probs.csv";
 	of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));
       }
-      sample.write_probabilities(reference.group_names, args.gzip_probs, (args.print_probs ? std::cout : *of));
+      sample.write_probabilities(reference.grouping.names, args.gzip_probs, (args.print_probs ? std::cout : *of));
     }
   }
 }
@@ -51,6 +51,6 @@ void ProcessBootstrap(Reference &reference, Arguments &args, std::vector<std::un
   for (uint32_t i = 0; i < bitfields.size(); ++i) {
     BootstrapSample* bs = static_cast<BootstrapSample*>(&(*bitfields[i]));
     bs->BootstrapAbundances(reference, args);
-    bs->WriteBootstrap(reference.group_names, args.outfile, args.iters, args.batch_mode);    
+    bs->WriteBootstrap(reference.grouping.names, args.outfile, args.iters, args.batch_mode);    
   }
 }

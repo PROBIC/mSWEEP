@@ -61,7 +61,7 @@ void VerifyThemistoGrouping(const unsigned n_refs, std::istream &themisto_index)
 std::vector<std::string> ReadCellNames(std::istream &cells_file) {
   Reference reference;
   ReadClusterIndicators(cells_file, reference);
-  return reference.group_names;
+  return reference.grouping.names;
 }
 
 void ReadBitfield(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<std::unique_ptr<Sample>> &batch, Reference &reference, bool bootstrap_mode) {

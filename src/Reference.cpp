@@ -2,6 +2,8 @@
 
 #include <unordered_map>
 #include <exception>
+#include <vector>
+#include <string>
 
 #include "tools/matchfasta.hpp"
 
@@ -14,7 +16,7 @@ void Reference::verify() const {
 void AddToReference(const std::string &indicator_s, std::unordered_map<std::string, unsigned> &str_to_int, Reference &reference) {
   if (str_to_int.find(indicator_s) == str_to_int.end()) {
     str_to_int[indicator_s] = str_to_int.size();
-    reference.group_names.emplace_back(indicator_s);
+    reference.grouping.names.emplace_back(indicator_s);
     reference.grouping.sizes.emplace_back(0);
   }
   ++reference.grouping.sizes[str_to_int[indicator_s]];

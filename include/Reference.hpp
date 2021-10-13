@@ -4,6 +4,7 @@
 #include <vector>
 #include <array>
 #include <string>
+#include <fstream>
 
 struct Grouping {
   std::vector<uint32_t> indicators;
@@ -19,6 +20,10 @@ public:
   uint32_t n_refs;
   
   void calculate_bb_parameters(double params[2]);
+  void verify() const;
 };
+
+void ReadClusterIndicators(std::istream &indicator_file, Reference &reference);
+void MatchClusterIndicators(const char delim, std::istream &groups, std::istream &fasta, Reference &reference);
 
 #endif

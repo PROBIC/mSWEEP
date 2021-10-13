@@ -53,9 +53,8 @@ int main (int argc, char *argv[]) {
       File::In fasta_file(args.fasta_file);
       MatchClusterIndicators(args.groups_list_delimiter, groups_file.stream(), fasta_file.stream(), reference);
     }
-    if (reference.n_refs == 0) {
-      throw std::runtime_error("The grouping contains 0 reference sequences");
-    }
+    reference.verify();
+
     std::cerr << "  read " << reference.n_refs << " group indicators" << std::endl;
 
     std::cerr << "  reading pseudoalignments" << '\n';

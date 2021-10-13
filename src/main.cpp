@@ -59,12 +59,12 @@ int main (int argc, char *argv[]) {
     std::cerr << "  reading pseudoalignments" << '\n';
     if (!args.themisto_mode) {
       // Check that the number of reference sequences matches in the grouping and the alignment.
-      reference.verify(args.themisto_mode, *args.infiles.run_info);
+      reference.verify(*args.infiles.run_info);
       ReadBitfield(args.infiles, reference.n_refs, bitfields, reference, args.bootstrap_mode);
     } else {
       if (!args.themisto_index_path.empty()) {
 	File::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
-	reference.verify(args.themisto_mode, themisto_index.stream());
+	reference.verify(themisto_index);
       }
       ReadBitfield(args.tinfile1, args.tinfile2, args.themisto_merge_mode, args.bootstrap_mode, reference.n_refs, bitfields);
     }

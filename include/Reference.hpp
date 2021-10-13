@@ -3,6 +3,8 @@
 
 #include <fstream>
 
+#include "file.hpp"
+
 #include "Grouping.hpp"
 
 class Reference {
@@ -10,9 +12,10 @@ public:
   Grouping grouping;
   uint32_t n_refs;
 
-  void verify(const bool themisto_mode, std::istream &infile) const;
+  void verify(std::istream &infile) const;
+  void verify(File::In &infile) const;
 private:
-  void verify_themisto_index(std::istream &themisto_index) const;
+  void verify_themisto_index(File::In &themisto_index) const;
   void verify_kallisto_alignment(std::istream &kallisto_run_info) const;
 };
 

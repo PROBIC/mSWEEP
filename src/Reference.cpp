@@ -8,18 +8,8 @@
 
 #include "tools/matchfasta.hpp"
 
-
-uint32_t CountLines (std::istream &stream) {
-  uint32_t n_lines = 0;
-  std::string line;
-  while (std::getline(stream, line)) {
-    n_lines += 1;
-  }
-  return n_lines;
-}
-
-void Reference::verify_themisto_index(std::istream &themisto_index) const {
-  uint32_t lines_in_grouping = CountLines(themisto_index);
+void Reference::verify_themisto_index(File::In &themisto_index) const {
+  uint32_t lines_in_grouping = themisto_index.count_lines();
   if (lines_in_grouping > this->n_refs) {
     throw std::runtime_error("pseudoalignment has more reference sequences than the grouping.");
   } else if (lines_in_grouping < this->n_refs) {
@@ -61,20 +51,21 @@ void Reference::verify_kallisto_alignment(std::istream &run_info) const {
   }
 }
 
-void Reference::verify(const bool themisto_mode, std::istream &infile) const {
+void Reference::verify(File::In &infile) const {
   // Should always have at least 1 reference sequences.
   if (this->n_refs == 0) {
     throw std::runtime_error("The grouping contains 0 reference sequences");
   }
-
-  // Check that the number of reference sequences matches the number
-  // of reference sequences in the themisto/kallisto pseudoalignment.
-  if (themisto_mode) {
-    this->verify_themisto_index(infile);
-  } else {
-    this->verify_kallisto_alignment(infile);
-  }
+  this->verify_themisto_index(infile);
 }
+
+void Reference::verify(std::istream &infile) const {
+  // Should always have at least 1 reference sequences.
+  if (this->n_refs == 0) {
+    throw std::runtime_error("The grouping contains 0 reference sequences");
+  }
+  this->verify_kallisto_alignment(infile);
+}  
 
 void AddToReference(const std::string &indicator_s, std::unordered_map<std::string, unsigned> &str_to_int, Reference &reference) {
   if (str_to_int.find(indicator_s) == str_to_int.end()) {

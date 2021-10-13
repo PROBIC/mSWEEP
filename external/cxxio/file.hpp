@@ -6,6 +6,7 @@
 #include <memory>
 #include <exception>
 #include <iostream>
+#include <sstream>
 
 #include "bxzstr.hpp"
 
@@ -92,6 +93,15 @@ namespace File {
     }
     void rewind() {
       reset_state(myfile);
+    }
+    uint32_t count_lines() {
+      uint32_t n_lines = 0;
+      std::string line;
+      while (std::getline(this->is, line)) {
+	n_lines += 1;
+      }
+      this->rewind();
+      return n_lines;
     }
     std::istream& stream() { return this->is; }
     const std::string& filename() const { return this->myfile; }

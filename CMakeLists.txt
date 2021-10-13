@@ -62,6 +62,7 @@ configure_file(include/openmp_config.hpp.in ${CMAKE_BINARY_DIR}/include/openmp_c
 add_executable(mSWEEP
 ${CMAKE_SOURCE_DIR}/src/BootstrapSample.cpp
 ${CMAKE_SOURCE_DIR}/src/Reference.cpp
+${CMAKE_SOURCE_DIR}/src/Grouping.cpp
 ${CMAKE_SOURCE_DIR}/src/Sample.cpp
 ${CMAKE_SOURCE_DIR}/src/likelihood.cpp
 ${CMAKE_SOURCE_DIR}/src/main.cpp

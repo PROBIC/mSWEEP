@@ -7,7 +7,7 @@
 #include "file.hpp"
 
 #include "parse_arguments.hpp"
-#include "read_bitfield.hpp"
+#include "read_pseudoalignment.hpp"
 #include "process_reads.hpp"
 #include "Sample.hpp"
 #include "Reference.hpp"
@@ -60,13 +60,13 @@ int main (int argc, char *argv[]) {
     if (!args.themisto_mode) {
       // Check that the number of reference sequences matches in the grouping and the alignment.
       reference.verify(*args.infiles.run_info);
-      ReadBitfield(args.infiles, reference.n_refs, bitfields, reference, args.bootstrap_mode);
+      ReadPseudoalignment(args.infiles, reference.n_refs, bitfields, reference, args.bootstrap_mode);
     } else {
       if (!args.themisto_index_path.empty()) {
 	File::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
 	reference.verify(themisto_index);
       }
-      ReadBitfield(args.tinfile1, args.tinfile2, args.themisto_merge_mode, args.bootstrap_mode, reference.n_refs, bitfields);
+      ReadPseudoalignment(args.tinfile1, args.tinfile2, args.themisto_merge_mode, args.bootstrap_mode, reference.n_refs, bitfields);
     }
 
     std::cerr << "  read " << (args.batch_mode ? bitfields.size() : bitfields[0]->num_ecs()) << (args.batch_mode ? " samples from the batch" : " unique alignments") << std::endl;

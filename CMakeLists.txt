@@ -70,7 +70,7 @@ ${CMAKE_SOURCE_DIR}/src/matrix.cpp
 ${CMAKE_SOURCE_DIR}/src/parse_arguments.cpp
 ${CMAKE_SOURCE_DIR}/src/process_reads.cpp
 ${CMAKE_SOURCE_DIR}/src/rcg.cpp
-${CMAKE_SOURCE_DIR}/src/read_bitfield.cpp)
+${CMAKE_SOURCE_DIR}/src/read_pseudoalignment.cpp)
 
 ## Check supported compression types
 find_package(BZip2)

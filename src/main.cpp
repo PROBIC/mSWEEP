@@ -77,9 +77,6 @@ int main (int argc, char *argv[]) {
     return 1;
   }
 
-  // Calculate the beta-binomial parameters for the grouping
-  reference.grouping.calculate_bb_parameters(args.params);
-
   // Initialize the prior counts on the groups
   args.optimizer.alphas = std::vector<double>(reference.grouping.n_groups, 1.0);
 

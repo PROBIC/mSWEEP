@@ -260,16 +260,16 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     if (frac_mu <= 0.5 || frac_mu >= 1.0) {
       throw std::runtime_error("-q must be between 0.5 and 1.");
     } else {
-      args.params[0] = frac_mu;
+      args.optimizer.bb_constants[0] = frac_mu;
     }
   }
   
   if (CmdOptionPresent(argv, argv+argc, "-e")) {
     double epsilon = ParseDoubleOption(argv, argv+argc, "-e");
-    if (epsilon <= 0.0 || epsilon >= 2.0*(args.params[0]) - 1.0) {
+    if (epsilon <= 0.0 || epsilon >= 2.0*(args.optimizer.bb_constants[0]) - 1.0) {
       throw std::runtime_error("-e must be greater than 0, and less than 2*q - 1");
     } else {
-      args.params[1] = epsilon;
+      args.optimizer.bb_constants[1] = epsilon;
     }
   }
 }

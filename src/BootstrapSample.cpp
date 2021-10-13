@@ -6,9 +6,9 @@
 
 #include "bxzstr.hpp"
 
-void BootstrapSample::InitBootstrap(const Grouping &grouping, const std::vector<uint32_t> &group_indicators) {
+void BootstrapSample::InitBootstrap(const Grouping &grouping, const double bb_constants[2], const std::vector<uint32_t> &group_indicators) {
   ec_distribution = std::discrete_distribution<uint32_t>(pseudos.ec_counts.begin(), pseudos.ec_counts.end());
-  CalcLikelihood(grouping, group_indicators);
+  CalcLikelihood(grouping, bb_constants, group_indicators);
 }
 
 void BootstrapSample::ResampleCounts(const uint32_t how_many, std::mt19937_64 &generator) {
@@ -43,7 +43,7 @@ void BootstrapSample::BootstrapAbundances(const Reference &reference, const Argu
   std::string name = (args.batch_mode ? cell_name() : "0");
   std::cout << "Processing " << (args.batch_mode ? name : "the sample") << std::endl;
   // Init the bootstrap variables
-  InitBootstrap(reference.grouping, reference.group_indicators);
+  InitBootstrap(reference.grouping, args.optimizer.bb_constants, reference.group_indicators);
   //  bootstrap_abundances = std::vector<std::vector<double>>(args.iters, std::vector<double>());
   for (unsigned i = 0; i <= args.iters; ++i) {
     if (i > 0) {

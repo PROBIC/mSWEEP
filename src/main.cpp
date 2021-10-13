@@ -53,19 +53,18 @@ int main (int argc, char *argv[]) {
       File::In fasta_file(args.fasta_file);
       MatchClusterIndicators(args.groups_list_delimiter, groups_file.stream(), fasta_file.stream(), reference);
     }
-    reference.verify();
 
     std::cerr << "  read " << reference.n_refs << " group indicators" << std::endl;
 
     std::cerr << "  reading pseudoalignments" << '\n';
     if (!args.themisto_mode) {
       // Check that the number of reference sequences matches in the grouping and the alignment.
-      VerifyGrouping(reference.n_refs, *args.infiles.run_info);
+      reference.verify(args.themisto_mode, *args.infiles.run_info);
       ReadBitfield(args.infiles, reference.n_refs, bitfields, reference, args.bootstrap_mode);
     } else {
       if (!args.themisto_index_path.empty()) {
 	File::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
-	VerifyThemistoGrouping(reference.n_refs, themisto_index.stream());
+	reference.verify(args.themisto_mode, themisto_index.stream());
       }
       ReadBitfield(args.tinfile1, args.tinfile2, args.themisto_merge_mode, args.bootstrap_mode, reference.n_refs, bitfields);
     }

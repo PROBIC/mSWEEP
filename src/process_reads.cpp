@@ -7,7 +7,7 @@ void ProcessReads(const Reference &reference, std::string outfile, Sample &sampl
   // Process pseudoalignments from kallisto.
   std::cerr << "Building log-likelihood array" << std::endl;
 
-  sample.CalcLikelihood(reference.grouping);
+  sample.CalcLikelihood(reference.grouping, reference.group_indicators);
 
   if (args.write_likelihood || args.write_likelihood_bitseq) {
     std::cerr << "Writing likelihood matrix" << std::endl;

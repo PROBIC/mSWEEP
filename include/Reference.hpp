@@ -9,8 +9,11 @@
 
 class Reference {
 public:
+  uint32_t n_refs = 0;
+  std::vector<uint32_t> group_indicators;
   Grouping grouping;
-  uint32_t n_refs;
+
+  void add_sequence(const std::string &seq_name);
 
   void verify(std::istream &infile) const;
   void verify(File::In &infile) const;

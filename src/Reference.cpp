@@ -67,34 +67,28 @@ void Reference::verify(std::istream &infile) const {
   this->verify_kallisto_alignment(infile);
 }  
 
-void AddToReference(const std::string &indicator_s, std::unordered_map<std::string, unsigned> &str_to_int, Reference &reference) {
-  if (str_to_int.find(indicator_s) == str_to_int.end()) {
-    str_to_int[indicator_s] = str_to_int.size();
-    reference.grouping.names.emplace_back(indicator_s);
-    reference.grouping.sizes.emplace_back(0);
+void Reference::add_sequence(const std::string &indicator_s) {
+  if (this->grouping.name_to_id.find(indicator_s) == this->grouping.name_to_id.end()) {
+    this->grouping.name_to_id[indicator_s] = this->grouping.name_to_id.size(); // Newest always has id equal to size.
+    this->grouping.add_group(indicator_s);
   }
-  ++reference.grouping.sizes[str_to_int[indicator_s]];
-  reference.grouping.indicators.emplace_back(str_to_int[indicator_s]);
+  this->n_refs += 1;
+  this->group_indicators.emplace_back(this->grouping.name_to_id[indicator_s]);
+  this->grouping.add_sequence(indicator_s);
 }
 
 void ReadClusterIndicators(std::istream &indicator_file, Reference &reference) {
-  std::unordered_map<std::string, unsigned> str_to_int;
-
   if (indicator_file.good()) {
     std::string indicator_s;
     while (getline(indicator_file, indicator_s)) {
-      AddToReference(indicator_s, str_to_int, reference);
+      reference.add_sequence(indicator_s);
     }
   } else {
     throw std::runtime_error("Could not read cluster indicators.");
   }
-
-  reference.n_refs = reference.grouping.indicators.size();
-  reference.grouping.n_groups = str_to_int.size();
 }
 
 void MatchClusterIndicators(const char delim, std::istream &groups, std::istream &fasta, Reference &reference) {
-  std::unordered_map<std::string, unsigned> str_to_int;
   std::vector<std::string> groups_in_fasta;
   try {
     mSWEEP::tools::matchfasta(groups, fasta, delim, &groups_in_fasta);
@@ -103,9 +97,6 @@ void MatchClusterIndicators(const char delim, std::istream &groups, std::istream
   }
 
   for (uint32_t i = 0; i < groups_in_fasta.size(); ++i) {
-    AddToReference(groups_in_fasta[i], str_to_int, reference);
+    reference.add_sequence(groups_in_fasta[i]);
   }
-
-  reference.n_refs = reference.grouping.indicators.size();
-  reference.grouping.n_groups = str_to_int.size();
 }

@@ -9,3 +9,13 @@ void Grouping::calculate_bb_parameters(double params[2]) {
     this->bb_params.emplace_back(std::array<double, 2>{ { alpha, beta } });
   }
 }
+
+void Grouping::add_group(const std::string &group_name) {
+  this->names.emplace_back(group_name);
+  this->sizes.emplace_back(0);
+  this->n_groups += 1;
+}
+
+void Grouping::add_sequence(const std::string &group_name) {
+  this->sizes[this->name_to_id[group_name]] += 1;
+}

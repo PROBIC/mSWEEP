@@ -61,7 +61,7 @@ public:
   void read_themisto(const Mode &mode, const uint32_t n_refs, std::vector<std::istream*> &strands) override;
   void read_kallisto(const uint32_t n_refs, std::istream &tsv_file, std::istream &ec_file) override;
   // Fill the likelihood matrix
-  void CalcLikelihood(const Grouping &grouping);
+  void CalcLikelihood(const Grouping &grouping, const std::vector<uint32_t> &group_indicators);
 };
 
 class BootstrapSample : public Sample {
@@ -72,7 +72,7 @@ private:
   // Run estimation and add results to relative_abundances
   void BootstrapIter(const std::vector<double> &alpha0, const double tolerance, const uint16_t max_iters);
   // Initialize ec_distributino and ll_mat for bootstrapping
-  void InitBootstrap(const Grouping &grouping);
+  void InitBootstrap(const Grouping &grouping, const std::vector<uint32_t> &group_indicators);
   // Resample the equivalence class counts
   void ResampleCounts(const uint32_t how_many, std::mt19937_64 &rng);
 

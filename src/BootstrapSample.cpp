@@ -30,7 +30,7 @@ void BootstrapSample::BootstrapIter(const std::vector<double> &alpha0, const dou
   this->relative_abundances.emplace_back(group_abundances());
 }
 
-void BootstrapSample::BootstrapAbundances(const Reference &reference, const Arguments &args) {
+void BootstrapSample::BootstrapAbundances(const Grouping &grouping, const std::vector<uint32_t> &group_indicators, const Arguments &args) {
   std::mt19937_64 gen;
   if (args.seed == -1) {
     std::random_device rd;
@@ -43,7 +43,7 @@ void BootstrapSample::BootstrapAbundances(const Reference &reference, const Argu
   std::string name = (args.batch_mode ? cell_name() : "0");
   std::cout << "Processing " << (args.batch_mode ? name : "the sample") << std::endl;
   // Init the bootstrap variables
-  InitBootstrap(reference.groupings[0], args.optimizer.bb_constants, reference.groups_indicators[0]);
+  InitBootstrap(grouping, args.optimizer.bb_constants, group_indicators);
   //  bootstrap_abundances = std::vector<std::vector<double>>(args.iters, std::vector<double>());
   for (unsigned i = 0; i <= args.iters; ++i) {
     if (i > 0) {
@@ -64,7 +64,7 @@ void BootstrapSample::BootstrapAbundances(const Reference &reference, const Argu
 	  outfile += "_probs.csv";
 	  of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));
 	}
-	write_probabilities(reference.groupings[0].names, args.optimizer.gzip_probs, (args.optimizer.print_probs ? std::cout : *of));
+	write_probabilities(grouping.names, args.optimizer.gzip_probs, (args.optimizer.print_probs ? std::cout : *of));
       }
     }
     // Resample the pseudoalignment counts (here because we want to include the original)

@@ -68,13 +68,10 @@ void Reference::verify(std::istream &infile) const {
 }  
 
 void Reference::add_sequence(const std::string &indicator_s) {
-  if (this->grouping.name_to_id.find(indicator_s) == this->grouping.name_to_id.end()) {
-    this->grouping.name_to_id[indicator_s] = this->grouping.name_to_id.size(); // Newest always has id equal to size.
-    this->grouping.add_group(indicator_s);
-  }
+  this->grouping.add_group(indicator_s);
+  this->grouping.add_sequence(indicator_s);
   this->n_refs += 1;
   this->group_indicators.emplace_back(this->grouping.name_to_id[indicator_s]);
-  this->grouping.add_sequence(indicator_s);
 }
 
 void ReadClusterIndicators(std::istream &indicator_file, Reference &reference) {

@@ -13,9 +13,12 @@ std::vector<std::array<double, 2>> Grouping::bb_parameters(const double bb_const
 }
 
 void Grouping::add_group(const std::string &group_name) {
-  this->names.emplace_back(group_name);
-  this->sizes.emplace_back(0);
-  this->n_groups += 1;
+  if (this->name_to_id.find(group_name) == this->name_to_id.end()) {
+    this->name_to_id[group_name] = this->name_to_id.size(); // Newest always has id equal to size.
+    this->names.emplace_back(group_name);
+    this->sizes.emplace_back(0);
+    this->n_groups += 1;
+  }
 }
 
 void Grouping::add_sequence(const std::string &group_name) {

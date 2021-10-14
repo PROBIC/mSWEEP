@@ -72,7 +72,7 @@ private:
   // Run estimation and add results to relative_abundances
   void BootstrapIter(const std::vector<double> &alpha0, const double tolerance, const uint16_t max_iters);
   // Initialize ec_distributino and ll_mat for bootstrapping
-  void InitBootstrap(const Grouping &grouping, const double bb_constants[2], const std::vector<uint32_t> &group_indicators);
+  void InitBootstrap(const Grouping &grouping, const Arguments &args, const std::vector<uint32_t> &group_indicators);
   // Resample the equivalence class counts
   void ResampleCounts(const uint32_t how_many, std::mt19937_64 &rng);
 

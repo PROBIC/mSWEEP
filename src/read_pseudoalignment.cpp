@@ -9,7 +9,7 @@
 
 std::vector<std::string> ReadCellNames(std::istream &cells_file) {
   Reference reference;
-  ReadClusterIndicators(cells_file, reference);
+  reference.read_from_file(cells_file);
   return reference.grouping.names;
 }
 

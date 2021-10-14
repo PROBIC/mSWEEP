@@ -47,11 +47,11 @@ int main (int argc, char *argv[]) {
     std::cerr << "  reading group indicators" << '\n';
     if (args.fasta_file.empty()) {
       File::In indicators_file(args.indicators_file);
-      ReadClusterIndicators(indicators_file.stream(), reference);
+      reference.read_from_file(indicators_file.stream());
     } else {
       File::In groups_file(args.groups_list_file);
       File::In fasta_file(args.fasta_file);
-      MatchClusterIndicators(args.groups_list_delimiter, groups_file.stream(), fasta_file.stream(), reference);
+      reference.match_with_fasta(args.groups_list_delimiter, groups_file.stream(), fasta_file.stream());
     }
 
     std::cerr << "  read " << reference.n_refs << " group indicators" << std::endl;
@@ -59,12 +59,12 @@ int main (int argc, char *argv[]) {
     std::cerr << "  reading pseudoalignments" << '\n';
     if (!args.themisto_mode) {
       // Check that the number of reference sequences matches in the grouping and the alignment.
-      reference.verify(*args.infiles.run_info);
+      reference.verify_kallisto_alignment(*args.infiles.run_info);
       ReadPseudoalignment(args.infiles, reference.n_refs, bitfields, reference, args.bootstrap_mode);
     } else {
       if (!args.themisto_index_path.empty()) {
 	File::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
-	reference.verify(themisto_index);
+	reference.verify_themisto_index(themisto_index);
       }
       ReadPseudoalignment(args.tinfile1, args.tinfile2, args.themisto_merge_mode, args.bootstrap_mode, reference.n_refs, bitfields);
     }

@@ -2,8 +2,6 @@
 
 #include <unordered_map>
 #include <exception>
-#include <vector>
-#include <string>
 #include <sstream>
 
 #include "tools/matchfasta.hpp"
@@ -51,22 +49,6 @@ void Reference::verify_kallisto_alignment(std::istream &run_info) const {
   }
 }
 
-void Reference::verify(File::In &infile) const {
-  // Should always have at least 1 reference sequences.
-  if (this->n_refs == 0) {
-    throw std::runtime_error("The grouping contains 0 reference sequences");
-  }
-  this->verify_themisto_index(infile);
-}
-
-void Reference::verify(std::istream &infile) const {
-  // Should always have at least 1 reference sequences.
-  if (this->n_refs == 0) {
-    throw std::runtime_error("The grouping contains 0 reference sequences");
-  }
-  this->verify_kallisto_alignment(infile);
-}  
-
 void Reference::add_sequence(const std::string &indicator_s) {
   this->grouping.add_group(indicator_s);
   this->grouping.add_sequence(indicator_s);
@@ -74,26 +56,29 @@ void Reference::add_sequence(const std::string &indicator_s) {
   this->group_indicators.emplace_back(this->grouping.name_to_id[indicator_s]);
 }
 
-void ReadClusterIndicators(std::istream &indicator_file, Reference &reference) {
+void Reference::read_from_file(std::istream &indicator_file) {
   if (indicator_file.good()) {
     std::string indicator_s;
     while (getline(indicator_file, indicator_s)) {
-      reference.add_sequence(indicator_s);
+      this->add_sequence(indicator_s);
     }
   } else {
     throw std::runtime_error("Could not read cluster indicators.");
   }
+  if (this->n_refs == 0) {
+    throw std::runtime_error("The grouping contains 0 reference sequences");
+  }
 }
 
-void MatchClusterIndicators(const char delim, std::istream &groups, std::istream &fasta, Reference &reference) {
+void Reference::match_with_fasta(const char delim, std::istream &groups_file, std::istream &fasta_file) {
   std::vector<std::string> groups_in_fasta;
   try {
-    mSWEEP::tools::matchfasta(groups, fasta, delim, &groups_in_fasta);
+    mSWEEP::tools::matchfasta(groups_file, fasta_file, delim, &groups_in_fasta);
   } catch (std::exception &e) {
     throw std::runtime_error("Matching the group indicators to the fasta file failed, is the --groups-list delimiter correct?");
   }
 
   for (uint32_t i = 0; i < groups_in_fasta.size(); ++i) {
-    reference.add_sequence(groups_in_fasta[i]);
+    this->add_sequence(groups_in_fasta[i]);
   }
 }

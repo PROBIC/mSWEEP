@@ -71,7 +71,7 @@ void Reference::read_from_file(std::istream &indicator_file) {
 }
 
 void Reference::match_with_fasta(const char delim, std::istream &groups_file, std::istream &fasta_file) {
-  std::vector<std::string> groups_in_fasta;
+  std::vector<std::vector<std::string>> groups_in_fasta;
   try {
     mSWEEP::tools::matchfasta(groups_file, fasta_file, delim, &groups_in_fasta);
   } catch (std::exception &e) {
@@ -79,6 +79,6 @@ void Reference::match_with_fasta(const char delim, std::istream &groups_file, st
   }
 
   for (uint32_t i = 0; i < groups_in_fasta.size(); ++i) {
-    this->add_sequence(groups_in_fasta[i]);
+    this->add_sequence(groups_in_fasta[i][0]);
   }
 }

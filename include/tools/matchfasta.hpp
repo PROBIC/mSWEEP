@@ -85,7 +85,7 @@ class Args {
   }
 };
 
-void matchfasta(std::istream &groups, std::istream &fasta, const char delim, std::vector<std::string> *groups_in_fasta);
+void matchfasta(std::istream &groups, std::istream &fasta, const char delim, std::vector<std::vector<std::string>> *groups_in_fasta);
 }
 }
 

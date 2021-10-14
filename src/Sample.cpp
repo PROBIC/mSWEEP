@@ -192,5 +192,5 @@ void Sample::CalcLikelihood(const Grouping &grouping, const double bb_constants[
       counts[i][j] = groupcounts[i];
     }
   }
-  clear_configs();
+  //clear_configs();
 }

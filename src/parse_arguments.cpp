@@ -201,19 +201,20 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     }
   }
 
-  if (CmdOptionPresent(argv, argv+argc, "--fasta") || CmdOptionPresent(argv, argv+argc, "--groups-list") || CmdOptionPresent(argv, argv+argc, "--groups-delimiter")) {
+  if (CmdOptionPresent(argv, argv+argc, "--fasta") || CmdOptionPresent(argv, argv+argc, "--groups-list")) {
     if ((!CmdOptionPresent(argv, argv+argc, "--fasta") || !CmdOptionPresent(argv, argv+argc, "--groups-list"))) {
       throw std::runtime_error("--fasta and --groups-list must both be specified if either is present.");
     }
     args.fasta_file = std::string(GetCmdOption(argv, argv+argc, "--fasta"));
     args.groups_list_file = std::string(GetCmdOption(argv, argv+argc, "--groups-list"));
-    if (CmdOptionPresent(argv, argv+argc, "--groups-delimiter")) {
-      std::string groups_list_delimiter = std::string(GetCmdOption(argv, argv+argc, "--groups-delimiter"));
-      if (groups_list_delimiter.size() > 1) {
-	throw std::runtime_error("--groups-delimiter must be a single character");
-      } else {
-	args.groups_list_delimiter = groups_list_delimiter.at(0);
-      }
+  }
+
+  if (CmdOptionPresent(argv, argv+argc, "--groups-delimiter")) {
+    std::string groups_list_delimiter = std::string(GetCmdOption(argv, argv+argc, "--groups-delimiter"));
+    if (groups_list_delimiter.size() > 1) {
+      throw std::runtime_error("--groups-delimiter must be a single character");
+    } else {
+      args.groups_list_delimiter = groups_list_delimiter.at(0);
     }
   }
 

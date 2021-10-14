@@ -47,7 +47,7 @@ int main (int argc, char *argv[]) {
     std::cerr << "  reading group indicators" << '\n';
     if (args.fasta_file.empty()) {
       File::In indicators_file(args.indicators_file);
-      reference.read_from_file(indicators_file.stream());
+      reference.read_from_file(indicators_file.stream(), args.groups_list_delimiter);
     } else {
       File::In groups_file(args.groups_list_file);
       File::In fasta_file(args.fasta_file);
@@ -77,15 +77,28 @@ int main (int argc, char *argv[]) {
     return 1;
   }
 
-  // Initialize the prior counts on the groups
-  args.optimizer.alphas = std::vector<double>(reference.groupings[0].n_groups, 1.0);
 
-  // Process the reads accordingly
-  switch(args.run_mode()) {
-  case 0: ProcessReads(reference.groupings[0], reference.groups_indicators[0], args.outfile, *bitfields[0], args.optimizer); break;
-  case 1: ProcessBatch(reference.groupings[0], reference.groups_indicators[0], args, bitfields); break;
-  case 2: ProcessBootstrap(reference.groupings[0], reference.groups_indicators[0], args, bitfields); break;
-  case 3: ProcessBootstrap(reference.groupings[0], reference.groups_indicators[0], args, bitfields); break; // Same function for batch and single files
+  // Estimate abundances with all groupings that were provided
+  uint16_t n_groupings = reference.groupings.size();
+  std::string outfile_name = args.outfile;
+  for (uint16_t i = 0; i < n_groupings; ++i) {
+    // Initialize the prior counts on the groups
+    args.optimizer.alphas = std::vector<double>(reference.groupings[i].n_groups, 1.0);
+
+    args.outfile = outfile_name;
+    // Set output file name correctly
+    if (n_groupings > 1 && !outfile_name.empty()) { // Backwards compatibility with v1.4.0 or older in output names
+      args.outfile += "_";
+      args.outfile += std::to_string(i);
+    }
+
+    // Process the reads accordingly
+    switch(args.run_mode()) {
+    case 0: ProcessReads(reference.groupings[i], reference.groups_indicators[i], args.outfile, *bitfields[0], args.optimizer); break;
+    case 1: ProcessBatch(reference.groupings[i], reference.groups_indicators[i], args, bitfields); break;
+    case 2: ProcessBootstrap(reference.groupings[i], reference.groups_indicators[i], args, bitfields); break;
+    case 3: ProcessBootstrap(reference.groupings[i], reference.groups_indicators[i], args, bitfields); break; // Same function for batch and single files
+    }
   }
 
   return 0;

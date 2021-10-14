@@ -9,6 +9,9 @@
 void BootstrapSample::InitBootstrap(const Grouping &grouping, const double bb_constants[2], const std::vector<uint32_t> &group_indicators) {
   ec_distribution = std::discrete_distribution<uint32_t>(pseudos.ec_counts.begin(), pseudos.ec_counts.end());
   CalcLikelihood(grouping, bb_constants, group_indicators);
+
+  // Clear the abundances in case we're estimating the same sample again.
+  this->relative_abundances = std::vector<std::vector<double>>();
 }
 
 void BootstrapSample::ResampleCounts(const uint32_t how_many, std::mt19937_64 &generator) {
@@ -44,8 +47,12 @@ void BootstrapSample::BootstrapAbundances(const Grouping &grouping, const std::v
   std::cout << "Processing " << (args.batch_mode ? name : "the sample") << std::endl;
   // Init the bootstrap variables
   InitBootstrap(grouping, args.optimizer.bb_constants, group_indicators);
-  //  bootstrap_abundances = std::vector<std::vector<double>>(args.iters, std::vector<double>());
-  for (unsigned i = 0; i <= args.iters; ++i) {
+
+  // Store the original values
+  std::vector<double> og_log_ec_counts(this->log_ec_counts);
+  uint32_t og_counts_total = this->counts_total;
+
+  for (uint16_t i = 0; i <= args.iters; ++i) {
     if (i > 0) {
       std::cout << "Bootstrap" << " iter " << i << "/" << args.iters << std::endl;
     } else {
@@ -70,6 +77,10 @@ void BootstrapSample::BootstrapAbundances(const Grouping &grouping, const std::v
     // Resample the pseudoalignment counts (here because we want to include the original)
     ResampleCounts((args.bootstrap_count == 0 ? counts_total : args.bootstrap_count), gen);
   }
+
+  // Restore original values
+  this->log_ec_counts = og_log_ec_counts;
+  this->counts_total = og_counts_total;
 }
 
 

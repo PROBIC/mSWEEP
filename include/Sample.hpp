@@ -61,7 +61,7 @@ public:
   void read_themisto(const Mode &mode, const uint32_t n_refs, std::vector<std::istream*> &strands) override;
   void read_kallisto(const uint32_t n_refs, std::istream &tsv_file, std::istream &ec_file) override;
   // Fill the likelihood matrix
-  void CalcLikelihood(const Grouping &grouping, const double bb_constants[2], const std::vector<uint32_t> &group_indicators);
+  void CalcLikelihood(const Grouping &grouping, const double bb_constants[2], const std::vector<uint32_t> &group_indicators, const bool cleanup);
 };
 
 class BootstrapSample : public Sample {

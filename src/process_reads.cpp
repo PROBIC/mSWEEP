@@ -4,10 +4,7 @@
 #include "bxzstr.hpp"
 
 void ProcessReads(const Grouping &grouping, const std::vector<uint32_t> &group_indicators, std::string outfile, Sample &sample, OptimizerArgs args) {
-  // Process pseudoalignments from kallisto.
-  std::cerr << "Building log-likelihood array" << std::endl;
-
-  sample.CalcLikelihood(grouping, args.bb_constants, group_indicators);
+  // Process pseudoalignments.
 
   if (args.write_likelihood || args.write_likelihood_bitseq) {
     std::cerr << "Writing likelihood matrix" << std::endl;

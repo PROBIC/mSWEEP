@@ -92,6 +92,21 @@ int main (int argc, char *argv[]) {
       args.outfile += std::to_string(i);
     }
 
+    std::cerr << "Building log-likelihood array" << std::endl;
+    for (uint16_t j = 0; j < samples.size(); ++j) {
+      samples[j]->CalcLikelihood(reference.groupings[i], args.optimizer.bb_constants, reference.groups_indicators[i], n_groupings == 1);
+
+      if (args.optimizer.write_likelihood || args.optimizer.write_likelihood_bitseq) {
+	std::cerr << "Writing likelihood matrix" << std::endl;
+	if (args.optimizer.write_likelihood) {
+	  samples[j]->write_likelihood(args.optimizer.gzip_probs, reference.groupings[i].n_groups, args.outfile);
+	}
+	if (args.optimizer.write_likelihood_bitseq) {
+	  samples[j]->write_likelihood_bitseq(args.optimizer.gzip_probs, reference.groupings[i].n_groups, args.outfile);
+	}
+      }
+    }
+
     // Process the reads accordingly
     switch(args.run_mode()) {
     case 0: ProcessReads(reference.groupings[i], reference.groups_indicators[i], args.outfile, *samples[0], args.optimizer); break;

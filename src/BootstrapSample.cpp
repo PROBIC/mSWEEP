@@ -8,17 +8,6 @@
 
 void BootstrapSample::InitBootstrap(const Grouping &grouping, const Arguments &args, const std::vector<uint32_t> &group_indicators) {
   ec_distribution = std::discrete_distribution<uint32_t>(pseudos.ec_counts.begin(), pseudos.ec_counts.end());
-  CalcLikelihood(grouping, args.optimizer.bb_constants, group_indicators);
-
-  if (args.optimizer.write_likelihood || args.optimizer.write_likelihood_bitseq) {
-    std::cerr << "Writing likelihood matrix" << std::endl;
-    if (args.optimizer.write_likelihood) {
-      this->write_likelihood(args.optimizer.gzip_probs, grouping.n_groups, args.outfile);
-    }
-    if (args.optimizer.write_likelihood_bitseq) {
-      this->write_likelihood_bitseq(args.optimizer.gzip_probs, grouping.n_groups, args.outfile);
-    }
-  }
 
   // Clear the abundances in case we're estimating the same sample again.
   this->relative_abundances = std::vector<std::vector<double>>();

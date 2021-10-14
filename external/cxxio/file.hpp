@@ -94,8 +94,9 @@ namespace File {
     void rewind() {
       reset_state(myfile);
     }
-    uint32_t count_lines() {
-      uint32_t n_lines = 0;
+    template<typename T>
+    T count_lines() {
+      T n_lines = 0;
       std::string line;
       while (std::getline(this->is, line)) {
 	n_lines += 1;

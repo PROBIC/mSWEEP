@@ -7,7 +7,7 @@
 #include "tools/matchfasta.hpp"
 
 void Reference::verify_themisto_index(File::In &themisto_index) const {
-  uint32_t lines_in_grouping = themisto_index.count_lines();
+  uint32_t lines_in_grouping = themisto_index.count_lines<uint32_t>();
   if (lines_in_grouping > this->n_refs) {
     throw std::runtime_error("pseudoalignment has more reference sequences than the grouping.");
   } else if (lines_in_grouping < this->n_refs) {

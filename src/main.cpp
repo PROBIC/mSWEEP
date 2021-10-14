@@ -40,7 +40,7 @@ int main (int argc, char *argv[]) {
   omp_set_num_threads(args.optimizer.nr_threads);
 #endif
 
-  std::vector<std::unique_ptr<Sample>> bitfields;
+  std::vector<std::unique_ptr<Sample>> samples;
   Reference reference;
   try {
     std::cerr << "Reading the input files" << '\n';
@@ -60,16 +60,16 @@ int main (int argc, char *argv[]) {
     if (!args.themisto_mode) {
       // Check that the number of reference sequences matches in the grouping and the alignment.
       reference.verify_kallisto_alignment(*args.infiles.run_info);
-      ReadPseudoalignment(args.infiles, reference.n_refs, bitfields, reference, args.bootstrap_mode);
+      ReadPseudoalignment(args.infiles, reference.n_refs, samples, reference, args.bootstrap_mode);
     } else {
       if (!args.themisto_index_path.empty()) {
 	File::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
 	reference.verify_themisto_index(themisto_index);
       }
-      ReadPseudoalignment(args.tinfile1, args.tinfile2, args.themisto_merge_mode, args.bootstrap_mode, reference.n_refs, bitfields);
+      ReadPseudoalignment(args.tinfile1, args.tinfile2, args.themisto_merge_mode, args.bootstrap_mode, reference.n_refs, samples);
     }
 
-    std::cerr << "  read " << (args.batch_mode ? bitfields.size() : bitfields[0]->num_ecs()) << (args.batch_mode ? " samples from the batch" : " unique alignments") << std::endl;
+    std::cerr << "  read " << (args.batch_mode ? samples.size() : samples[0]->num_ecs()) << (args.batch_mode ? " samples from the batch" : " unique alignments") << std::endl;
   } catch (std::runtime_error &e) {
     std::cerr << "Reading the input files failed:\n  ";
     std::cerr << e.what();
@@ -94,10 +94,10 @@ int main (int argc, char *argv[]) {
 
     // Process the reads accordingly
     switch(args.run_mode()) {
-    case 0: ProcessReads(reference.groupings[i], reference.groups_indicators[i], args.outfile, *bitfields[0], args.optimizer); break;
-    case 1: ProcessBatch(reference.groupings[i], reference.groups_indicators[i], args, bitfields); break;
-    case 2: ProcessBootstrap(reference.groupings[i], reference.groups_indicators[i], args, bitfields); break;
-    case 3: ProcessBootstrap(reference.groupings[i], reference.groups_indicators[i], args, bitfields); break; // Same function for batch and single files
+    case 0: ProcessReads(reference.groupings[i], reference.groups_indicators[i], args.outfile, *samples[0], args.optimizer); break;
+    case 1: ProcessBatch(reference.groupings[i], reference.groups_indicators[i], args, samples); break;
+    case 2: ProcessBootstrap(reference.groupings[i], reference.groups_indicators[i], args, samples); break;
+    case 3: ProcessBootstrap(reference.groupings[i], reference.groups_indicators[i], args, samples); break; // Same function for batch and single files
     }
   }
 

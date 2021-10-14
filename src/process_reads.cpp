@@ -7,15 +7,15 @@ void ProcessReads(const Reference &reference, std::string outfile, Sample &sampl
   // Process pseudoalignments from kallisto.
   std::cerr << "Building log-likelihood array" << std::endl;
 
-  sample.CalcLikelihood(reference.grouping, args.bb_constants, reference.group_indicators);
+  sample.CalcLikelihood(reference.groupings[0], args.bb_constants, reference.groups_indicators[0]);
 
   if (args.write_likelihood || args.write_likelihood_bitseq) {
     std::cerr << "Writing likelihood matrix" << std::endl;
     if (args.write_likelihood) {
-      sample.write_likelihood(args.gzip_probs, reference.grouping.n_groups, outfile);
+      sample.write_likelihood(args.gzip_probs, reference.groupings[0].n_groups, outfile);
     }
     if (args.write_likelihood_bitseq) {
-      sample.write_likelihood_bitseq(args.gzip_probs, reference.grouping.n_groups, outfile);
+      sample.write_likelihood_bitseq(args.gzip_probs, reference.groupings[0].n_groups, outfile);
     }
   }
 
@@ -25,7 +25,7 @@ void ProcessReads(const Reference &reference, std::string outfile, Sample &sampl
     std::cerr << "Estimating relative abundances" << std::endl;
     sample.ec_probs = rcg_optl_mat(sample.ll_mat, sample, args.alphas, args.tolerance, args.max_iters);
 
-    sample.write_abundances(reference.grouping.names, outfile);  
+    sample.write_abundances(reference.groupings[0].names, outfile);  
     if (args.write_probs && !outfile.empty()) {
       std::unique_ptr<std::ostream> of;
       if (args.gzip_probs) {
@@ -35,7 +35,7 @@ void ProcessReads(const Reference &reference, std::string outfile, Sample &sampl
 	outfile += "_probs.csv";
 	of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));
       }
-      sample.write_probabilities(reference.grouping.names, args.gzip_probs, (args.print_probs ? std::cout : *of));
+      sample.write_probabilities(reference.groupings[0].names, args.gzip_probs, (args.print_probs ? std::cout : *of));
     }
   }
 }
@@ -51,6 +51,6 @@ void ProcessBootstrap(Reference &reference, Arguments &args, std::vector<std::un
   for (uint32_t i = 0; i < bitfields.size(); ++i) {
     BootstrapSample* bs = static_cast<BootstrapSample*>(&(*bitfields[i]));
     bs->BootstrapAbundances(reference, args);
-    bs->WriteBootstrap(reference.grouping.names, args.outfile, args.iters, args.batch_mode);    
+    bs->WriteBootstrap(reference.groupings[0].names, args.outfile, args.iters, args.batch_mode);    
   }
 }

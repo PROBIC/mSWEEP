@@ -49,18 +49,28 @@ void Reference::verify_kallisto_alignment(std::istream &run_info) const {
   }
 }
 
-void Reference::add_sequence(const std::string &indicator_s) {
-  this->grouping.add_group(indicator_s);
-  this->grouping.add_sequence(indicator_s);
-  this->n_refs += 1;
-  this->group_indicators.emplace_back(this->grouping.name_to_id[indicator_s]);
+void Reference::add_sequence(const std::string &indicator_s, const uint8_t grouping_id) {
+  this->groupings[grouping_id].add_group(indicator_s);
+  this->groupings[grouping_id].add_sequence(indicator_s);
+  if (grouping_id == 0) {
+    this->n_refs += 1;
+  }
+  this->groups_indicators[grouping_id].emplace_back(this->groupings[grouping_id].name_to_id[indicator_s]);
 }
 
-void Reference::read_from_file(std::istream &indicator_file) {
+void Reference::read_from_file(std::istream &indicator_file, const char delimiter) {
   if (indicator_file.good()) {
     std::string indicator_s;
-    while (getline(indicator_file, indicator_s)) {
-      this->add_sequence(indicator_s);
+    while (std::getline(indicator_file, indicator_s)) {
+      std::stringstream indicators(indicator_s);
+      std::string indicator;
+      uint8_t grouping_id = 0;
+      while (std::getline(indicators, indicator, delimiter)) {
+	this->groupings.emplace_back(Grouping());
+	this->groups_indicators.emplace_back(std::vector<uint32_t>());
+	this->add_sequence(indicator, grouping_id);
+	++grouping_id;
+      }
     }
   } else {
     throw std::runtime_error("Could not read cluster indicators.");
@@ -78,7 +88,9 @@ void Reference::match_with_fasta(const char delim, std::istream &groups_file, st
     throw std::runtime_error("Matching the group indicators to the fasta file failed, is the --groups-list delimiter correct?");
   }
 
+  this->groupings.emplace_back(Grouping());
+  this->groups_indicators.emplace_back(std::vector<uint32_t>());
   for (uint32_t i = 0; i < groups_in_fasta.size(); ++i) {
-    this->add_sequence(groups_in_fasta[i][0]);
+    this->add_sequence(groups_in_fasta[i][0], 0);
   }
 }

@@ -10,7 +10,7 @@
 std::vector<std::string> ReadCellNames(std::istream &cells_file) {
   Reference reference;
   reference.read_from_file(cells_file);
-  return reference.grouping.names;
+  return reference.groupings[0].names;
 }
 
 void ReadPseudoalignment(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<std::unique_ptr<Sample>> &batch, Reference &reference, bool bootstrap_mode) {

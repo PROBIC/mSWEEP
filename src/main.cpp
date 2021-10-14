@@ -78,7 +78,7 @@ int main (int argc, char *argv[]) {
   }
 
   // Initialize the prior counts on the groups
-  args.optimizer.alphas = std::vector<double>(reference.grouping.n_groups, 1.0);
+  args.optimizer.alphas = std::vector<double>(reference.groupings[0].n_groups, 1.0);
 
   // Process the reads accordingly
   switch(args.run_mode()) {

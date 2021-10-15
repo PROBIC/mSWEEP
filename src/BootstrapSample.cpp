@@ -6,13 +6,6 @@
 
 #include "bxzstr.hpp"
 
-void BootstrapSample::InitBootstrap(const Grouping &grouping, const Arguments &args) {
-  ec_distribution = std::discrete_distribution<uint32_t>(pseudos.ec_counts.begin(), pseudos.ec_counts.end());
-
-  // Clear the abundances in case we're estimating the same sample again.
-  this->relative_abundances = std::vector<std::vector<double>>();
-}
-
 void BootstrapSample::ResampleCounts(const uint32_t how_many, std::mt19937_64 &generator) {
   std::vector<uint32_t> tmp_counts(num_ecs());
   for (uint32_t i = 0; i < how_many; ++i) {
@@ -44,8 +37,12 @@ void BootstrapSample::BootstrapAbundances(const Grouping &grouping, const Argume
   // Which sample are we processing?
   std::string name = (args.batch_mode ? cell_name() : "0");
   std::cout << "Processing " << (args.batch_mode ? name : "the sample") << std::endl;
-  // Init the bootstrap variables
-  InitBootstrap(grouping, args);
+
+  // Initialize ec_distribution for bootstrapping
+  ec_distribution = std::discrete_distribution<uint32_t>(pseudos.ec_counts.begin(), pseudos.ec_counts.end());
+
+  // Clear the abundances in case we're estimating the same sample again.
+  this->relative_abundances = std::vector<std::vector<double>>();
 
   // Store the original values
   std::vector<double> og_log_ec_counts(this->log_ec_counts);

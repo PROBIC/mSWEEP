@@ -54,19 +54,19 @@ int main (int argc, char *argv[]) {
       reference.match_with_fasta(args.groups_list_delimiter, groups_file.stream(), fasta_file.stream());
     }
 
-    std::cerr << "  read " << reference.n_refs << " group indicators" << std::endl;
+    std::cerr << "  read " << reference.get_n_refs() << " group indicators" << std::endl;
 
     std::cerr << "  reading pseudoalignments" << '\n';
     if (!args.themisto_mode) {
       // Check that the number of reference sequences matches in the grouping and the alignment.
       reference.verify_kallisto_alignment(*args.infiles.run_info);
-      ReadPseudoalignment(args.infiles, reference.n_refs, samples, args.bootstrap_mode);
+      ReadPseudoalignment(args.infiles, reference.get_n_refs(), samples, args.bootstrap_mode);
     } else {
       if (!args.themisto_index_path.empty()) {
 	File::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
 	reference.verify_themisto_index(themisto_index);
       }
-      ReadPseudoalignment(args.tinfile1, args.tinfile2, args.themisto_merge_mode, args.bootstrap_mode, reference.n_refs, samples);
+      ReadPseudoalignment(args.tinfile1, args.tinfile2, args.themisto_merge_mode, args.bootstrap_mode, reference.get_n_refs(), samples);
     }
 
     std::cerr << "  read " << (args.batch_mode ? samples.size() : samples[0]->num_ecs()) << (args.batch_mode ? " samples from the batch" : " unique alignments") << std::endl;
@@ -79,10 +79,10 @@ int main (int argc, char *argv[]) {
 
 
   // Estimate abundances with all groupings that were provided
-  uint16_t n_groupings = reference.groupings.size();
+  uint16_t n_groupings = reference.get_n_groupings();
   std::string outfile_name = args.outfile;
   for (uint16_t i = 0; i < n_groupings; ++i) {
-    uint32_t n_groups = reference.groupings[i].get_n_groups();
+    uint32_t n_groups = reference.get_grouping(i).get_n_groups();
 
     // Initialize the prior counts on the groups
     args.optimizer.alphas = std::vector<double>(n_groups, 1.0);
@@ -96,7 +96,7 @@ int main (int argc, char *argv[]) {
 
     std::cerr << "Building log-likelihood array" << std::endl;
     for (uint16_t j = 0; j < samples.size(); ++j) {
-      samples[j]->CalcLikelihood(reference.groupings[i], args.optimizer.bb_constants, reference.groups_indicators[i], n_groupings == 1);
+      samples[j]->CalcLikelihood(reference.get_grouping(i), args.optimizer.bb_constants, reference.get_group_indicators(i), n_groupings == 1);
 
       if (args.optimizer.write_likelihood || args.optimizer.write_likelihood_bitseq) {
 	std::cerr << "Writing likelihood matrix" << std::endl;
@@ -115,9 +115,9 @@ int main (int argc, char *argv[]) {
     } else {
       std::cerr << "Estimating relative abundances" << std::endl;
       if (args.bootstrap_mode) {
-	ProcessBootstrap(reference.groupings[i], args, samples);
+	ProcessBootstrap(reference.get_grouping(i), args, samples);
       } else {
-	ProcessReads(reference.groupings[i], args, samples);
+	ProcessReads(reference.get_grouping(i), args, samples);
       }
     }
   }

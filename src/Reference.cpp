@@ -65,9 +65,10 @@ void Reference::read_from_file(std::istream &indicator_file, const char delimite
       std::string indicator;
       uint16_t grouping_id = 0;
       while (std::getline(indicators, indicator, delimiter)) {
-	if (grouping_id >= this->groupings.size()) {
+	if (grouping_id >= this->n_groupings) {
 	  this->groupings.emplace_back(Grouping());
 	  this->groups_indicators.emplace_back(std::vector<uint32_t>());
+	  ++this->n_groupings;
 	}
 	this->add_sequence(indicator, grouping_id);
 	++grouping_id;
@@ -89,12 +90,12 @@ void Reference::match_with_fasta(const char delim, std::istream &groups_file, st
     throw std::runtime_error("Matching the group indicators to the fasta file failed, is the --groups-delimiter argument correct?");
   }
 
-  uint16_t n_groupings = groups_in_fasta[0].size();
-  this->groupings = std::vector<Grouping>(n_groupings);
-  this->groups_indicators = std::vector<std::vector<uint32_t>>(n_groupings);
+  this->n_groupings = groups_in_fasta[0].size();
+  this->groupings = std::vector<Grouping>(this->n_groupings);
+  this->groups_indicators = std::vector<std::vector<uint32_t>>(this->n_groupings);
 
   for (uint32_t i = 0; i < groups_in_fasta.size(); ++i) {
-    for (uint16_t j = 0; j < n_groupings; ++j) {
+    for (uint16_t j = 0; j < this->n_groupings; ++j) {
       this->add_sequence(groups_in_fasta[i][j], j);
     }
   }

@@ -6,11 +6,6 @@
 
 #include "bxzstr.hpp"
 
-void BootstrapSample::InitBootstrap(const Grouping &grouping) {
-  ec_distribution = std::discrete_distribution<uint32_t>(pseudos.ec_counts.begin(), pseudos.ec_counts.end());
-  CalcLikelihood(grouping);
-}
-
 void BootstrapSample::ResampleCounts(const uint32_t how_many, std::mt19937_64 &generator) {
   std::vector<uint32_t> tmp_counts(num_ecs());
   for (uint32_t i = 0; i < how_many; ++i) {
@@ -30,7 +25,7 @@ void BootstrapSample::BootstrapIter(const std::vector<double> &alpha0, const dou
   this->relative_abundances.emplace_back(group_abundances());
 }
 
-void BootstrapSample::BootstrapAbundances(const Reference &reference, const Arguments &args) {
+void BootstrapSample::BootstrapAbundances(const Grouping &grouping, const Arguments &args) {
   std::mt19937_64 gen;
   if (args.seed == -1) {
     std::random_device rd;
@@ -42,10 +37,18 @@ void BootstrapSample::BootstrapAbundances(const Reference &reference, const Argu
   // Which sample are we processing?
   std::string name = (args.batch_mode ? cell_name() : "0");
   std::cout << "Processing " << (args.batch_mode ? name : "the sample") << std::endl;
-  // Init the bootstrap variables
-  InitBootstrap(reference.grouping);
-  //  bootstrap_abundances = std::vector<std::vector<double>>(args.iters, std::vector<double>());
-  for (unsigned i = 0; i <= args.iters; ++i) {
+
+  // Initialize ec_distribution for bootstrapping
+  ec_distribution = std::discrete_distribution<uint32_t>(pseudos.ec_counts.begin(), pseudos.ec_counts.end());
+
+  // Clear the abundances in case we're estimating the same sample again.
+  this->relative_abundances = std::vector<std::vector<double>>();
+
+  // Store the original values
+  std::vector<double> og_log_ec_counts(this->log_ec_counts);
+  uint32_t og_counts_total = this->counts_total;
+
+  for (uint16_t i = 0; i <= args.iters; ++i) {
     if (i > 0) {
       std::cout << "Bootstrap" << " iter " << i << "/" << args.iters << std::endl;
     } else {
@@ -64,12 +67,16 @@ void BootstrapSample::BootstrapAbundances(const Reference &reference, const Argu
 	  outfile += "_probs.csv";
 	  of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));
 	}
-	write_probabilities(reference.group_names, args.optimizer.gzip_probs, (args.optimizer.print_probs ? std::cout : *of));
+	write_probabilities(grouping.get_names(), (args.optimizer.print_probs ? std::cout : *of));
       }
     }
     // Resample the pseudoalignment counts (here because we want to include the original)
     ResampleCounts((args.bootstrap_count == 0 ? counts_total : args.bootstrap_count), gen);
   }
+
+  // Restore original values
+  this->log_ec_counts = og_log_ec_counts;
+  this->counts_total = og_counts_total;
 }
 
 

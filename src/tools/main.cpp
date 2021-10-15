@@ -16,7 +16,7 @@ int main (int argc, char *argv[]) {
     return 1;
   }
 
-  std::vector<std::string> groups_in_fasta;
+  std::vector<std::vector<std::string>> groups_in_fasta;
   try {
     mSWEEP::tools::matchfasta(args.groups, args.fasta, args.delim, &groups_in_fasta);
   } catch (std::exception &e) {
@@ -26,8 +26,15 @@ int main (int argc, char *argv[]) {
     return 1;
   }
 
-  for (auto val : groups_in_fasta) {
-    std::cout << val << '\n';
+  size_t n_groups_for_seq = groups_in_fasta.size();
+  for (size_t i = 0; i < n_groups_for_seq; ++i) {
+    for (auto val : groups_in_fasta[i]) {
+      std::cout << val;
+      if (i < n_groups_for_seq - 1) {
+	std::cout << args.delim;
+      }
+    }
+    std::cout << '\n';
   }
   std::cout << std::endl;
   return 0;

@@ -1,11 +1,102 @@
 #include "Reference.hpp"
 
-void Reference::calculate_bb_parameters(double params[2]) {
-  for (size_t i = 0; i < this->grouping.n_groups; ++i) {
-    double e = this->grouping.sizes[i]*params[0];
-    double phi = 1.0/(this->grouping.sizes[i] - e + params[1]);
-    double beta = phi*(this->grouping.sizes[i] - e);
-    double alpha = (e*beta)/(this->grouping.sizes[i] - e);
-    this->grouping.bb_params.emplace_back(std::array<double, 2>{ { alpha, beta } });
+#include <unordered_map>
+#include <exception>
+#include <sstream>
+
+#include "tools/matchfasta.hpp"
+
+void Reference::verify_themisto_index(File::In &themisto_index) const {
+  uint32_t lines_in_grouping = themisto_index.count_lines<uint32_t>();
+  if (lines_in_grouping > this->n_refs) {
+    throw std::runtime_error("pseudoalignment has more reference sequences than the grouping.");
+  } else if (lines_in_grouping < this->n_refs) {
+    throw std::runtime_error("grouping has more reference sequences than the pseudoalignment.");
+  }
+}
+
+void Reference::verify_kallisto_alignment(std::istream &run_info) const {
+  // Get the number of reference sequences in the pseudoalignment
+  // contained in the 'n_targets' variable in run_info.json file.
+  short unsigned line_nr = 0; // number of reference seqs is on line 2 (kallisto v0.43)
+  if (run_info.good()) {
+    std::string line;
+    while (getline(run_info, line)) {
+      if (line_nr == 0) {
+	++line_nr;
+      } else {
+	std::string part;
+	std::stringstream partition(line);
+	unsigned n_targets = 0;
+	while (getline(partition, part, ':')) {
+	  if (n_targets == 0) {
+	    ++n_targets;
+	  } else {
+	    part.pop_back(); // the number ends in a ','; get rid of it.
+	    unsigned n_targets = std::stoi(part);
+	    if (n_targets > this->n_refs) {
+	      throw std::runtime_error("pseudoalignment has more reference sequences than the grouping.");
+	    } else if (n_targets < this->n_refs) {
+	      throw std::runtime_error("grouping has more reference sequences than the pseudoalignment.");
+	    }
+	    return;
+	  }
+	}
+      }
+    }
+  } else {
+    throw std::runtime_error("Could not read run_info.json found.");
+  }
+}
+
+void Reference::add_sequence(const std::string &indicator_s, const uint16_t grouping_id) {
+  this->groupings[grouping_id].add_sequence(indicator_s);
+  if (grouping_id == 0) {
+    this->n_refs += 1;
+  }
+  this->groups_indicators[grouping_id].emplace_back(this->groupings[grouping_id].get_id(indicator_s));
+}
+
+void Reference::read_from_file(std::istream &indicator_file, const char delimiter) {
+  if (indicator_file.good()) {
+    std::string indicator_s;
+    while (std::getline(indicator_file, indicator_s)) {
+      std::stringstream indicators(indicator_s);
+      std::string indicator;
+      uint16_t grouping_id = 0;
+      while (std::getline(indicators, indicator, delimiter)) {
+	if (grouping_id >= this->n_groupings) {
+	  this->groupings.emplace_back(Grouping());
+	  this->groups_indicators.emplace_back(std::vector<uint32_t>());
+	  ++this->n_groupings;
+	}
+	this->add_sequence(indicator, grouping_id);
+	++grouping_id;
+      }
+    }
+  } else {
+    throw std::runtime_error("Could not read cluster indicators.");
+  }
+  if (this->n_refs == 0) {
+    throw std::runtime_error("The grouping contains 0 reference sequences");
+  }
+}
+
+void Reference::match_with_fasta(const char delim, std::istream &groups_file, std::istream &fasta_file) {
+  std::vector<std::vector<std::string>> groups_in_fasta;
+  try {
+    mSWEEP::tools::matchfasta(groups_file, fasta_file, delim, &groups_in_fasta);
+  } catch (std::exception &e) {
+    throw std::runtime_error("Matching the group indicators to the fasta file failed, is the --groups-delimiter argument correct?");
+  }
+
+  this->n_groupings = groups_in_fasta[0].size();
+  this->groupings = std::vector<Grouping>(this->n_groupings);
+  this->groups_indicators = std::vector<std::vector<uint32_t>>(this->n_groupings);
+
+  for (uint32_t i = 0; i < groups_in_fasta.size(); ++i) {
+    for (uint16_t j = 0; j < this->n_groupings; ++j) {
+      this->add_sequence(groups_in_fasta[i][j], j);
+    }
   }
 }

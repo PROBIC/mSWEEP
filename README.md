@@ -14,8 +14,8 @@ If you use our method, please cite us as Mäklin T, Kallonen T, David S
 
 # Installation
 mSWEEP can be obtained either in the form of a precompiled binary
-* [Linux 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.4.0/mSWEEP_linux-v1.4.0.tar.gz)
-* [macOS 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.4.0/mSWEEP_macOS-v1.4.0.tar.gz)
+* [Linux 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.5.0/mSWEEP_linux-v1.5.0.tar.gz)
+* [macOS 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.5.0/mSWEEP_macOS-v1.5.0.tar.gz)
 or by following the instructions below for compiling mSWEEP from source.
 
 In addition to mSWEEP, you will need to install either [Themisto
@@ -221,9 +221,24 @@ cluster2
 cluster1
 ```
 The grouping identifiers must be in the same order as their
-corresponding sequences appear in the reference file. Alternatively,
-you can use supply the reference sequences and a table containing the
-groups to reorder the indicators.
+corresponding sequences appear in the reference file.
+
+Multiple groupings can be supplied by adding them as columns to the
+file containing the identifiers. When mSWEEP detects multiple
+groupings, relative abundances will be estimated for all of them. When
+outputting to file, the column index will be appended to the output
+file name. For example with four sequences and two different groupings:
+```
+cluster1	clusterA
+cluster2	clusterB
+cluster2	clusterC
+cluster1	clusterA
+```
+The default delimiter for the columns is a tab. The delimiter can be
+changed to something else with the `--groups-delimiter` option.
+
+Alternatively, you can use supply the reference sequences and a table
+containing the groups to reorder the indicators.
 
 ### Reordering identifiers
 If your grouping identifiers are not in the same order as in the fasta
@@ -259,6 +274,19 @@ mSWEEP --themisto-1 215_1_alignment.txt --themisto-2 215_2_alignment.txt -t 2 --
 Should you require the reordered identifiers written to a file
 (e. g. for running mSWEEP on multiple input files), please refer to
 the 'matchfasta' utility shipped alongside mSWEEP which performs the reordering.
+
+Reordering the identifiers also supports providing several groupings at once:
+```
+seq_156	group2	groupA
+seq_157	group1	groupB
+seq_197	group4	groupC
+seq_20	group3	groupD
+seq_285	group4	groupE
+seq_43	group2	groupA
+seq_44	group1	groupB
+seq_5	group3	groupF
+```
+which will instruct mSWEEP to estimate relative abundances for both groupings.
 
 ## Analysing reads (with Themisto)
 - Pseudomap paired-end reads:

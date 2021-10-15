@@ -1,56 +1,40 @@
 #include "process_reads.hpp"
 
+#include <string>
+
 #include "rcg.hpp"
 #include "bxzstr.hpp"
 
-void ProcessReads(const Reference &reference, std::string outfile, Sample &sample, OptimizerArgs args) {
-  // Process pseudoalignments from kallisto.
-  std::cerr << "Building log-likelihood array" << std::endl;
+void ProcessReads(const Grouping &grouping, const Arguments &args, std::vector<std::unique_ptr<Sample>> &samples) {
+  for (uint32_t i = 0; i < samples.size(); ++i) {
+    // Process pseudoalignments.
+    samples[i]->ec_probs = rcg_optl_mat(samples[i]->ll_mat, (*samples[i]), args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters);
 
-  sample.CalcLikelihood(reference.grouping);
-
-  if (args.write_likelihood || args.write_likelihood_bitseq) {
-    std::cerr << "Writing likelihood matrix" << std::endl;
-    if (args.write_likelihood) {
-      sample.write_likelihood(args.gzip_probs, reference.grouping.n_groups, outfile);
+    std::string outfile(args.outfile);
+    if (samples.size() > 1) {
+      // Legacy kallisto batch mode support in outfile names.
+      outfile = (args.outfile.empty() ? args.outfile : args.outfile + "/" + samples[i]->cell_name());
     }
-    if (args.write_likelihood_bitseq) {
-      sample.write_likelihood_bitseq(args.gzip_probs, reference.grouping.n_groups, outfile);
-    }
-  }
 
-  if (args.no_fit_model) {
-    std::cerr << "Skipping relative abundance estimation (--no-fit-model toggled)" << std::endl;
-  } else {
-    std::cerr << "Estimating relative abundances" << std::endl;
-    sample.ec_probs = rcg_optl_mat(sample.ll_mat, sample, args.alphas, args.tolerance, args.max_iters);
-
-    sample.write_abundances(reference.group_names, outfile);  
-    if (args.write_probs && !outfile.empty()) {
+    samples[i]->write_abundances(grouping.get_names(), outfile);
+    if (args.optimizer.write_probs && !outfile.empty()) {
       std::unique_ptr<std::ostream> of;
-      if (args.gzip_probs) {
+      if (args.optimizer.gzip_probs) {
 	outfile += "_probs.csv.gz";
 	of = std::unique_ptr<std::ostream>(new bxz::ofstream(outfile));
       } else {
 	outfile += "_probs.csv";
 	of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));
       }
-      sample.write_probabilities(reference.group_names, args.gzip_probs, (args.print_probs ? std::cout : *of));
+      samples[i]->write_probabilities(grouping.get_names(), (args.optimizer.print_probs ? std::cout : *of));
     }
   }
 }
 
-void ProcessBatch(const Reference &reference, Arguments &args, std::vector<std::unique_ptr<Sample>> &bitfields) {
-  for (uint32_t i = 0; i < bitfields.size(); ++i) {
-    std::string batch_outfile = (args.outfile.empty() ? args.outfile : args.outfile + "/" + bitfields[i]->cell_name());
-    ProcessReads(reference, batch_outfile, *bitfields[i], args.optimizer);
-  }
-}
-
-void ProcessBootstrap(Reference &reference, Arguments &args, std::vector<std::unique_ptr<Sample>> &bitfields) {
+void ProcessBootstrap(const Grouping &grouping, Arguments &args, std::vector<std::unique_ptr<Sample>> &bitfields) {
   for (uint32_t i = 0; i < bitfields.size(); ++i) {
     BootstrapSample* bs = static_cast<BootstrapSample*>(&(*bitfields[i]));
-    bs->BootstrapAbundances(reference, args);
-    bs->WriteBootstrap(reference.group_names, args.outfile, args.iters, args.batch_mode);    
+    bs->BootstrapAbundances(grouping, args);
+    bs->WriteBootstrap(grouping.get_names(), args.outfile, args.iters, args.batch_mode);    
   }
 }

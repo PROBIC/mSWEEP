@@ -48,7 +48,7 @@ public:
   // Write estimated relative abundances
   void write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile) const;
   // Write estimated read-reference posterior probabilities (gamma_Z)
-  void write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, const bool gzip_probs, std::ostream &outfile) const;
+  void write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, std::ostream &outfile) const;
   // Write likelihoods
   void write_likelihood(const bool gzip_output, const uint32_t n_groups, std::string outfile) const;
   void write_likelihood_bitseq(const bool gzip_output, const uint32_t n_groups, std::string outfile) const;
@@ -61,7 +61,7 @@ public:
   void read_themisto(const Mode &mode, const uint32_t n_refs, std::vector<std::istream*> &strands) override;
   void read_kallisto(const uint32_t n_refs, std::istream &tsv_file, std::istream &ec_file) override;
   // Fill the likelihood matrix
-  void CalcLikelihood(const Grouping &grouping);
+  void CalcLikelihood(const Grouping &grouping, const double bb_constants[2], const std::vector<uint32_t> &group_indicators, const bool cleanup);
 };
 
 class BootstrapSample : public Sample {
@@ -71,14 +71,12 @@ private:
 
   // Run estimation and add results to relative_abundances
   void BootstrapIter(const std::vector<double> &alpha0, const double tolerance, const uint16_t max_iters);
-  // Initialize ec_distributino and ll_mat for bootstrapping
-  void InitBootstrap(const Grouping &grouping);
   // Resample the equivalence class counts
   void ResampleCounts(const uint32_t how_many, std::mt19937_64 &rng);
 
 public:
   void WriteBootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string &outfile, const unsigned iters, const bool batch_mode) const;
-  void BootstrapAbundances(const Reference &reference, const Arguments &args);
+  void BootstrapAbundances(const Grouping &grouping, const Arguments &args);
 
   // Read in pseudoalignments but do not free the memory used by storing the equivalence class counts.
   void read_themisto(const Mode &mode, const uint32_t n_refs, std::vector<std::istream*> &strands) override;

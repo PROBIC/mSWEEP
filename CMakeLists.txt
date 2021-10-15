@@ -5,9 +5,9 @@ project(mSWEEP)
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release) ## Build Release by default
 elseif(CMAKE_BUILD_TYPE MATCHES Debug)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -g")
-  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -g")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -Wpedantic")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -g -Wall -Wextra -Wpedantic")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -g -Wall -Wextra -Wpedantic")
 endif()
 
 if(CMAKE_BUILD_TYPE MATCHES Release)
@@ -62,6 +62,7 @@ configure_file(include/openmp_config.hpp.in ${CMAKE_BINARY_DIR}/include/openmp_c
 add_executable(mSWEEP
 ${CMAKE_SOURCE_DIR}/src/BootstrapSample.cpp
 ${CMAKE_SOURCE_DIR}/src/Reference.cpp
+${CMAKE_SOURCE_DIR}/src/Grouping.cpp
 ${CMAKE_SOURCE_DIR}/src/Sample.cpp
 ${CMAKE_SOURCE_DIR}/src/likelihood.cpp
 ${CMAKE_SOURCE_DIR}/src/main.cpp
@@ -69,7 +70,7 @@ ${CMAKE_SOURCE_DIR}/src/matrix.cpp
 ${CMAKE_SOURCE_DIR}/src/parse_arguments.cpp
 ${CMAKE_SOURCE_DIR}/src/process_reads.cpp
 ${CMAKE_SOURCE_DIR}/src/rcg.cpp
-${CMAKE_SOURCE_DIR}/src/read_bitfield.cpp)
+${CMAKE_SOURCE_DIR}/src/read_pseudoalignment.cpp)
 
 ## Check supported compression types
 find_package(BZip2)

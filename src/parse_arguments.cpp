@@ -201,19 +201,20 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     }
   }
 
-  if (CmdOptionPresent(argv, argv+argc, "--fasta") || CmdOptionPresent(argv, argv+argc, "--groups-list") || CmdOptionPresent(argv, argv+argc, "--groups-delimiter")) {
+  if (CmdOptionPresent(argv, argv+argc, "--fasta") || CmdOptionPresent(argv, argv+argc, "--groups-list")) {
     if ((!CmdOptionPresent(argv, argv+argc, "--fasta") || !CmdOptionPresent(argv, argv+argc, "--groups-list"))) {
       throw std::runtime_error("--fasta and --groups-list must both be specified if either is present.");
     }
     args.fasta_file = std::string(GetCmdOption(argv, argv+argc, "--fasta"));
     args.groups_list_file = std::string(GetCmdOption(argv, argv+argc, "--groups-list"));
-    if (CmdOptionPresent(argv, argv+argc, "--groups-delimiter")) {
-      std::string groups_list_delimiter = std::string(GetCmdOption(argv, argv+argc, "--groups-delimiter"));
-      if (groups_list_delimiter.size() > 1) {
-	throw std::runtime_error("--groups-delimiter must be a single character");
-      } else {
-	args.groups_list_delimiter = groups_list_delimiter.at(0);
-      }
+  }
+
+  if (CmdOptionPresent(argv, argv+argc, "--groups-delimiter")) {
+    std::string groups_list_delimiter = std::string(GetCmdOption(argv, argv+argc, "--groups-delimiter"));
+    if (groups_list_delimiter.size() > 1) {
+      throw std::runtime_error("--groups-delimiter must be a single character");
+    } else {
+      args.groups_list_delimiter = groups_list_delimiter.at(0);
     }
   }
 
@@ -247,11 +248,11 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
   }
 
   if (CmdOptionPresent(argv, argv+argc, "--max-iters")) {
-    unsigned max_iters = std::stoi(std::string(GetCmdOption(argv, argv+argc, "--max-iters")));
-    if (max_iters < 0) {
-      throw std::runtime_error("--max-iters must be at least 1");
+    int32_t max_iters = std::stoi(std::string(GetCmdOption(argv, argv+argc, "--max-iters")));
+    if (max_iters < 0 || max_iters > 65536) {
+      throw std::runtime_error("--max-iters must be at least 1 and less than 65537.");
     } else {
-      args.optimizer.max_iters = max_iters;
+      args.optimizer.max_iters = (uint16_t)max_iters;
     }
   }
 
@@ -260,16 +261,16 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     if (frac_mu <= 0.5 || frac_mu >= 1.0) {
       throw std::runtime_error("-q must be between 0.5 and 1.");
     } else {
-      args.params[0] = frac_mu;
+      args.optimizer.bb_constants[0] = frac_mu;
     }
   }
   
   if (CmdOptionPresent(argv, argv+argc, "-e")) {
     double epsilon = ParseDoubleOption(argv, argv+argc, "-e");
-    if (epsilon <= 0.0 || epsilon >= 2.0*(args.params[0]) - 1.0) {
+    if (epsilon <= 0.0 || epsilon >= 2.0*(args.optimizer.bb_constants[0]) - 1.0) {
       throw std::runtime_error("-e must be greater than 0, and less than 2*q - 1");
     } else {
-      args.params[1] = epsilon;
+      args.optimizer.bb_constants[1] = epsilon;
     }
   }
 }

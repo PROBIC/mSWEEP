@@ -91,7 +91,7 @@ void ELBO_rcg_mat(const Matrix<double> &logl, const Matrix<double> &gamma_Z, con
   }
 }
 
-void revert_step(Matrix<double> &gamma_Z, const Matrix<double> &step, const std::vector<double> &oldm) {
+void revert_step(Matrix<double> &gamma_Z, const std::vector<double> &oldm) {
   short unsigned n_rows = gamma_Z.get_rows();
   unsigned n_cols = gamma_Z.get_cols();
 #pragma omp parallel for schedule(static)
@@ -157,7 +157,7 @@ Matrix<double> rcg_optl_mat(const Matrix<double> &logl, const Sample &sample, co
     
     if (bound < oldbound) {
       didreset = true;
-      revert_step(gamma_Z, step, oldm);
+      revert_step(gamma_Z, oldm);
       if (beta_FR > 0) {
 	gamma_Z -= oldstep;
       }

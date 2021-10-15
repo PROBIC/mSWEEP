@@ -48,9 +48,6 @@ struct Arguments {
   uint16_t iters = 1;
   uint32_t bootstrap_count = 0;
   int32_t seed = -1;
-
-  // 0 = single sample, 1 = batch input, 2 = bootstrap single sample
-  uint8_t run_mode() { return 0 | (this->bootstrap_mode << 1) | (this->batch_mode << 0); };
 };
 
 void ParseArguments(int argc, char *argv[], Arguments &args);

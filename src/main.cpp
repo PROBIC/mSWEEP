@@ -112,11 +112,10 @@ int main (int argc, char *argv[]) {
       std::cerr << "Skipping relative abundance estimation (--no-fit-model toggled)" << std::endl;
     } else {
       std::cerr << "Estimating relative abundances" << std::endl;
-      switch(args.run_mode()) {
-      case 0: ProcessReads(reference.groupings[i], args, samples); break;
-      case 1: ProcessReads(reference.groupings[i], args, samples); break;
-      case 2: ProcessBootstrap(reference.groupings[i], args, samples); break;
-      case 3: ProcessBootstrap(reference.groupings[i], args, samples); break; // Same function for batch and single files
+      if (args.bootstrap_mode) {
+	ProcessBootstrap(reference.groupings[i], args, samples);
+      } else {
+	ProcessReads(reference.groupings[i], args, samples);
       }
     }
   }

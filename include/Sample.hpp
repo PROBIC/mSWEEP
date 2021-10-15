@@ -72,13 +72,13 @@ private:
   // Run estimation and add results to relative_abundances
   void BootstrapIter(const std::vector<double> &alpha0, const double tolerance, const uint16_t max_iters);
   // Initialize ec_distributino and ll_mat for bootstrapping
-  void InitBootstrap(const Grouping &grouping, const Arguments &args, const std::vector<uint32_t> &group_indicators);
+  void InitBootstrap(const Grouping &grouping, const Arguments &args);
   // Resample the equivalence class counts
   void ResampleCounts(const uint32_t how_many, std::mt19937_64 &rng);
 
 public:
   void WriteBootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string &outfile, const unsigned iters, const bool batch_mode) const;
-  void BootstrapAbundances(const Grouping &grouping, const std::vector<uint32_t> &group_indicators, const Arguments &args);
+  void BootstrapAbundances(const Grouping &grouping, const Arguments &args);
 
   // Read in pseudoalignments but do not free the memory used by storing the equivalence class counts.
   void read_themisto(const Mode &mode, const uint32_t n_refs, std::vector<std::istream*> &strands) override;

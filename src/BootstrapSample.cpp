@@ -6,7 +6,7 @@
 
 #include "bxzstr.hpp"
 
-void BootstrapSample::InitBootstrap(const Grouping &grouping, const Arguments &args, const std::vector<uint32_t> &group_indicators) {
+void BootstrapSample::InitBootstrap(const Grouping &grouping, const Arguments &args) {
   ec_distribution = std::discrete_distribution<uint32_t>(pseudos.ec_counts.begin(), pseudos.ec_counts.end());
 
   // Clear the abundances in case we're estimating the same sample again.
@@ -32,7 +32,7 @@ void BootstrapSample::BootstrapIter(const std::vector<double> &alpha0, const dou
   this->relative_abundances.emplace_back(group_abundances());
 }
 
-void BootstrapSample::BootstrapAbundances(const Grouping &grouping, const std::vector<uint32_t> &group_indicators, const Arguments &args) {
+void BootstrapSample::BootstrapAbundances(const Grouping &grouping, const Arguments &args) {
   std::mt19937_64 gen;
   if (args.seed == -1) {
     std::random_device rd;
@@ -45,7 +45,7 @@ void BootstrapSample::BootstrapAbundances(const Grouping &grouping, const std::v
   std::string name = (args.batch_mode ? cell_name() : "0");
   std::cout << "Processing " << (args.batch_mode ? name : "the sample") << std::endl;
   // Init the bootstrap variables
-  InitBootstrap(grouping, args, group_indicators);
+  InitBootstrap(grouping, args);
 
   // Store the original values
   std::vector<double> og_log_ec_counts(this->log_ec_counts);

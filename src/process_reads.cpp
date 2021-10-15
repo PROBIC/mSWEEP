@@ -3,7 +3,7 @@
 #include "rcg.hpp"
 #include "bxzstr.hpp"
 
-void ProcessReads(const Grouping &grouping, const std::vector<uint32_t> &group_indicators, std::string outfile, Sample &sample, OptimizerArgs args) {
+void ProcessReads(const Grouping &grouping, std::string outfile, Sample &sample, OptimizerArgs args) {
   // Process pseudoalignments.
   sample.ec_probs = rcg_optl_mat(sample.ll_mat, sample, args.alphas, args.tolerance, args.max_iters);
 
@@ -21,17 +21,17 @@ void ProcessReads(const Grouping &grouping, const std::vector<uint32_t> &group_i
   }
 }
 
-void ProcessBatch(const Grouping &grouping, const std::vector<uint32_t> &group_indicators, Arguments &args, std::vector<std::unique_ptr<Sample>> &bitfields) {
+void ProcessBatch(const Grouping &grouping, Arguments &args, std::vector<std::unique_ptr<Sample>> &bitfields) {
   for (uint32_t i = 0; i < bitfields.size(); ++i) {
     std::string batch_outfile = (args.outfile.empty() ? args.outfile : args.outfile + "/" + bitfields[i]->cell_name());
-    ProcessReads(grouping, group_indicators, batch_outfile, *bitfields[i], args.optimizer);
+    ProcessReads(grouping, batch_outfile, *bitfields[i], args.optimizer);
   }
 }
 
-void ProcessBootstrap(const Grouping &grouping, const std::vector<uint32_t> &group_indicators, Arguments &args, std::vector<std::unique_ptr<Sample>> &bitfields) {
+void ProcessBootstrap(const Grouping &grouping, Arguments &args, std::vector<std::unique_ptr<Sample>> &bitfields) {
   for (uint32_t i = 0; i < bitfields.size(); ++i) {
     BootstrapSample* bs = static_cast<BootstrapSample*>(&(*bitfields[i]));
-    bs->BootstrapAbundances(grouping, group_indicators, args);
+    bs->BootstrapAbundances(grouping, args);
     bs->WriteBootstrap(grouping.names, args.outfile, args.iters, args.batch_mode);    
   }
 }

@@ -113,8 +113,8 @@ int main (int argc, char *argv[]) {
     } else {
       std::cerr << "Estimating relative abundances" << std::endl;
       switch(args.run_mode()) {
-      case 0: ProcessReads(reference.groupings[i], args.outfile, *samples[0], args.optimizer); break;
-      case 1: ProcessBatch(reference.groupings[i], args, samples); break;
+      case 0: ProcessReads(reference.groupings[i], args, samples); break;
+      case 1: ProcessReads(reference.groupings[i], args, samples); break;
       case 2: ProcessBootstrap(reference.groupings[i], args, samples); break;
       case 3: ProcessBootstrap(reference.groupings[i], args, samples); break; // Same function for batch and single files
       }

@@ -248,11 +248,11 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
   }
 
   if (CmdOptionPresent(argv, argv+argc, "--max-iters")) {
-    unsigned max_iters = std::stoi(std::string(GetCmdOption(argv, argv+argc, "--max-iters")));
-    if (max_iters < 0) {
-      throw std::runtime_error("--max-iters must be at least 1");
+    int32_t max_iters = std::stoi(std::string(GetCmdOption(argv, argv+argc, "--max-iters")));
+    if (max_iters < 0 || max_iters > 65536) {
+      throw std::runtime_error("--max-iters must be at least 1 and less than 65537.");
     } else {
-      args.optimizer.max_iters = max_iters;
+      args.optimizer.max_iters = (uint16_t)max_iters;
     }
   }
 

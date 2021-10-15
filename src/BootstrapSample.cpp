@@ -67,7 +67,7 @@ void BootstrapSample::BootstrapAbundances(const Grouping &grouping, const Argume
 	  outfile += "_probs.csv";
 	  of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));
 	}
-	write_probabilities(grouping.names, args.optimizer.gzip_probs, (args.optimizer.print_probs ? std::cout : *of));
+	write_probabilities(grouping.names, (args.optimizer.print_probs ? std::cout : *of));
       }
     }
     // Resample the pseudoalignment counts (here because we want to include the original)

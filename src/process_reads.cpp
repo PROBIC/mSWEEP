@@ -26,7 +26,7 @@ void ProcessReads(const Grouping &grouping, const Arguments &args, std::vector<s
 	outfile += "_probs.csv";
 	of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));
       }
-      samples[i]->write_probabilities(grouping.names, args.optimizer.gzip_probs, (args.optimizer.print_probs ? std::cout : *of));
+      samples[i]->write_probabilities(grouping.names, (args.optimizer.print_probs ? std::cout : *of));
     }
   }
 }

@@ -52,7 +52,7 @@ std::vector<uint16_t> Sample::group_counts(const std::vector<uint32_t> indicator
   return read_hitcounts;
 }
 
-void Sample::write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, const bool gzip_probs, std::ostream &of) const {
+void Sample::write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, std::ostream &of) const {
   // Write the probability matrix to a file.
   if (of.good()) {
     of << "ec_id" << ',';

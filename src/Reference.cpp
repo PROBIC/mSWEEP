@@ -50,7 +50,6 @@ void Reference::verify_kallisto_alignment(std::istream &run_info) const {
 }
 
 void Reference::add_sequence(const std::string &indicator_s, const uint16_t grouping_id) {
-  this->groupings[grouping_id].add_group(indicator_s);
   this->groupings[grouping_id].add_sequence(indicator_s);
   if (grouping_id == 0) {
     this->n_refs += 1;

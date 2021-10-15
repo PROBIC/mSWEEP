@@ -14,8 +14,12 @@ private:
   std::vector<std::string> names;
   std::unordered_map<std::string, uint32_t> name_to_id;
 
-public:
+  // Adds group_name to this Grouping
   void add_group(const std::string &group_name);
+
+public:
+  // Increase the count of sequences assigned to group_name, and add
+  // group_name to this grouping if it does not exist yet.
   void add_sequence(const std::string &group_name);
 
   // Calculates the group-specific likelihood parameters that depend on the group sizes

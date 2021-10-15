@@ -60,7 +60,7 @@ int main (int argc, char *argv[]) {
     if (!args.themisto_mode) {
       // Check that the number of reference sequences matches in the grouping and the alignment.
       reference.verify_kallisto_alignment(*args.infiles.run_info);
-      ReadPseudoalignment(args.infiles, reference.n_refs, samples, reference, args.bootstrap_mode);
+      ReadPseudoalignment(args.infiles, reference.n_refs, samples, args.bootstrap_mode);
     } else {
       if (!args.themisto_index_path.empty()) {
 	File::In themisto_index(args.themisto_index_path + "/coloring-names.txt");

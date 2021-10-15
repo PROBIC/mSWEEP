@@ -13,7 +13,7 @@ std::vector<std::string> ReadCellNames(std::istream &cells_file) {
   return reference.groupings[0].names;
 }
 
-void ReadPseudoalignment(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<std::unique_ptr<Sample>> &batch, Reference &reference, bool bootstrap_mode) {
+void ReadPseudoalignment(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<std::unique_ptr<Sample>> &batch, bool bootstrap_mode) {
   if (bootstrap_mode) {
     batch.emplace_back(new BootstrapSample());
   } else {

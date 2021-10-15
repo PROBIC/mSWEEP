@@ -82,8 +82,10 @@ int main (int argc, char *argv[]) {
   uint16_t n_groupings = reference.groupings.size();
   std::string outfile_name = args.outfile;
   for (uint16_t i = 0; i < n_groupings; ++i) {
+    uint32_t n_groups = reference.groupings[i].get_n_groups();
+
     // Initialize the prior counts on the groups
-    args.optimizer.alphas = std::vector<double>(reference.groupings[i].n_groups, 1.0);
+    args.optimizer.alphas = std::vector<double>(n_groups, 1.0);
 
     args.outfile = outfile_name;
     // Set output file name correctly
@@ -99,10 +101,10 @@ int main (int argc, char *argv[]) {
       if (args.optimizer.write_likelihood || args.optimizer.write_likelihood_bitseq) {
 	std::cerr << "Writing likelihood matrix" << std::endl;
 	if (args.optimizer.write_likelihood) {
-	  samples[j]->write_likelihood(args.optimizer.gzip_probs, reference.groupings[i].n_groups, args.outfile);
+	  samples[j]->write_likelihood(args.optimizer.gzip_probs, n_groups, args.outfile);
 	}
 	if (args.optimizer.write_likelihood_bitseq) {
-	  samples[j]->write_likelihood_bitseq(args.optimizer.gzip_probs, reference.groupings[i].n_groups, args.outfile);
+	  samples[j]->write_likelihood_bitseq(args.optimizer.gzip_probs, n_groups, args.outfile);
 	}
       }
     }

@@ -16,7 +16,7 @@ void ProcessReads(const Grouping &grouping, const Arguments &args, std::vector<s
       outfile = (args.outfile.empty() ? args.outfile : args.outfile + "/" + samples[i]->cell_name());
     }
 
-    samples[i]->write_abundances(grouping.names, outfile);
+    samples[i]->write_abundances(grouping.get_names(), outfile);
     if (args.optimizer.write_probs && !outfile.empty()) {
       std::unique_ptr<std::ostream> of;
       if (args.optimizer.gzip_probs) {
@@ -26,7 +26,7 @@ void ProcessReads(const Grouping &grouping, const Arguments &args, std::vector<s
 	outfile += "_probs.csv";
 	of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));
       }
-      samples[i]->write_probabilities(grouping.names, (args.optimizer.print_probs ? std::cout : *of));
+      samples[i]->write_probabilities(grouping.get_names(), (args.optimizer.print_probs ? std::cout : *of));
     }
   }
 }
@@ -35,6 +35,6 @@ void ProcessBootstrap(const Grouping &grouping, Arguments &args, std::vector<std
   for (uint32_t i = 0; i < bitfields.size(); ++i) {
     BootstrapSample* bs = static_cast<BootstrapSample*>(&(*bitfields[i]));
     bs->BootstrapAbundances(grouping, args);
-    bs->WriteBootstrap(grouping.names, args.outfile, args.iters, args.batch_mode);    
+    bs->WriteBootstrap(grouping.get_names(), args.outfile, args.iters, args.batch_mode);    
   }
 }

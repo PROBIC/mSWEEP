@@ -55,7 +55,7 @@ void Reference::add_sequence(const std::string &indicator_s, const uint16_t grou
   if (grouping_id == 0) {
     this->n_refs += 1;
   }
-  this->groups_indicators[grouping_id].emplace_back(this->groupings[grouping_id].name_to_id[indicator_s]);
+  this->groups_indicators[grouping_id].emplace_back(this->groupings[grouping_id].get_id(indicator_s));
 }
 
 void Reference::read_from_file(std::istream &indicator_file, const char delimiter) {

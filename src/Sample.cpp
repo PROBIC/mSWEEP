@@ -183,12 +183,13 @@ void Sample::write_likelihood_bitseq(const bool gzip_output, const uint32_t n_gr
 
 void Sample::CalcLikelihood(const Grouping &grouping, const double bb_constants[2], const std::vector<uint32_t> &group_indicators, const bool cleanup) {
   precalc_lls(grouping, bb_constants, &ll_mat);
+  uint32_t n_groups = grouping.get_n_groups();
 
-  counts.resize(grouping.n_groups, std::vector<uint16_t>(m_num_ecs, 0));
+  counts.resize(n_groups, std::vector<uint16_t>(m_num_ecs, 0));
 #pragma omp parallel for schedule(static)
   for (uint32_t j = 0; j < m_num_ecs; ++j) {
-    const std::vector<uint16_t> &groupcounts = group_counts(group_indicators, j, grouping.n_groups);
-    for (uint32_t i = 0; i < grouping.n_groups; ++i) {
+    const std::vector<uint16_t> &groupcounts = group_counts(group_indicators, j, n_groups);
+    for (uint32_t i = 0; i < n_groups; ++i) {
       counts[i][j] = groupcounts[i];
     }
   }

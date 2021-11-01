@@ -60,6 +60,8 @@ void PrintHelpMessage() {
 	    << "\tPrint this message.\n"
 	    << "\t--version\n"
 	    << "\tPrint the version number.\n"
+	    << "\t--cite\n"
+	    << "\tPrint citation information.\n"
 	    << "\n\tELBO optimization and modeling\n"
 	    << "\t--no-fit-model\n"
 	    << "\tSkip fitting the model entirely. Useful if only the likelihood matrix is required.\n"
@@ -73,6 +75,14 @@ void PrintHelpMessage() {
 	    << "\t-e <dispersionTerm>\n"
 	    << "\tCalibration term in the likelihood function."
 	    << " (default: 0.01)" << std::endl;
+}
+
+void PrintCitationInfo() {
+  std::cerr << "Please cite us as:\n"
+	    << "\tMäklin T, Kallonen T, David S et al. High-resolution sweep\n"
+	    << "\tmetagenomics using fast probabilistic inference [version 2;\n"
+	    << "\tpeer review: 2 approved]. Wellcome Open Res 2021, 5:14\n"
+	    << "\t(https://doi.org/10.12688/wellcomeopenres.15639.2)" << std::endl;
 }
 
 void CheckDirExists(const std::string &dir_path) {

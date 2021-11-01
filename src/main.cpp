@@ -23,10 +23,14 @@ int main (int argc, char *argv[]) {
   Arguments args;
   if (CmdOptionPresent(argv, argv+argc, "--version")) {
     std::cerr << "mSWEEP-" << MSWEEP_BUILD_VERSION << std::endl;
-    return 0;
   }
   if (CmdOptionPresent(argv, argv+argc, "--help")) {
     PrintHelpMessage();
+  }
+  if (CmdOptionPresent(argv, argv+argc, "--cite")) {
+    PrintCitationInfo();
+  }
+  if (CmdOptionPresent(argv, argv+argc, "--version") || CmdOptionPresent(argv, argv+argc, "--help") || CmdOptionPresent(argv, argv+argc, "--cite")) {
     return 0;
   }
   try {

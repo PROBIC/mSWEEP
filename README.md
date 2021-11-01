@@ -377,6 +377,8 @@ mSWEEP accepts the following flags:
 	Print this message.
 	--version
 	Print the version number.
+	--cite
+	Print citation information.
 
 	ELBO optimization and modeling
 	--no-fit-model

@@ -56,8 +56,9 @@ endif()
 string(TIMESTAMP _BUILD_TIMESTAMP)
 
 ## Generate a version.h file containing build version and timestamp
-configure_file(include/version.h.in ${CMAKE_BINARY_DIR}/include/version.h @ONLY)
-configure_file(include/openmp_config.hpp.in ${CMAKE_BINARY_DIR}/include/openmp_config.hpp @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/version.h.in ${CMAKE_BINARY_DIR}/include/version.h @ONLY)
+## Configure OpenMP if it supported on the system.
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/openmp_config.hpp.in ${CMAKE_BINARY_DIR}/include/openmp_config.hpp @ONLY)
 
 add_executable(mSWEEP
 ${CMAKE_SOURCE_DIR}/src/BootstrapSample.cpp

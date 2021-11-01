@@ -5,7 +5,7 @@
 #include <fstream>
 #include <string>
 
-#include "file.hpp"
+#include "cxxio.hpp"
 
 #include "Grouping.hpp"
 
@@ -25,7 +25,7 @@ public:
 
   // Check that the reference has same number of sequences as ...
   // ... the themisto index.
-  void verify_themisto_index(File::In &themisto_index) const;
+  void verify_themisto_index(cxxio::In &themisto_index) const;
   // ... the kallisto pseudoalignment.
   void verify_kallisto_alignment(std::istream &kallisto_run_info) const;
 

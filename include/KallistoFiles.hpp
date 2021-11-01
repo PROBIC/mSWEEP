@@ -6,12 +6,12 @@
 #include <string>
 
 #include "bxzstr.hpp"
-#include "file.hpp"
+#include "cxxio.hpp"
 
 class KallistoFiles {
  private:
   bool file_exists (const std::string& name) const {
-    File::In test(name);
+    cxxio::In test(name);
     return (!test.stream().fail()); 
   }
 

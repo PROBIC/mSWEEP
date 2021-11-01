@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "bxzstr.hpp"
-#include "file.hpp"
+#include "cxxio.hpp"
 
 #include "parse_arguments.hpp"
 #include "read_pseudoalignment.hpp"
@@ -53,11 +53,11 @@ int main (int argc, char *argv[]) {
     std::cerr << "Reading the input files" << '\n';
     std::cerr << "  reading group indicators" << '\n';
     if (args.fasta_file.empty()) {
-      File::In indicators_file(args.indicators_file);
+      cxxio::In indicators_file(args.indicators_file);
       reference.read_from_file(indicators_file.stream(), args.groups_list_delimiter);
     } else {
-      File::In groups_file(args.groups_list_file);
-      File::In fasta_file(args.fasta_file);
+      cxxio::In groups_file(args.groups_list_file);
+      cxxio::In fasta_file(args.fasta_file);
       reference.match_with_fasta(args.groups_list_delimiter, groups_file.stream(), fasta_file.stream());
     }
 
@@ -70,7 +70,7 @@ int main (int argc, char *argv[]) {
       ReadPseudoalignment(args.infiles, reference.get_n_refs(), samples, args.bootstrap_mode);
     } else {
       if (!args.themisto_index_path.empty()) {
-	File::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
+	cxxio::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
 	reference.verify_themisto_index(themisto_index);
       }
       ReadPseudoalignment(args.tinfile1, args.tinfile2, args.themisto_merge_mode, args.bootstrap_mode, reference.get_n_refs(), samples);

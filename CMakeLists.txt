@@ -108,12 +108,74 @@ else()
   set(ZLIB ZLIB::ZLIB)
 endif()
 
+## bxzstr
+if (DEFINED CMAKE_BXZSTR_HEADERS)
+  message(STATUS "bxzstr headers provided in: ${CMAKE_BXZSTR_HEADERS}")
+else()
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-bxzstr.txt.in ${CMAKE_BINARY_DIR}/external/bxzstr-download/CMakeLists.txt)
+  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/bxzstr-download )
+  if(result)
+    message(FATAL_ERROR "CMake step for bxzstr failed: ${result}")
+  endif()
+  execute_process(COMMAND ${CMAKE_COMMAND} --build .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/bxzstr-download )
+  if(result)
+    message(FATAL_ERROR "Build step for bxzstr failed: ${result}")
+  endif()
+  set(CMAKE_BXZSTR_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/bxzstr/include)
+endif()
+include_directories(${CMAKE_BXZSTR_HEADERS})
+
 ## Check dependencies and download them if not given
+## cxxio
+if (DEFINED CMAKE_CXXIO_HEADERS)
+  message(STATUS "cxxio headers provided in: ${CMAKE_CXXIO_HEADERS}")
+else()
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-cxxio.txt.in ${CMAKE_BINARY_DIR}/external/cxxio-download/CMakeLists.txt)
+  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/cxxio-download )
+  if(result)
+    message(FATAL_ERROR "CMake step for cxxio failed: ${result}")
+  endif()
+  execute_process(COMMAND ${CMAKE_COMMAND} --build .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/cxxio-download )
+  if(result)
+    message(FATAL_ERROR "Build step for cxxio failed: ${result}")
+  endif()
+  set(CMAKE_CXXIO_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/cxxio/include)
+endif()
+include_directories("${CMAKE_CXXIO_HEADERS}")
+
+## cxxargs
+if (DEFINED CMAKE_CXXARGS_HEADERS)
+  message(STATUS "cxxargs headers provided in: ${CMAKE_CXXARGS_HEADERS}")
+else()
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-cxxargs.txt.in ${CMAKE_BINARY_DIR}/external/cxxargs-download/CMakeLists.txt)
+  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/cxxargs-download )
+  if(result)
+    message(FATAL_ERROR "CMake step for cxxargs failed: ${result}")
+  endif()
+  execute_process(COMMAND ${CMAKE_COMMAND} --build .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/cxxargs-download )
+  if(result)
+    message(FATAL_ERROR "Build step for cxxargs failed: ${result}")
+  endif()
+  set(CMAKE_CXXARGS_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/cxxargs/include)
+endif()
+include_directories("${CMAKE_CXXARGS_HEADERS}")
+
 ## telescope
 if (DEFINED CMAKE_TELESCOPE_LIBRARY AND DEFINED CMAKE_TELESCOPE_HEADERS)
   find_library(TELESCOPE NAMES telescope HINTS ${CMAKE_TELESCOPE_LIBRARY})
   target_link_libraries(mSWEEP ${TELESCOPE})
-  include_directories("${CMAKE_TELESCOPE_HEADERS}")
 else()
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-telescope.txt.in ${CMAKE_BINARY_DIR}/external/telescope-download/CMakeLists.txt)
   execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
@@ -130,33 +192,11 @@ else()
   endif()
   add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/external/telescope
                    ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/build)
-  include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/telescope/include)
   set_target_properties(telescope PROPERTIES EXCLUDE_FROM_ALL 1)
   target_link_libraries(mSWEEP libtelescope)
+  set(CMAKE_TELESCOPE_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/include)
 endif()
-
-## bxzstr
-if (DEFINED CMAKE_BXZSTR_LIBRARY AND DEFINED CMAKE_BXZSTR_HEADERS)
-  find_library(BXZSTR NAMES telescope HINTS ${CMAKE_BXZSTR_LIBRARY})
-  include_directories("${CMAKE_BXZSTR_HEADERS}")
-else()
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-bxzstr.txt.in ${CMAKE_BINARY_DIR}/external/bxzstr-download/CMakeLists.txt)
-  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-    RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/bxzstr-download )
-  if(result)
-    message(FATAL_ERROR "CMake step for bxzstr failed: ${result}")
-  endif()
-  execute_process(COMMAND ${CMAKE_COMMAND} --build .
-    RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/bxzstr-download )
-  if(result)
-    message(FATAL_ERROR "Build step for bxzstr failed: ${result}")
-  endif()
-  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/external/bxzstr
-                   ${CMAKE_CURRENT_BINARY_DIR}/external/bxzstr/build)
-  include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/bxzstr/include)
-endif()
+include_directories(${CMAKE_TELESCOPE_HEADERS})
 
 include_directories(${CMAKE_SOURCE_DIR}/include
 ${CMAKE_SOURCE_DIR}/external ${CMAKE_SOURCE_DIR}/include/tools

@@ -21,6 +21,14 @@
 int main (int argc, char *argv[]) {
   std::cerr << "mSWEEP-" << MSWEEP_BUILD_VERSION << " abundance estimation" << std::endl;
   Arguments args;
+  if (CmdOptionPresent(argv, argv+argc, "--version")) {
+    std::cerr << "mSWEEP-" << MSWEEP_BUILD_VERSION << std::endl;
+    return 0;
+  }
+  if (CmdOptionPresent(argv, argv+argc, "--help")) {
+    PrintHelpMessage();
+    return 0;
+  }
   try {
     ParseArguments(argc, argv, args);
   }
@@ -29,11 +37,6 @@ int main (int argc, char *argv[]) {
 	      << e.what()
 	      << "\nexiting" << std::endl;
     return 1;
-  }
-  catch (std::invalid_argument &e) {
-    std::cerr << e.what() << std::endl;
-    PrintHelpMessage();
-    return 0;
   }
 
 #if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1

@@ -58,6 +58,8 @@ void PrintHelpMessage() {
             << "\tGzip the .csv matrix output from --write-probs and the likelihoods from --write-likelihood or --write-likelihood-bitseq.\n"
 	    << "\t--help\n"
 	    << "\tPrint this message.\n"
+	    << "\t--version\n"
+	    << "\tPrint the version number.\n"
 	    << "\n\tELBO optimization and modeling\n"
 	    << "\t--no-fit-model\n"
 	    << "\tSkip fitting the model entirely. Useful if only the likelihood matrix is required.\n"
@@ -103,9 +105,6 @@ double ParseDoubleOption(char **begin, char **end, const std::string &option) {
 }
 
 void ParseArguments(int argc, char *argv[], Arguments &args) {
-  if (CmdOptionPresent(argv, argv+argc, "--help")) {
-    throw std::invalid_argument("");
-  }
   if (argc < 3) {
     throw std::runtime_error("Error: Specify at least the infile and indicators file.\n");
   }

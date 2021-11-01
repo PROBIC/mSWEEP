@@ -375,6 +375,8 @@ mSWEEP accepts the following flags:
 	Gzip the .csv matrix output from --write-probs and the likelihoods from --write-likelihood or --write-likelihood-bitseq.
 	--help
 	Print this message.
+	--version
+	Print the version number.
 
 	ELBO optimization and modeling
 	--no-fit-model

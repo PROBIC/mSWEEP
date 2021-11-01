@@ -3,14 +3,17 @@ Fast and accurate bacterial community composition estimation on strain
 level by using pseudoalignments and variational inference.
 
 More about mSWEEP in the article [High-resolution sweep metagenomics
-using fast probabilistic
-inference](https://doi.org/10.12688/wellcomeopenres.15639.1) in
-Wellcome Open Research (awaiting peer review)
+using fast probabilistic inference](https://wellcomeopenresearch.org/articles/5-14)
+in Wellcome Open Research.
 
-If you use our method, please cite us as Mäklin T, Kallonen T, David S
- et al. High-resolution sweep metagenomics using fast probabilistic
- inference [version 1; peer review: awaiting peer review]. Wellcome
- Open Res 2020, 5:14 (https://doi.org/10.12688/wellcomeopenres.15639.1)
+If you use our method, please cite us as "Mäklin T, Kallonen T, David
+S et al. High-resolution sweep metagenomics using fast probabilistic
+inference [version 2; peer review: 2 approved]. Wellcome Open Res
+2021, 5:14 (https://doi.org/10.12688/wellcomeopenres.15639.2)"
+
+You can also watch a talk from [ISMB/ECCB
+2019](https://www.iscb.org/ismbeccb2019) presenting the main results
+from the mSWEEP paper [in YouTube](https://www.youtube.com/watch?v=VDfChoJwSKg).
 
 # Installation
 mSWEEP can be obtained either in the form of a precompiled binary

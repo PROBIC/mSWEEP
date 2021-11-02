@@ -1,10 +1,10 @@
 #include "parse_arguments.hpp"
 
-#include <dirent.h>
-
 #include <algorithm>
 #include <iostream>
 #include <exception>
+
+#include "cxxio.hpp"
 
 void PrintHelpMessage() {
   std::cerr << "Usage: mSWEEP -f <pseudomappingFile> -i <clusterIndicators> [OPTIONS]\n"
@@ -85,15 +85,6 @@ void PrintCitationInfo() {
 	    << "\t(https://doi.org/10.12688/wellcomeopenres.15639.2)" << std::endl;
 }
 
-void CheckDirExists(const std::string &dir_path) {
-  DIR* dir = opendir(dir_path.c_str());
-  if (dir) {
-    closedir(dir);
-  } else {
-    throw std::runtime_error("Directory " + dir_path + " does not seem to exist.");
-  }
-}
-
 char* GetCmdOption(char **begin, char **end, const std::string &option) {
   char **it = std::find(begin, end, option);
   return ((it != end && ++it != end) ? *it : 0);
@@ -148,7 +139,7 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     }
     if (CmdOptionPresent(argv, argv+argc, "--themisto-index")) {
       args.themisto_index_path = std::string(GetCmdOption(argv, argv+argc, "--themisto-index"));
-      CheckDirExists(args.themisto_index_path);
+      cxxio::directory_exists(args.themisto_index_path);
     }
   } else {
     throw std::runtime_error("infile not found.");
@@ -187,7 +178,7 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     if (args.outfile.find("/") != std::string::npos) {
       std::string outfile_dir = args.outfile;
       outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size());
-      CheckDirExists(outfile_dir);
+      cxxio::directory_exists(outfile_dir);
     }
   }
 

@@ -66,7 +66,7 @@ ${CMAKE_SOURCE_DIR}/src/Reference.cpp
 ${CMAKE_SOURCE_DIR}/src/Grouping.cpp
 ${CMAKE_SOURCE_DIR}/src/Sample.cpp
 ${CMAKE_SOURCE_DIR}/src/likelihood.cpp
-${CMAKE_SOURCE_DIR}/src/main.cpp
+${CMAKE_SOURCE_DIR}/src/mSWEEP.cpp
 ${CMAKE_SOURCE_DIR}/src/matrix.cpp
 ${CMAKE_SOURCE_DIR}/src/parse_arguments.cpp
 ${CMAKE_SOURCE_DIR}/src/process_reads.cpp

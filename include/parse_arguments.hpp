@@ -52,5 +52,7 @@ struct Arguments {
 
 void ParseArguments(int argc, char *argv[], Arguments &args);
 void PrintHelpMessage();
+void PrintCitationInfo();
+bool CmdOptionPresent(char **begin, char **end, const std::string &option);
 
 #endif

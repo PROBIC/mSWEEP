@@ -1,10 +1,10 @@
 #include "parse_arguments.hpp"
 
-#include <dirent.h>
-
 #include <algorithm>
 #include <iostream>
 #include <exception>
+
+#include "cxxio.hpp"
 
 void PrintHelpMessage() {
   std::cerr << "Usage: mSWEEP -f <pseudomappingFile> -i <clusterIndicators> [OPTIONS]\n"
@@ -58,6 +58,10 @@ void PrintHelpMessage() {
             << "\tGzip the .csv matrix output from --write-probs and the likelihoods from --write-likelihood or --write-likelihood-bitseq.\n"
 	    << "\t--help\n"
 	    << "\tPrint this message.\n"
+	    << "\t--version\n"
+	    << "\tPrint the version number.\n"
+	    << "\t--cite\n"
+	    << "\tPrint citation information.\n"
 	    << "\n\tELBO optimization and modeling\n"
 	    << "\t--no-fit-model\n"
 	    << "\tSkip fitting the model entirely. Useful if only the likelihood matrix is required.\n"
@@ -73,13 +77,12 @@ void PrintHelpMessage() {
 	    << " (default: 0.01)" << std::endl;
 }
 
-void CheckDirExists(const std::string &dir_path) {
-  DIR* dir = opendir(dir_path.c_str());
-  if (dir) {
-    closedir(dir);
-  } else {
-    throw std::runtime_error("Directory " + dir_path + " does not seem to exist.");
-  }
+void PrintCitationInfo() {
+  std::cerr << "Please cite us as:\n"
+	    << "\tMäklin T, Kallonen T, David S et al. High-resolution sweep\n"
+	    << "\tmetagenomics using fast probabilistic inference [version 2;\n"
+	    << "\tpeer review: 2 approved]. Wellcome Open Res 2021, 5:14\n"
+	    << "\t(https://doi.org/10.12688/wellcomeopenres.15639.2)" << std::endl;
 }
 
 char* GetCmdOption(char **begin, char **end, const std::string &option) {
@@ -103,9 +106,6 @@ double ParseDoubleOption(char **begin, char **end, const std::string &option) {
 }
 
 void ParseArguments(int argc, char *argv[], Arguments &args) {
-  if (CmdOptionPresent(argv, argv+argc, "--help")) {
-    throw std::invalid_argument("");
-  }
   if (argc < 3) {
     throw std::runtime_error("Error: Specify at least the infile and indicators file.\n");
   }
@@ -139,7 +139,7 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     }
     if (CmdOptionPresent(argv, argv+argc, "--themisto-index")) {
       args.themisto_index_path = std::string(GetCmdOption(argv, argv+argc, "--themisto-index"));
-      CheckDirExists(args.themisto_index_path);
+      cxxio::directory_exists(args.themisto_index_path);
     }
   } else {
     throw std::runtime_error("infile not found.");
@@ -178,7 +178,7 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     if (args.outfile.find("/") != std::string::npos) {
       std::string outfile_dir = args.outfile;
       outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size());
-      CheckDirExists(outfile_dir);
+      cxxio::directory_exists(outfile_dir);
     }
   }
 

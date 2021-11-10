@@ -5,7 +5,7 @@
 #include <memory>
 #include <string>
 
-#include "matrix.hpp"
+#include "Matrix.hpp"
 #include "Sample.hpp"
 #include "Reference.hpp"
 #include "KallistoFiles.hpp"

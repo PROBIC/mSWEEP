@@ -182,7 +182,6 @@ void Sample::write_likelihood_bitseq(const bool gzip_output, const uint32_t n_gr
 }
 
 void Sample::CalcLikelihood(const Grouping &grouping, const double bb_constants[2], const std::vector<uint32_t> &group_indicators, const bool cleanup) {
-  precalc_lls(grouping, bb_constants, &ll_mat);
   uint32_t n_groups = grouping.get_n_groups();
 
   counts.resize(n_groups, std::vector<uint16_t>(m_num_ecs, 0));
@@ -193,6 +192,8 @@ void Sample::CalcLikelihood(const Grouping &grouping, const double bb_constants[
       counts[i][j] = groupcounts[i];
     }
   }
+
+  likelihood_array_mat(grouping, group_indicators, bb_constants, *this);
   if (cleanup) {
     // If estimating with only 1 grouping free the memory used by the configs
     clear_configs();

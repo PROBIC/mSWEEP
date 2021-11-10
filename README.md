@@ -11,15 +11,6 @@ S et al. High-resolution sweep metagenomics using fast probabilistic
 inference [version 2; peer review: 2 approved]. Wellcome Open Res
 2021, 5:14 (https://doi.org/10.12688/wellcomeopenres.15639.2)"
 
-To cite a specific version of mSWEEP, visit the [releases
-page](https://github.com/PROBIC/mSWEEP/releases) and find the doi for
-the version of the program that you used. Then, cite the version (v1.5.0
-in the example) as "Tommi Mäklin, & Antti
-Honkela. (2021). PROBIC/mSWEEP: mSWEEP v1.5.0 (15 October 2021)
-(v1.5.0). Zenodo. (https://doi.org/10.5281/zenodo.5571944)". Please
-also cite the [mSWEEP article](https://doi.org/10.12688/wellcomeopenres.15639.2)
-if you use mSWEEP.
-
 You can also watch a talk from [ISMB/ECCB
 2019](https://www.iscb.org/ismbeccb2019) presenting the main results
 from the mSWEEP paper [in YouTube](https://www.youtube.com/watch?v=VDfChoJwSKg).

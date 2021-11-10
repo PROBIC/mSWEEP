@@ -8,7 +8,7 @@
 
 #include "telescope.hpp"
 
-#include "matrix.hpp"
+#include "Matrix.hpp"
 #include "Reference.hpp"
 #include "parse_arguments.hpp"
 
@@ -24,9 +24,6 @@ private:
   uint32_t m_num_ecs;
   std::string cell_id;
 
-  // Count the number of pseudoalignments in groups defined by the given indicators.
-  std::vector<uint16_t> group_counts(const std::vector<uint32_t> indicators, const uint32_t ec_id, const uint32_t n_groups) const;
-
   // Free the memory taken by ec_configs
   void clear_configs() { pseudos.ec_configs.clear(); }
 
@@ -38,10 +35,13 @@ protected:
   uint32_t counts_total;
 
 public:
-  Matrix<double> ec_probs;
-  Matrix<double> ll_mat;
+  rcgpar::Matrix<double> ec_probs;
+  rcgpar::Matrix<double> ll_mat;
   std::vector<std::vector<uint16_t>> counts;
   std::vector<double> log_ec_counts;
+
+  // Count the number of pseudoalignments in groups defined by the given indicators.
+  std::vector<uint16_t> group_counts(const std::vector<uint32_t> indicators, const uint32_t ec_id, const uint32_t n_groups) const;
 
   // Retrieve relative abundances from the ec_probs matrix.
   std::vector<double> group_abundances() const;

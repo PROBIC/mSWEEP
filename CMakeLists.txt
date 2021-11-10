@@ -67,10 +67,8 @@ ${CMAKE_SOURCE_DIR}/src/Grouping.cpp
 ${CMAKE_SOURCE_DIR}/src/Sample.cpp
 ${CMAKE_SOURCE_DIR}/src/likelihood.cpp
 ${CMAKE_SOURCE_DIR}/src/mSWEEP.cpp
-${CMAKE_SOURCE_DIR}/src/matrix.cpp
 ${CMAKE_SOURCE_DIR}/src/parse_arguments.cpp
 ${CMAKE_SOURCE_DIR}/src/process_reads.cpp
-${CMAKE_SOURCE_DIR}/src/rcg.cpp
 ${CMAKE_SOURCE_DIR}/src/read_pseudoalignment.cpp)
 
 ## Check supported compression types
@@ -198,6 +196,31 @@ else()
   set(CMAKE_TELESCOPE_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/include)
 endif()
 include_directories(${CMAKE_TELESCOPE_HEADERS})
+
+## rcgpar
+if (DEFINED CMAKE_RCGPAR_LIBRARY AND DEFINED CMAKE_RCGPAR_HEADERS)
+  find_library(RCGPAR NAMES rcgpar HINTS ${CMAKE_RCGPAR_LIBRARY})
+  target_link_libraries(mSWEEP ${RCGPAR})
+else()
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-rcgpar.txt.in ${CMAKE_BINARY_DIR}/external/rcgpar-download/CMakeLists.txt)
+  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/rcgpar-download )
+  if(result)
+    message(FATAL_ERROR "CMake step for rcgpar failed: ${result}")
+  endif()
+  execute_process(COMMAND ${CMAKE_COMMAND} --build .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/rcgpar-download )
+  if(result)
+    message(FATAL_ERROR "Build step for rcgpar failed: ${result}")
+  endif()
+  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/external/rcgpar
+                   ${CMAKE_CURRENT_BINARY_DIR}/external/rcgpar/build)
+  target_link_libraries(mSWEEP rcgomp)
+  set(CMAKE_RCGPAR_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/rcgpar/include)
+endif()
+include_directories(${CMAKE_RCGPAR_HEADERS})
 
 include_directories(${CMAKE_SOURCE_DIR}/include
 ${CMAKE_SOURCE_DIR}/external ${CMAKE_SOURCE_DIR}/include/tools

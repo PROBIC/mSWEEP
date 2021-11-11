@@ -56,6 +56,10 @@ void PrintHelpMessage() {
             << "\tWrite the likelihoods in a format can be parsed by BitSeq's (https://github.com/bitseq/bitseq) functions.\n"
             << "\t--gzip-probs\n"
             << "\tGzip the .csv matrix output from --write-probs and the likelihoods from --write-likelihood or --write-likelihood-bitseq.\n"
+	    << "\n"
+	    << "\t--read-likelihood\n"
+	    << "\tRead in a likelihood matrix that has been written to file with the --write-likelihood toggle.\n"
+	    << "\n"
 	    << "\t--help\n"
 	    << "\tPrint this message.\n"
 	    << "\t--version\n"
@@ -141,7 +145,14 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
       args.themisto_index_path = std::string(GetCmdOption(argv, argv+argc, "--themisto-index"));
       cxxio::directory_exists(args.themisto_index_path);
     }
-  } else {
+  } else if (CmdOptionPresent(argv, argv+argc, "--read-likelihood")) {
+      args.likelihood_file = std::string(GetCmdOption(argv, argv+argc, "--read-likelihood"));
+      args.read_likelihood_mode = true;
+      if (CmdOptionPresent(argv, argv+argc, "--themisto-index")) {
+	args.themisto_index_path = std::string(GetCmdOption(argv, argv+argc, "--themisto-index"));
+	cxxio::directory_exists(args.themisto_index_path);
+      }
+    } else {
     throw std::runtime_error("infile not found.");
   }
 
@@ -153,7 +164,7 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     args.kallisto_files[1] = args.batch_infile + "/matrix.ec";
     args.kallisto_files[2] = args.batch_infile + "/matrix.tsv";
     args.kallisto_files[3] = args.batch_infile + "/matrix.cells";
-  } else if (!args.themisto_mode) {
+  } else if (!args.themisto_mode && !args.read_likelihood_mode) {
     args.infiles = KallistoFiles(args.infile, args.batch_mode);
     args.kallisto_files[0] = args.infile + "/run_info.json";
     args.kallisto_files[1] = args.infile + "/pseudoalignments.ec";

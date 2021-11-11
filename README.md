@@ -373,6 +373,10 @@ mSWEEP accepts the following flags:
 	Write the likelihoods in a format can be parsed by BitSeq's (https://github.com/bitseq/bitseq) functions.
 	--gzip-probs
 	Gzip the .csv matrix output from --write-probs and the likelihoods from --write-likelihood or --write-likelihood-bitseq.
+
+	--read-likelihood
+	Read in a likelihood matrix that has been written to file with the --write-likelihood toggle.
+
 	--help
 	Print this message.
 	--version

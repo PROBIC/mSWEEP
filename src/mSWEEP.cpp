@@ -63,17 +63,19 @@ int main (int argc, char *argv[]) {
 
     std::cerr << "  read " << reference.get_n_refs() << " group indicators" << std::endl;
 
-    std::cerr << "  reading pseudoalignments" << '\n';
-    if (!args.themisto_mode) {
+    std::cerr << (args.read_likelihood_mode ? "  reading likelihoods from file" : "  reading pseudoalignments") << '\n';
+    if (!args.themisto_mode && !args.read_likelihood_mode) {
       // Check that the number of reference sequences matches in the grouping and the alignment.
       reference.verify_kallisto_alignment(*args.infiles.run_info);
       ReadPseudoalignment(args.infiles, reference.get_n_refs(), samples, args.bootstrap_mode);
-    } else {
+    } else if (!args.read_likelihood_mode) {
       if (!args.themisto_index_path.empty()) {
 	cxxio::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
 	reference.verify_themisto_index(themisto_index);
       }
       ReadPseudoalignment(args.tinfile1, args.tinfile2, args.themisto_merge_mode, args.bootstrap_mode, reference.get_n_refs(), samples);
+    } else {
+      ReadLikelihood(args.bootstrap_mode, std::cin, samples);
     }
 
     std::cerr << "  read " << (args.batch_mode ? samples.size() : samples[0]->num_ecs()) << (args.batch_mode ? " samples from the batch" : " unique alignments") << std::endl;

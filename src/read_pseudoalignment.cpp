@@ -37,3 +37,11 @@ void ReadPseudoalignment(const std::string &tinfile1, const std::string &tinfile
 
   batch.back()->read_themisto(get_mode(themisto_mode), n_refs, strands);
 }
+
+void ReadLikelihood(const bool bootstrap_mode, std::istream &likelihood_file, std::vector<std::unique_ptr<Sample>> &samples) {
+  if (bootstrap_mode) {
+    samples.emplace_back(new BootstrapSample());
+  } else {
+    samples.emplace_back(new Sample());
+  }
+}

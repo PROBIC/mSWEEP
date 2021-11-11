@@ -65,6 +65,11 @@ int main (int argc, char *argv[]) {
     std::cerr << "  read " << reference.get_n_refs() << " group indicators" << std::endl;
 
     std::cerr << (args.read_likelihood_mode ? "  reading likelihoods from file" : "  reading pseudoalignments") << '\n';
+    if (args.bootstrap_mode) {
+      samples.emplace_back(new BootstrapSample());
+    } else {
+      samples.emplace_back(new Sample());
+    }
     if (!args.themisto_mode && !args.read_likelihood_mode) {
       // Check that the number of reference sequences matches in the grouping and the alignment.
       reference.verify_kallisto_alignment(*args.infiles.run_info);
@@ -80,7 +85,7 @@ int main (int argc, char *argv[]) {
 	throw std::runtime_error("Using more than one grouping with --read-likelihood is not yet implemented.");
       }
       cxxio::In likelihoods(args.likelihood_file);
-      ReadLikelihood(reference.get_grouping(0), args.bootstrap_mode, likelihoods.stream(), samples);
+      samples.back()->ReadLikelihood(reference.get_grouping(0), likelihoods.stream());
     }
 
     std::cerr << "  read " << (args.batch_mode ? samples.size() : samples[0]->num_ecs()) << (args.batch_mode ? " samples from the batch" : " unique alignments") << std::endl;

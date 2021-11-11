@@ -12,13 +12,7 @@
 #include "Reference.hpp"
 #include "parse_arguments.hpp"
 
-class VSample {
-public:
-  virtual void read_themisto(const Mode &mode, const uint32_t n_refs, std::vector<std::istream*> &strands) =0;
-  virtual void read_kallisto(const uint32_t n_refs, std::istream &tsv_file, std::istream &ec_file) =0;
-};
-
-class Sample : public VSample{
+class Sample {
 private:
   uint32_t m_num_refs;
   uint32_t m_num_ecs;
@@ -28,10 +22,6 @@ private:
   void clear_configs() { pseudos.ec_configs.clear(); }
 
 protected:
-  // Calculate log_ec_counts and counts_total.
-  void process_aln();
-
-  KallistoAlignment pseudos;
   uint32_t counts_total;
 
 public:
@@ -42,8 +32,11 @@ public:
   // Count the number of pseudoalignments in groups defined by the given indicators.
   std::vector<uint16_t> group_counts(const std::vector<uint32_t> indicators, const uint32_t ec_id, const uint32_t n_groups) const;
 
-  // Retrieve relative abundances from the ec_probs matrix.
-  std::vector<double> group_abundances() const;
+  KallistoAlignment pseudos;
+
+  // Calculate log_ec_counts and counts_total.
+  void process_aln();
+
   // Write estimated relative abundances
   void write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile) const;
   // Write estimated read-reference posterior probabilities (gamma_Z)
@@ -56,9 +49,6 @@ public:
   uint32_t num_ecs() const { return m_num_ecs; };
   uint32_t total_counts() const { return counts_total; };
 
-  // Read Themisto or kallisto pseudoalignments
-  void read_themisto(const Mode &mode, const uint32_t n_refs, std::vector<std::istream*> &strands) override;
-  void read_kallisto(const uint32_t n_refs, std::istream &tsv_file, std::istream &ec_file) override;
   // Fill the likelihood matrix
   void CalcLikelihood(const Grouping &grouping, const double bb_constants[2], const std::vector<uint32_t> &group_indicators, const bool cleanup);
   // Read in the likelihoods from a file
@@ -79,9 +69,6 @@ public:
   void WriteBootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string &outfile, const unsigned iters, const bool batch_mode) const;
   void BootstrapAbundances(const Grouping &grouping, const Arguments &args);
 
-  // Read in pseudoalignments but do not free the memory used by storing the equivalence class counts.
-  void read_themisto(const Mode &mode, const uint32_t n_refs, std::vector<std::istream*> &strands) override;
-  void read_kallisto(const uint32_t n_refs, std::istream &tsv_file, std::istream &ec_file) override;
 };
 
 #endif

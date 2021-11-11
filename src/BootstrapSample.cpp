@@ -110,14 +110,3 @@ void BootstrapSample::WriteBootstrap(const std::vector<std::string> &cluster_ind
     of.close();
   }
 }
-
-void BootstrapSample::read_themisto(const Mode &mode, const uint32_t n_refs, std::vector<std::istream*> &strands) {
-  ReadThemisto(mode, n_refs, strands, &pseudos);
-  process_aln();
-}
-
-void BootstrapSample::read_kallisto(const uint32_t n_refs, std::istream &ec_file, std::istream &tsv_file) {
-  ReadKallisto(n_refs, ec_file, tsv_file, &pseudos);
-  process_aln();
-}
-

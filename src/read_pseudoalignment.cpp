@@ -19,7 +19,8 @@ void ReadPseudoalignment(KallistoFiles &kallisto_files, unsigned n_refs, std::ve
   } else {
     batch.emplace_back(new Sample());
   }
-  batch.back()->read_kallisto(n_refs, *kallisto_files.ec, *kallisto_files.tsv);
+  ReadKallisto(n_refs, *kallisto_files.ec, *kallisto_files.tsv, &batch.back()->pseudos);
+  batch.back()->process_aln();
 }
 
 void ReadPseudoalignment(const std::string &tinfile1, const std::string &tinfile2, const std::string &themisto_mode, const bool bootstrap_mode, const unsigned n_refs, std::vector<std::unique_ptr<Sample>> &batch) {
@@ -35,7 +36,13 @@ void ReadPseudoalignment(const std::string &tinfile1, const std::string &tinfile
     batch.emplace_back(new Sample());
   }
 
-  batch.back()->read_themisto(get_mode(themisto_mode), n_refs, strands);
+  ReadThemisto(get_mode(themisto_mode), n_refs, strands, &batch.back()->pseudos);
+  batch.back()->process_aln();
+
+  if (!bootstrap_mode) {
+    batch.back()->pseudos.ec_counts.clear();
+    batch.back()->pseudos.ec_counts.shrink_to_fit();
+  }
 }
 
 void ReadLikelihood(const Grouping &grouping, const bool bootstrap_mode, std::istream &infile, std::vector<std::unique_ptr<Sample>> &samples) {

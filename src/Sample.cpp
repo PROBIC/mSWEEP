@@ -22,18 +22,6 @@ void Sample::process_aln() {
   counts_total = aln_counts_total;
 }
 
-void Sample::read_themisto(const Mode &mode, const uint32_t n_refs, std::vector<std::istream*> &strands) {
-  ReadThemisto(mode, n_refs, strands, &pseudos);
-  process_aln();
-  pseudos.ec_counts.clear();
-}
-
-void Sample::read_kallisto(const uint32_t n_refs, std::istream &ec_file, std::istream &tsv_file) {
-  ReadKallisto(n_refs, ec_file, tsv_file, &pseudos);
-  process_aln();
-  pseudos.ec_counts.clear();
-}
-
 std::vector<uint16_t> Sample::group_counts(const std::vector<uint32_t> indicators, const uint32_t ec_id, const uint32_t n_groups) const {
   std::vector<uint16_t> read_hitcounts(n_groups);
   for (uint32_t j = 0; j < m_num_refs; ++j) {

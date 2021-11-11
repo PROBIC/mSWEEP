@@ -2,12 +2,12 @@
 #include <vector>
 #include <exception>
 #include <memory>
+#include <fstream>
 
 #include "bxzstr.hpp"
 #include "cxxio.hpp"
 
 #include "parse_arguments.hpp"
-#include "read_pseudoalignment.hpp"
 #include "process_reads.hpp"
 #include "likelihood.hpp"
 #include "Sample.hpp"
@@ -80,7 +80,16 @@ int main (int argc, char *argv[]) {
 	cxxio::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
 	reference.verify_themisto_index(themisto_index);
       }
-      ReadPseudoalignment(args.tinfile1, args.tinfile2, args.themisto_merge_mode, args.bootstrap_mode, reference.get_n_refs(), samples);
+      cxxio::In forward_strand(args.tinfile1);
+      cxxio::In reverse_strand(args.tinfile2);
+      std::vector<std::istream*> strands = { &forward_strand.stream(), &reverse_strand.stream() };
+      ReadThemisto(get_mode(args.themisto_merge_mode), reference.get_n_refs(), strands, &samples.back()->pseudos);
+      samples.back()->process_aln();
+
+      if (!args.bootstrap_mode) {
+	samples.back()->pseudos.ec_counts.clear();
+	samples.back()->pseudos.ec_counts.shrink_to_fit();
+      }
     } else {
       if (reference.get_n_groupings() > 1) {
 	throw std::runtime_error("Using more than one grouping with --read-likelihood is not yet implemented.");

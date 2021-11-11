@@ -168,15 +168,15 @@ int main (int argc, char *argv[]) {
 
 	  samples[i]->write_abundances(grouping->get_names(), outfile);
 	  if (args.optimizer.write_probs && !outfile.empty()) {
-	    std::unique_ptr<std::ostream> of;
+	    cxxio::Out of;
+	    outfile += "_probs.csv";
 	    if (args.optimizer.gzip_probs) {
-	      outfile += "_probs.csv.gz";
-	      of = std::unique_ptr<std::ostream>(new bxz::ofstream(outfile));
+	      outfile += ".gz";
+	      of.open_compressed(outfile);
 	    } else {
-	      outfile += "_probs.csv";
-	      of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));
+	      of.open(outfile);
 	    }
-	    samples[i]->write_probabilities(grouping->get_names(), (args.optimizer.print_probs ? std::cout : *of));
+	    samples[i]->write_probabilities(grouping->get_names(), (args.optimizer.print_probs ? std::cout : of.stream()));
 	  }
 	}
       }

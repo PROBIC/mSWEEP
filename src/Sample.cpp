@@ -122,12 +122,11 @@ void Sample::write_likelihood(const bool gzip_output, const uint32_t n_groups, s
 
   for (uint32_t i = 0; i < this->m_num_ecs; ++i){
     uint32_t ec_hit_count = std::round(std::exp(this->log_ec_counts[i]));
-    for (uint32_t k = 0; k < ec_hit_count; ++k) {
+    out << ec_hit_count << '\t';
       for (uint32_t j = 0; j < n_groups; ++j) {
-	out << this->ll_mat(j, this->counts[j][i]);
+	out << this->ll_mat(j, i);
 	out << (j == n_groups - 1 ? '\n' : '\t');
       }
-    }
   }
   if (!outfile.empty()) {
     of->flush();

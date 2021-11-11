@@ -135,14 +135,13 @@ int main (int argc, char *argv[]) {
 	}
       }
 
-      if (args.optimizer.write_likelihood || args.optimizer.write_likelihood_bitseq) {
+      if (args.optimizer.write_likelihood) {
 	std::cerr << "Writing likelihood matrix" << std::endl;
-	if (args.optimizer.write_likelihood) {
-	  samples[j]->write_likelihood(args.optimizer.gzip_probs, n_groups, args.outfile);
-	}
-	if (args.optimizer.write_likelihood_bitseq) {
-	  samples[j]->write_likelihood_bitseq(args.optimizer.gzip_probs, n_groups, args.outfile);
-	}
+	samples[j]->write_likelihood(args.optimizer.gzip_probs, n_groups, args.outfile);
+      }
+      if (args.optimizer.write_likelihood_bitseq) {
+	std::cerr << "Writing likelihood matrix in BitSeq format" << std::endl;
+	samples[j]->write_likelihood_bitseq(args.optimizer.gzip_probs, n_groups, args.outfile);
       }
     }
 

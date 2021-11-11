@@ -7,11 +7,6 @@
 #include "bxzstr.hpp"
 #include "cxxio.hpp"
 
-void ReadPseudoalignment(KallistoFiles &kallisto_files, unsigned n_refs, std::vector<std::unique_ptr<Sample>> &batch, bool bootstrap_mode) {
-  ReadKallisto(n_refs, *kallisto_files.ec, *kallisto_files.tsv, &batch.back()->pseudos);
-  batch.back()->process_aln();
-}
-
 void ReadPseudoalignment(const std::string &tinfile1, const std::string &tinfile2, const std::string &themisto_mode, const bool bootstrap_mode, const unsigned n_refs, std::vector<std::unique_ptr<Sample>> &batch) {
   std::vector<std::istream*> strands(2);
   cxxio::In check_strand_1(tinfile1);

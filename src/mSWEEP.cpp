@@ -73,7 +73,8 @@ int main (int argc, char *argv[]) {
     if (!args.themisto_mode && !args.read_likelihood_mode) {
       // Check that the number of reference sequences matches in the grouping and the alignment.
       reference.verify_kallisto_alignment(*args.infiles.run_info);
-      ReadPseudoalignment(args.infiles, reference.get_n_refs(), samples, args.bootstrap_mode);
+      ReadKallisto(reference.get_n_refs(), *args.infiles.ec, *args.infiles.tsv, &samples.back()->pseudos);
+      samples.back()->process_aln();
     } else if (!args.read_likelihood_mode) {
       if (!args.themisto_index_path.empty()) {
 	cxxio::In themisto_index(args.themisto_index_path + "/coloring-names.txt");

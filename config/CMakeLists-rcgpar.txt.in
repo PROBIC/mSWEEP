@@ -4,7 +4,7 @@ project(rcgpar-get NONE)
 include(ExternalProject)
 
 ExternalProject_Add(rcgpar-download
-  GIT_REPOSITORY    git@github.com:tmaklin/rcgpar.git 
+  GIT_REPOSITORY    https://github.com/tmaklin/rcgpar
   GIT_TAG           main
   SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/rcgpar"
   BUILD_IN_SOURCE   0

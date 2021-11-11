@@ -75,7 +75,11 @@ int main (int argc, char *argv[]) {
       }
       ReadPseudoalignment(args.tinfile1, args.tinfile2, args.themisto_merge_mode, args.bootstrap_mode, reference.get_n_refs(), samples);
     } else {
-      ReadLikelihood(args.bootstrap_mode, std::cin, samples);
+      if (reference.get_n_groupings() > 1) {
+	throw std::runtime_error("Using more than one grouping with --read-likelihood is not yet implemented.");
+      }
+      cxxio::In likelihoods(args.likelihood_file);
+      ReadLikelihood(reference.get_grouping(0), args.bootstrap_mode, likelihoods.stream(), samples);
     }
 
     std::cerr << "  read " << (args.batch_mode ? samples.size() : samples[0]->num_ecs()) << (args.batch_mode ? " samples from the batch" : " unique alignments") << std::endl;
@@ -105,7 +109,9 @@ int main (int argc, char *argv[]) {
 
     std::cerr << "Building log-likelihood array" << std::endl;
     for (uint16_t j = 0; j < samples.size(); ++j) {
-      samples[j]->CalcLikelihood(reference.get_grouping(i), args.optimizer.bb_constants, reference.get_group_indicators(i), n_groupings == 1);
+      if (!args.read_likelihood_mode) {
+	samples[j]->CalcLikelihood(reference.get_grouping(i), args.optimizer.bb_constants, reference.get_group_indicators(i), n_groupings == 1);
+      }
 
       if (args.optimizer.write_likelihood || args.optimizer.write_likelihood_bitseq) {
 	std::cerr << "Writing likelihood matrix" << std::endl;

@@ -37,7 +37,6 @@ protected:
 public:
   rcgpar::Matrix<double> ec_probs;
   rcgpar::Matrix<double> ll_mat;
-  std::vector<std::vector<uint16_t>> counts;
   std::vector<double> log_ec_counts;
 
   // Count the number of pseudoalignments in groups defined by the given indicators.
@@ -62,6 +61,8 @@ public:
   void read_kallisto(const uint32_t n_refs, std::istream &tsv_file, std::istream &ec_file) override;
   // Fill the likelihood matrix
   void CalcLikelihood(const Grouping &grouping, const double bb_constants[2], const std::vector<uint32_t> &group_indicators, const bool cleanup);
+  // Read in the likelihoods from a file
+  void ReadLikelihood(const Grouping &grouping, std::istream &infile);
 };
 
 class BootstrapSample : public Sample {

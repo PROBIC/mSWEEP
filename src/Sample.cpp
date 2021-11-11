@@ -1,6 +1,7 @@
 #include "Sample.hpp"
 
 #include <cmath>
+#include <sstream>
 
 #include "likelihood.hpp"
 #include "version.h"
@@ -169,7 +170,7 @@ void Sample::write_likelihood_bitseq(const bool gzip_output, const uint32_t n_gr
       out << read_id << ' ';
       out << n_groups + 1 << ' ';
       for (uint32_t j = 0; j < n_groups; ++j) {
-	out << j + 1 << ' ' << this->ll_mat(j, this->counts[j][i]) << ' ';
+	out << j + 1 << ' ' << this->ll_mat(j, i) << ' ';
       }
       out << 0 << ' ' << "-10000.00" << '\n';
       ++read_id;
@@ -182,19 +183,47 @@ void Sample::write_likelihood_bitseq(const bool gzip_output, const uint32_t n_gr
 
 void Sample::CalcLikelihood(const Grouping &grouping, const double bb_constants[2], const std::vector<uint32_t> &group_indicators, const bool cleanup) {
   uint32_t n_groups = grouping.get_n_groups();
-
-  counts.resize(n_groups, std::vector<uint16_t>(m_num_ecs, 0));
-#pragma omp parallel for schedule(static)
-  for (uint32_t j = 0; j < m_num_ecs; ++j) {
-    const std::vector<uint16_t> &groupcounts = group_counts(group_indicators, j, n_groups);
-    for (uint32_t i = 0; i < n_groups; ++i) {
-      counts[i][j] = groupcounts[i];
-    }
-  }
-
   likelihood_array_mat(grouping, group_indicators, bb_constants, *this);
   if (cleanup) {
     // If estimating with only 1 grouping free the memory used by the configs
     clear_configs();
   }
+}
+
+void Sample::ReadLikelihood(const Grouping &grouping, std::istream &infile) {
+  uint32_t n_groups = grouping.get_n_groups();
+
+  std::vector<std::vector<double>> likelihoods(n_groups, std::vector<double>());
+  this->m_num_ecs = 0;
+  this->counts_total = 0;
+  this->pseudos = KallistoAlignment();
+
+  if (infile.good()) {
+    std::string newline;
+    uint32_t line_nr = 0;
+    while (std::getline(infile, newline)) {
+      this->pseudos.ec_ids.emplace_back(line_nr);
+      ++line_nr;
+      std::string part;
+      std::stringstream partition(newline);
+      bool ec_count_col = true;
+      uint32_t group_id = 0;
+      while (std::getline(partition, part, '\t')) {
+	if (ec_count_col) {
+	  uint32_t ec_count = std::stol(part);
+	  this->pseudos.ec_counts.emplace_back(ec_count);
+	  this->counts_total += ec_count;
+	  this->log_ec_counts.emplace_back(std::log(ec_count));
+	  ec_count_col = false;
+	} else {
+	  likelihoods[group_id].emplace_back(std::stod(part));
+	  ++group_id;
+	}
+      }
+    }
+    this->m_num_ecs = line_nr;
+  } else {
+    throw std::runtime_error("Could not read from the likelihoods file.");
+  }
+  this->ll_mat = rcgpar::Matrix<double>(likelihoods);
 }

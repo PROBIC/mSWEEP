@@ -8,7 +8,7 @@
 void ProcessReads(const Grouping &grouping, const Arguments &args, std::vector<std::unique_ptr<Sample>> &samples) {
   for (uint32_t i = 0; i < samples.size(); ++i) {
     // Process pseudoalignments.
-      samples[i]->ec_probs = rcgpar::rcg_optl_omp(samples[i]->ll_mat, samples[i]->log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters, std::cerr);
+    samples[i]->ec_probs = rcgpar::rcg_optl_omp(samples[i]->ll_mat, samples[i]->log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters, std::cerr);
 
     std::string outfile(args.outfile);
     if (samples.size() > 1) {

@@ -4,14 +4,14 @@
 #include <memory>
 #include <fstream>
 
-#include "bxzstr.hpp"
 #include "cxxio.hpp"
+#include "rcgpar.hpp"
 
 #include "parse_arguments.hpp"
-#include "process_reads.hpp"
 #include "likelihood.hpp"
 #include "Sample.hpp"
 #include "Reference.hpp"
+
 #include "version.h"
 #include "openmp_config.hpp"
 
@@ -111,7 +111,8 @@ int main (int argc, char *argv[]) {
   uint16_t n_groupings = reference.get_n_groupings();
   std::string outfile_name = args.outfile;
   for (uint16_t i = 0; i < n_groupings; ++i) {
-    uint32_t n_groups = reference.get_grouping(i).get_n_groups();
+    const Grouping *grouping = &reference.get_grouping(i);
+    uint32_t n_groups = grouping->get_n_groups();
 
     // Initialize the prior counts on the groups
     args.optimizer.alphas = std::vector<double>(n_groups, 1.0);
@@ -126,7 +127,7 @@ int main (int argc, char *argv[]) {
     std::cerr << "Building log-likelihood array" << std::endl;
     for (uint16_t j = 0; j < samples.size(); ++j) {
       if (!args.read_likelihood_mode) {
-	likelihood_array_mat(reference.get_grouping(i), reference.get_group_indicators(i), args.optimizer.bb_constants, (*samples[j]));
+	likelihood_array_mat((*grouping), reference.get_group_indicators(i), args.optimizer.bb_constants, (*samples[j]));
 	if (j == n_groupings - 1) {
 	  // Free memory used by the configs after all likelihood matrices are built.
 	  samples[j]->pseudos.ec_configs.clear();
@@ -150,13 +151,36 @@ int main (int argc, char *argv[]) {
       std::cerr << "Skipping relative abundance estimation (--no-fit-model toggled)" << std::endl;
     } else {
       std::cerr << "Estimating relative abundances" << std::endl;
-      if (args.bootstrap_mode) {
-	ProcessBootstrap(reference.get_grouping(i), args, samples);
-      } else {
-	ProcessReads(reference.get_grouping(i), args, samples);
+      for (uint32_t i = 0; i < samples.size(); ++i) {
+	if (args.bootstrap_mode) {
+	  BootstrapSample* bs = static_cast<BootstrapSample*>(&(*samples[i]));
+	  bs->BootstrapAbundances((*grouping), args);
+	  bs->WriteBootstrap(grouping->get_names(), args.outfile, args.iters, args.batch_mode);
+	} else {
+	  // Process pseudoalignments.
+	  samples[i]->ec_probs = rcgpar::rcg_optl_omp(samples[i]->ll_mat, samples[i]->log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters, std::cerr);
+
+	  std::string outfile(args.outfile);
+	  if (samples.size() > 1) {
+	    // Legacy kallisto batch mode support in outfile names.
+	    outfile = (args.outfile.empty() ? args.outfile : args.outfile + "/" + samples[i]->cell_name());
+	  }
+
+	  samples[i]->write_abundances(grouping->get_names(), outfile);
+	  if (args.optimizer.write_probs && !outfile.empty()) {
+	    std::unique_ptr<std::ostream> of;
+	    if (args.optimizer.gzip_probs) {
+	      outfile += "_probs.csv.gz";
+	      of = std::unique_ptr<std::ostream>(new bxz::ofstream(outfile));
+	    } else {
+	      outfile += "_probs.csv";
+	      of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));
+	    }
+	    samples[i]->write_probabilities(grouping->get_names(), (args.optimizer.print_probs ? std::cout : *of));
+	  }
+	}
       }
     }
   }
-
   return 0;
 }

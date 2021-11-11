@@ -18,9 +18,6 @@ private:
   uint32_t m_num_ecs;
   std::string cell_id;
 
-  // Free the memory taken by ec_configs
-  void clear_configs() { pseudos.ec_configs.clear(); }
-
 protected:
   uint32_t counts_total;
 
@@ -49,8 +46,6 @@ public:
   uint32_t num_ecs() const { return m_num_ecs; };
   uint32_t total_counts() const { return counts_total; };
 
-  // Fill the likelihood matrix
-  void CalcLikelihood(const Grouping &grouping, const double bb_constants[2], const std::vector<uint32_t> &group_indicators, const bool cleanup);
   // Read in the likelihoods from a file
   void ReadLikelihood(const Grouping &grouping, std::istream &infile);
 };

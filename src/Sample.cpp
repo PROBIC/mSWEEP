@@ -5,7 +5,6 @@
 
 #include "rcgpar.hpp"
 
-#include "likelihood.hpp"
 #include "version.h"
 
 void Sample::process_aln() {
@@ -155,15 +154,6 @@ void Sample::write_likelihood_bitseq(const bool gzip_output, const uint32_t n_gr
   }
   if (!outfile.empty()) {
     of->flush();
-  }
-}
-
-void Sample::CalcLikelihood(const Grouping &grouping, const double bb_constants[2], const std::vector<uint32_t> &group_indicators, const bool cleanup) {
-  uint32_t n_groups = grouping.get_n_groups();
-  likelihood_array_mat(grouping, group_indicators, bb_constants, *this);
-  if (cleanup) {
-    // If estimating with only 1 grouping free the memory used by the configs
-    clear_configs();
   }
 }
 

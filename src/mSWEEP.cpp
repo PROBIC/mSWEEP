@@ -9,6 +9,7 @@
 #include "parse_arguments.hpp"
 #include "read_pseudoalignment.hpp"
 #include "process_reads.hpp"
+#include "likelihood.hpp"
 #include "Sample.hpp"
 #include "Reference.hpp"
 #include "version.h"
@@ -110,7 +111,12 @@ int main (int argc, char *argv[]) {
     std::cerr << "Building log-likelihood array" << std::endl;
     for (uint16_t j = 0; j < samples.size(); ++j) {
       if (!args.read_likelihood_mode) {
-	samples[j]->CalcLikelihood(reference.get_grouping(i), args.optimizer.bb_constants, reference.get_group_indicators(i), n_groupings == 1);
+	likelihood_array_mat(reference.get_grouping(i), reference.get_group_indicators(i), args.optimizer.bb_constants, (*samples[j]));
+	if (j == n_groupings - 1) {
+	  // Free memory used by the configs after all likelihood matrices are built.
+	  samples[j]->pseudos.ec_configs.clear();
+	  samples[j]->pseudos.ec_configs.shrink_to_fit();
+	}
       }
 
       if (args.optimizer.write_likelihood || args.optimizer.write_likelihood_bitseq) {

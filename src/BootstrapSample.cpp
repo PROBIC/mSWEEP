@@ -23,7 +23,7 @@ void BootstrapSample::ResampleCounts(const uint32_t how_many, std::mt19937_64 &g
 void BootstrapSample::BootstrapIter(const std::vector<double> &alpha0, const double tolerance, const uint16_t max_iters) {
   // Process pseudoalignments but return the abundances rather than writing.
   ec_probs = rcgpar::rcg_optl_omp(ll_mat, this->log_ec_counts, alpha0, tolerance, max_iters, std::cerr);
-  this->relative_abundances.emplace_back(group_abundances());
+  this->relative_abundances.emplace_back(rcgpar::mixture_components(this->ec_probs, this->log_ec_counts));
 }
 
 void BootstrapSample::BootstrapAbundances(const Grouping &grouping, const Arguments &args) {

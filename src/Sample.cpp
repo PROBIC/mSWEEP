@@ -3,6 +3,8 @@
 #include <cmath>
 #include <sstream>
 
+#include "rcgpar.hpp"
+
 #include "likelihood.hpp"
 #include "version.h"
 
@@ -30,19 +32,6 @@ void Sample::read_kallisto(const uint32_t n_refs, std::istream &ec_file, std::is
   ReadKallisto(n_refs, ec_file, tsv_file, &pseudos);
   process_aln();
   pseudos.ec_counts.clear();
-}
-
-std::vector<double> Sample::group_abundances() const {
-  // Calculate the relative abundances of the
-  // reference groups from the ec_probs matrix
-  std::vector<double> thetas(this->ec_probs.get_rows(), 0.0);
-  for (uint32_t i = 0; i < this->ec_probs.get_rows(); ++i) {
-    for (uint32_t j = 0; j < this->ec_probs.get_cols(); ++j) {
-      thetas[i] += std::exp(this->ec_probs(i, j) + this->log_ec_counts[j]);
-    }
-    thetas[i] /= this->counts_total;
-  }
-  return thetas;
 }
 
 std::vector<uint16_t> Sample::group_counts(const std::vector<uint32_t> indicators, const uint32_t ec_id, const uint32_t n_groups) const {
@@ -76,7 +65,7 @@ void Sample::write_probabilities(const std::vector<std::string> &cluster_indicat
 void Sample::write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile) const {
   // Write relative abundances to a file,
   // outputs to std::cout if outfile is empty.
-  const std::vector<double> &abundances = this->group_abundances();
+  const std::vector<double> &abundances = rcgpar::mixture_components(this->ec_probs, this->log_ec_counts);
 
   std::streambuf *buf;
   std::ofstream of;

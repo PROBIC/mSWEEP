@@ -157,27 +157,24 @@ int main (int argc, char *argv[]) {
     } else {
       std::cerr << "Estimating relative abundances" << std::endl;
       for (uint32_t i = 0; i < samples.size(); ++i) {
+	// Set out buffer
+	std::string outfile(args.outfile);
+	outfile = (outfile.empty() || !args.batch_mode ? outfile : outfile + '/' + samples[i]->cell_name());
+	cxxio::Out of;
+	if (!outfile.empty()) {
+	  outfile += "_abundances.txt";
+	  of.open(outfile);
+	}
+
 	if (args.bootstrap_mode) {
 	  std::cerr << "Running estimation with " << args.iters << " bootstrap iterations" << '\n';
 	  BootstrapSample* bs = static_cast<BootstrapSample*>(&(*samples[i]));
 	  bs->bootstrap_abundances((*grouping), args);
-	  bs->write_bootstrap(grouping->get_names(), args.outfile, args.iters, args.batch_mode);
+	  bs->write_bootstrap(grouping->get_names(), args.iters, args.batch_mode, (outfile.empty() ? std::cout : of.stream()));
 	} else {
 	  // Estimate relative abundances
 	  samples[i]->ec_probs = rcgpar::rcg_optl_omp(samples[i]->ll_mat, samples[i]->log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters, std::cerr);
 	  samples[i]->relative_abundances = rcgpar::mixture_components(samples[i]->ec_probs, samples[i]->log_ec_counts);
-
-	  // Write to file or cout
-	  std::string outfile(args.outfile);
-	  if (samples.size() > 1) {
-	    // Legacy kallisto batch mode support in outfile names.
-	    outfile = (args.outfile.empty() ? args.outfile : args.outfile + "/" + samples[i]->cell_name());
-	  }
-	  cxxio::Out of;
-	  if (!outfile.empty()) {
-	    outfile += "_abundances.txt";
-	    of.open(outfile);
-	  }
 	  samples[i]->write_abundances(grouping->get_names(), (outfile.empty() ? std::cout : of.stream()));
 	}
 	// Write the probability matrix

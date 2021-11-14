@@ -1,7 +1,6 @@
 #include "Sample.hpp"
 
 #include "rcgpar.hpp"
-#include "cxxio.hpp"
 
 #include "version.h"
 
@@ -60,33 +59,24 @@ void BootstrapSample::bootstrap_abundances(const Grouping &grouping, const Argum
 }
 
 void BootstrapSample::write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string,
-				      std::string outfile, const uint16_t iters,
-				      const bool batch_mode) const {
+				      const uint16_t iters, const bool batch_mode,
+				      std::ostream &of) const {
   // Write relative abundances to a file,
   // outputs to std::cout if outfile is empty.
-  outfile = (outfile.empty() || !batch_mode ? outfile : outfile + '/' + cell_name());
-  std::streambuf *buf;
-  cxxio::Out of;
-  if (outfile.empty()) {
-    buf = std::cout.rdbuf();
-  } else {
-    outfile += "_abundances.txt";
-    of.open(outfile);
-    buf = of.stream().rdbuf();
-  }
-  std::ostream out(buf);
-  out << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
-  out << "#total_hits:" << '\t' << this->get_counts_total() << '\n';
-  out << "#bootstrap_iters:" << '\t' << iters << '\n';
-  out << "#c_id" << '\t' << "mean_theta" << '\t' << "bootstrap_mean_thetas" << '\n';
+  if (of.good()) {
+    of << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
+    of << "#total_hits:" << '\t' << this->get_counts_total() << '\n';
+    of << "#bootstrap_iters:" << '\t' << iters << '\n';
+    of << "#c_id" << '\t' << "mean_theta" << '\t' << "bootstrap_mean_thetas" << '\n';
 
-  for (size_t i = 0; i < cluster_indicators_to_string.size(); ++i) {
-    out << cluster_indicators_to_string[i] << '\t';
-    for (uint16_t j = 0; j <= iters; ++j) {
-      out << relative_abundances[j][i] << (j == iters ? '\n' : '\t');
+    for (size_t i = 0; i < cluster_indicators_to_string.size(); ++i) {
+      of << cluster_indicators_to_string[i] << '\t';
+      for (uint16_t j = 0; j <= iters; ++j) {
+	of << relative_abundances[j][i] << (j == iters ? '\n' : '\t');
+      }
     }
-  }
-  if (!outfile.empty()) {
-    of.close();
+    of.flush();
+  } else {
+    throw std::runtime_error("Could not write to abundances file.");
   }
 }

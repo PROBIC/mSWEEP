@@ -71,8 +71,8 @@ public:
   BootstrapSample(const int32_t seed);
 
   void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string,
-		       std::string outfile, const uint16_t iters,
-		       const bool batch_mode) const;
+		       const uint16_t iters, const bool batch_mode,
+		       std::ostream &of) const;
   void bootstrap_abundances(const Grouping &grouping, const Arguments &args);
 
 };

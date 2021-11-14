@@ -130,13 +130,24 @@ int main (int argc, char *argv[]) {
 	}
       }
 
-      if (args.optimizer.write_likelihood) {
-	std::cerr << "Writing likelihood matrix" << std::endl;
-	samples[j]->write_likelihood(args.optimizer.gzip_probs, n_groups, args.outfile);
-      }
-      if (args.optimizer.write_likelihood_bitseq) {
-	std::cerr << "Writing likelihood matrix in BitSeq format" << std::endl;
-	samples[j]->write_likelihood_bitseq(args.optimizer.gzip_probs, n_groups, args.outfile);
+      if (args.optimizer.write_likelihood || args.optimizer.write_likelihood_bitseq) {
+	cxxio::Out of;
+	std::string outfile(args.outfile);
+	outfile += (args.optimizer.write_likelihood_bitseq ? "_bitseq" : "");
+	outfile += "likelihoods.txt";
+	if (args.optimizer.gzip_probs) {
+	  outfile += ".gz";
+	  of.open_compressed(outfile);
+	} else {
+	  of.open(outfile);
+	}
+	if (args.optimizer.write_likelihood_bitseq) {
+	  std::cerr << "Writing likelihood matrix in BitSeq format" << std::endl;
+	  samples[j]->write_likelihood_bitseq(args.optimizer.gzip_probs, n_groups, of.stream());
+	} else {
+	  std::cerr << "Writing likelihood matrix" << std::endl;
+	  samples[j]->write_likelihood(args.optimizer.gzip_probs, n_groups, of.stream());
+	}
       }
     }
 

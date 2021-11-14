@@ -74,81 +74,48 @@ void Sample::write_abundances(const std::vector<std::string> &cluster_indicators
   }
 }
 
-void Sample::write_likelihood(const bool gzip_output, const uint32_t n_groups, std::string outfile) const {
+void Sample::write_likelihood(const bool gzip_output, const uint32_t n_groups, std::ostream &of) const {
   // Write likelihoods to a file
-
-  std::streambuf *buf;
-  cxxio::Out of;
-  if (outfile.empty()) {
-    buf = std::cout.rdbuf();
-  } else {
-    outfile += "_likelihoods.txt";
-    if (gzip_output) {
-      outfile += ".gz";
-      of.open_compressed(outfile);
-    } else {
-      of.open(outfile);
-    }
-    buf = of.stream().rdbuf();
-  }
-  std::ostream out(buf);
-
-  if (out.good()) {
+ if (of.good()) {
     for (uint32_t i = 0; i < this->m_num_ecs; ++i){
       uint32_t ec_hit_count = std::round(std::exp(this->log_ec_counts[i]));
-      out << ec_hit_count << '\t';
+      of << ec_hit_count << '\t';
       for (uint32_t j = 0; j < n_groups; ++j) {
-	out << this->ll_mat(j, i);
-	out << (j == n_groups - 1 ? '\n' : '\t');
+	of << this->ll_mat(j, i);
+	of << (j == n_groups - 1 ? '\n' : '\t');
       }
     }
-    out.flush();
+    of.flush();
   } else {
     throw std::runtime_error("Can't write to likelihoods file.");
   }
 }
 
-void Sample::write_likelihood_bitseq(const bool gzip_output, const uint32_t n_groups, std::string outfile) const {
+void Sample::write_likelihood_bitseq(const bool gzip_output, const uint32_t n_groups, std::ostream &of) const {
   // Write likelihoods to a file
   // *Note*: will write in BitSeq format!
   // Use Sample::write_likelihoods if tab-separated matrix format is needed.
-
-  std::streambuf *buf;
-  cxxio::Out of;
-  if (outfile.empty()) {
-    buf = std::cout.rdbuf();
-  } else {
-    outfile += "_bitseq_likelihoods.txt";
-    if (gzip_output) {
-      outfile += ".gz";
-      of.open_compressed(outfile);
-    } else {
-      of.open(outfile);
-    }
-    buf = of.stream().rdbuf();
-  }
-  std::ostream out(buf);
-  if (out.good()) {
-    out << "# Ntotal " << this->counts_total << '\n';
-    out << "# Nmap " << this->counts_total << '\n';
-    out << "# M " << n_groups << '\n';
-    out << "# LOGFORMAT (probabilities saved on log scale.)" << '\n';
-    out << "# r_name num_alignments (tr_id prob )^*{num_alignments}" << '\n';
+  if (of.good()) {
+    of << "# Ntotal " << this->counts_total << '\n';
+    of << "# Nmap " << this->counts_total << '\n';
+    of << "# M " << n_groups << '\n';
+    of << "# LOGFORMAT (probabilities saved on log scale.)" << '\n';
+    of << "# r_name num_alignments (tr_id prob )^*{num_alignments}" << '\n';
 
     uint32_t read_id = 1;
     for (uint32_t i = 0; i < this->m_num_ecs; ++i) {
       uint32_t ec_hit_count = std::round(std::exp(this->log_ec_counts[i]));
       for (uint32_t k = 0; k < ec_hit_count; ++k) {
-	out << read_id << ' ';
-	out << n_groups + 1 << ' ';
+	of << read_id << ' ';
+	of << n_groups + 1 << ' ';
 	for (uint32_t j = 0; j < n_groups; ++j) {
-	  out << j + 1 << ' ' << this->ll_mat(j, i) << ' ';
+	  of << j + 1 << ' ' << this->ll_mat(j, i) << ' ';
 	}
-	out << 0 << ' ' << "-10000.00" << '\n';
+	of << 0 << ' ' << "-10000.00" << '\n';
 	++read_id;
       }
     }
-    out.flush();
+    of.flush();
   } else {
     throw std::runtime_error("Can't write to likelihoods file (bitseq format).");
   }

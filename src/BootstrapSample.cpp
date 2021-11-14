@@ -28,7 +28,6 @@ std::vector<double> BootstrapSample::resample_counts(const uint32_t how_many, st
   for (uint32_t i = 0; i < num_ecs(); ++i) {
     resampled_log_ec_counts[i] = std::log(tmp_counts[i]);
   }
-  counts_total = how_many;
   return resampled_log_ec_counts;
 }
 
@@ -52,9 +51,7 @@ void BootstrapSample::bootstrap_abundances(const Grouping &grouping, const Argum
   // Clear the abundances in case we're estimating the same sample again.
   this->relative_abundances = std::vector<std::vector<double>>();
 
-  // Store the original values
-  uint32_t og_counts_total = this->counts_total;
-
+  // Estimate the relative abundances from the input data
   std::cerr << "Estimating relative abundances without bootstrapping" << std::endl;
   this->ec_probs = rcgpar::rcg_optl_omp(this->ll_mat, this->log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters, std::cerr);
   this->relative_abundances.emplace_back(rcgpar::mixture_components(this->ec_probs, this->log_ec_counts));
@@ -68,9 +65,6 @@ void BootstrapSample::bootstrap_abundances(const Grouping &grouping, const Argum
     // Estimate with the resampled counts
     bootstrap_iter(resampled_log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters);
   }
-
-  // Restore original values
-  this->counts_total = og_counts_total;
 }
 
 

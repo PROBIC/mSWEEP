@@ -35,7 +35,7 @@ void BootstrapSample::bootstrap_iter(const std::vector<double> &resampled_log_ec
   this->relative_abundances.emplace_back(rcgpar::mixture_components(bootstrapped_ec_probs, resampled_log_ec_counts));
 }
 
-void BootstrapSample::bootstrap_abundances(const Grouping &grouping, const Arguments &args) {
+void BootstrapSample::bootstrap_abundances(const Arguments &args) {
   // Clear the abundances in case we're estimating the same sample again.
   this->relative_abundances = std::vector<std::vector<double>>();
 
@@ -59,8 +59,7 @@ void BootstrapSample::bootstrap_abundances(const Grouping &grouping, const Argum
 }
 
 void BootstrapSample::write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string,
-				      const uint16_t iters, const bool batch_mode,
-				      std::ostream &of) const {
+				      const uint16_t iters, std::ostream &of) const {
   // Write relative abundances to a file,
   // outputs to std::cout if outfile is empty.
   if (of.good()) {

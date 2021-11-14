@@ -143,10 +143,10 @@ int main (int argc, char *argv[]) {
 	}
 	if (args.optimizer.write_likelihood_bitseq) {
 	  std::cerr << "Writing likelihood matrix in BitSeq format" << std::endl;
-	  samples[j]->write_likelihood_bitseq(args.optimizer.gzip_probs, n_groups, of.stream());
+	  samples[j]->write_likelihood_bitseq(n_groups, of.stream());
 	} else {
 	  std::cerr << "Writing likelihood matrix" << std::endl;
-	  samples[j]->write_likelihood(args.optimizer.gzip_probs, n_groups, of.stream());
+	  samples[j]->write_likelihood(n_groups, of.stream());
 	}
       }
     }
@@ -169,8 +169,8 @@ int main (int argc, char *argv[]) {
 	if (args.bootstrap_mode) {
 	  std::cerr << "Running estimation with " << args.iters << " bootstrap iterations" << '\n';
 	  BootstrapSample* bs = static_cast<BootstrapSample*>(&(*samples[i]));
-	  bs->bootstrap_abundances((*grouping), args);
-	  bs->write_bootstrap(grouping->get_names(), args.iters, args.batch_mode, (outfile.empty() ? std::cout : of.stream()));
+	  bs->bootstrap_abundances(args);
+	  bs->write_bootstrap(grouping->get_names(), args.iters, (outfile.empty() ? std::cout : of.stream()));
 	} else {
 	  // Estimate relative abundances
 	  samples[i]->ec_probs = rcgpar::rcg_optl_omp(samples[i]->ll_mat, samples[i]->log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters, std::cerr);

@@ -39,9 +39,9 @@ public:
   // Write estimated read-reference posterior probabilities (gamma_Z)
   void write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, std::ostream &outfile) const;
   // Write likelihoods
-  void write_likelihood(const bool gzip_output, const uint32_t n_groups, std::ostream &of) const;
+  void write_likelihood(const uint32_t n_groups, std::ostream &of) const;
   // Write likelihoods in BitSeq-compatible format
-  void write_likelihood_bitseq(const bool gzip_output, const uint32_t n_groups, std::ostream &of) const;
+  void write_likelihood_bitseq(const uint32_t n_groups, std::ostream &of) const;
 
   // Read in the likelihoods from a file
   void read_likelihood(const Grouping &grouping, std::istream &infile);
@@ -71,9 +71,8 @@ public:
   BootstrapSample(const int32_t seed);
 
   void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string,
-		       const uint16_t iters, const bool batch_mode,
-		       std::ostream &of) const;
-  void bootstrap_abundances(const Grouping &grouping, const Arguments &args);
+		       const uint16_t iters, std::ostream &of) const;
+  void bootstrap_abundances(const Arguments &args);
 
 };
 

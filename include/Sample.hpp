@@ -55,9 +55,12 @@ private:
   std::vector<std::vector<double>> relative_abundances;
 
   // Run estimation and add results to relative_abundances
-  void bootstrap_iter(const std::vector<double> &alpha0, const double tolerance, const uint16_t max_iters);
+  void bootstrap_iter(const std::vector<double> &resampled_log_ec_counts,
+		      const std::vector<double> &alpha0, const double tolerance,
+		      const uint16_t max_iters);
+
   // Resample the equivalence class counts
-  void resample_counts(const uint32_t how_many, std::mt19937_64 &rng);
+  std::vector<double> resample_counts(const uint32_t how_many, std::mt19937_64 &rng);
 
 public:
   // Set seed in constructor

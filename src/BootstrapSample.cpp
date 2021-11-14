@@ -17,23 +17,27 @@ BootstrapSample::BootstrapSample(const int32_t seed) {
   }
 }
 
-void BootstrapSample::resample_counts(const uint32_t how_many, std::mt19937_64 &generator) {
+std::vector<double> BootstrapSample::resample_counts(const uint32_t how_many, std::mt19937_64 &generator) {
   std::vector<uint32_t> tmp_counts(num_ecs());
   for (uint32_t i = 0; i < how_many; ++i) {
     uint32_t ec_id = ec_distribution(generator);
     tmp_counts[ec_id] += 1;
   }
+  std::vector<double> resampled_log_ec_counts(num_ecs());
 #pragma omp parallel for schedule(static)
   for (uint32_t i = 0; i < num_ecs(); ++i) {
-    log_ec_counts[i] = std::log(tmp_counts[i]);
+    resampled_log_ec_counts[i] = std::log(tmp_counts[i]);
   }
   counts_total = how_many;
+  return resampled_log_ec_counts;
 }
 
-void BootstrapSample::bootstrap_iter(const std::vector<double> &alpha0, const double tolerance, const uint16_t max_iters) {
+void BootstrapSample::bootstrap_iter(const std::vector<double> &resampled_log_ec_counts,
+				     const std::vector<double> &alpha0, const double tolerance,
+				     const uint16_t max_iters) {
   // Process pseudoalignments but return the abundances rather than writing.
-  ec_probs = rcgpar::rcg_optl_omp(ll_mat, this->log_ec_counts, alpha0, tolerance, max_iters, std::cerr);
-  this->relative_abundances.emplace_back(rcgpar::mixture_components(this->ec_probs, this->log_ec_counts));
+  const rcgpar::Matrix<double> &bootstrapped_ec_probs = rcgpar::rcg_optl_omp(this->ll_mat, resampled_log_ec_counts, alpha0, tolerance, max_iters, std::cerr);
+  this->relative_abundances.emplace_back(rcgpar::mixture_components(bootstrapped_ec_probs, resampled_log_ec_counts));
 }
 
 void BootstrapSample::bootstrap_abundances(const Grouping &grouping, const Arguments &args) {
@@ -49,37 +53,36 @@ void BootstrapSample::bootstrap_abundances(const Grouping &grouping, const Argum
   this->relative_abundances = std::vector<std::vector<double>>();
 
   // Store the original values
-  std::vector<double> og_log_ec_counts(this->log_ec_counts);
   uint32_t og_counts_total = this->counts_total;
 
-  for (uint16_t i = 0; i <= args.iters; ++i) {
-    if (i > 0) {
-      std::cout << "Bootstrap" << " iter " << i << "/" << args.iters << std::endl;
-    } else {
-      std::cerr << "Estimating relative abundances without bootstrapping" << std::endl;
-    }
-    bootstrap_iter(args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters);
+  std::cerr << "Estimating relative abundances without bootstrapping" << std::endl;
+  this->ec_probs = rcgpar::rcg_optl_omp(this->ll_mat, this->log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters, std::cerr);
+  this->relative_abundances.emplace_back(rcgpar::mixture_components(this->ec_probs, this->log_ec_counts));
 
-    if (i == 0) {
-      if (args.optimizer.write_probs && !args.outfile.empty()) {
-	std::string outfile = args.outfile;
-	cxxio::Out of;
-	outfile += "_probs.csv";
-	if (args.optimizer.gzip_probs) {
-	  outfile += ".gz";
-	  of.open_compressed(outfile);
-	} else {
-	  of.open(outfile);
-	}
-	write_probabilities(grouping.get_names(), (args.optimizer.print_probs ? std::cout : of.stream()));
-      }
+  if (args.optimizer.write_probs && !args.outfile.empty()) {
+    std::string outfile = args.outfile;
+    cxxio::Out of;
+    outfile += "_probs.csv";
+    if (args.optimizer.gzip_probs) {
+      outfile += ".gz";
+      of.open_compressed(outfile);
+    } else {
+      of.open(outfile);
     }
-    // Resample the pseudoalignment counts (here because we want to include the original)
-    resample_counts((args.bootstrap_count == 0 ? counts_total : args.bootstrap_count), gen);
+    write_probabilities(grouping.get_names(), (args.optimizer.print_probs ? std::cout : of.stream()));
+  }
+
+  for (uint16_t i = 0; i <= args.iters; ++i) {
+    std::cout << "Bootstrap" << " iter " << i << "/" << args.iters << std::endl;
+
+    // Resample the pseudoalignment counts
+    const std::vector<double> resampled_log_ec_counts = resample_counts((args.bootstrap_count == 0 ? counts_total : args.bootstrap_count), gen);
+
+    // Estimate with the resampled counts
+    bootstrap_iter(resampled_log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters);
   }
 
   // Restore original values
-  this->log_ec_counts = og_log_ec_counts;
   this->counts_total = og_counts_total;
 }
 

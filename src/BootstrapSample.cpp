@@ -60,7 +60,7 @@ void BootstrapSample::bootstrap_abundances(const Grouping &grouping, const Argum
     std::cout << "Bootstrap" << " iter " << i << "/" << args.iters << std::endl;
 
     // Resample the pseudoalignment counts
-    const std::vector<double> resampled_log_ec_counts = resample_counts((args.bootstrap_count == 0 ? counts_total : args.bootstrap_count), gen);
+    const std::vector<double> resampled_log_ec_counts = resample_counts((args.bootstrap_count == 0 ? this->get_counts_total() : args.bootstrap_count), gen);
 
     // Estimate with the resampled counts
     bootstrap_iter(resampled_log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters);
@@ -83,7 +83,7 @@ void BootstrapSample::write_bootstrap(const std::vector<std::string> &cluster_in
   }
   std::ostream out(buf);
   out << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
-  out << "#total_hits:" << '\t' << counts_total << '\n';
+  out << "#total_hits:" << '\t' << this->get_counts_total() << '\n';
   out << "#bootstrap_iters:" << '\t' << iters << '\n';
   out << "#c_id" << '\t' << "mean_theta" << '\t' << "bootstrap_mean_thetas" << '\n';
 

@@ -15,10 +15,8 @@
 class Sample {
 private:
   uint32_t m_num_ecs;
-  std::string cell_id;
-
-protected:
   uint32_t counts_total;
+  std::string cell_id;
 
 public:
   rcgpar::Matrix<double> ec_probs;
@@ -43,6 +41,7 @@ public:
   // Getters
   std::string cell_name() const { return cell_id; };
   uint32_t num_ecs() const { return m_num_ecs; };
+  uint32_t get_counts_total() const { return this->counts_total; };
 
   // Read in the likelihoods from a file
   void read_likelihood(const Grouping &grouping, std::istream &infile);

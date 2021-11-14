@@ -59,19 +59,6 @@ void BootstrapSample::bootstrap_abundances(const Grouping &grouping, const Argum
   this->ec_probs = rcgpar::rcg_optl_omp(this->ll_mat, this->log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters, std::cerr);
   this->relative_abundances.emplace_back(rcgpar::mixture_components(this->ec_probs, this->log_ec_counts));
 
-  if (args.optimizer.write_probs && !args.outfile.empty()) {
-    std::string outfile = args.outfile;
-    cxxio::Out of;
-    outfile += "_probs.csv";
-    if (args.optimizer.gzip_probs) {
-      outfile += ".gz";
-      of.open_compressed(outfile);
-    } else {
-      of.open(outfile);
-    }
-    write_probabilities(grouping.get_names(), (args.optimizer.print_probs ? std::cout : of.stream()));
-  }
-
   for (uint16_t i = 0; i <= args.iters; ++i) {
     std::cout << "Bootstrap" << " iter " << i << "/" << args.iters << std::endl;
 
@@ -87,7 +74,7 @@ void BootstrapSample::bootstrap_abundances(const Grouping &grouping, const Argum
 }
 
 
-void BootstrapSample::write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string &outfile, const unsigned iters, const bool batch_mode) const {
+void BootstrapSample::write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile, const unsigned iters, const bool batch_mode) const {
   // Write relative abundances to a file,
   // outputs to std::cout if outfile is empty.
   outfile = (outfile.empty() || !batch_mode ? outfile : outfile + '/' + cell_name());

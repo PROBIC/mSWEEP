@@ -66,7 +66,7 @@ public:
   // Set seed in constructor
   BootstrapSample(const int32_t seed);
 
-  void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string &outfile, const unsigned iters, const bool batch_mode) const;
+  void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile, const unsigned iters, const bool batch_mode) const;
   void bootstrap_abundances(const Grouping &grouping, const Arguments &args);
 
 };

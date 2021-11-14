@@ -7,10 +7,9 @@
 
 #include "version.h"
 
-void Sample::process_aln() {
+void Sample::process_aln(const bool bootstrap_mode) {
   cell_id = "";
-  m_num_ecs = pseudos.size();
-  m_num_refs = pseudos.n_targets();
+  m_num_ecs = pseudos.ec_counts.size();
   log_ec_counts.resize(m_num_ecs, 0.0);
   uint32_t aln_counts_total = 0;
 #pragma omp parallel for schedule(static) reduction(+:aln_counts_total)
@@ -19,10 +18,17 @@ void Sample::process_aln() {
     aln_counts_total += pseudos.ec_counts[i];
   }
   counts_total = aln_counts_total;
+
+  if (!bootstrap_mode) {
+    // EC counts aren't needed when not bootstrapping.
+    this->pseudos.ec_counts.clear();
+    this->pseudos.ec_counts.shrink_to_fit();
+  }
 }
 
 std::vector<uint16_t> Sample::group_counts(const std::vector<uint32_t> indicators, const uint32_t ec_id, const uint32_t n_groups) const {
   std::vector<uint16_t> read_hitcounts(n_groups);
+  uint32_t m_num_refs = this->pseudos.n_targets();
   for (uint32_t j = 0; j < m_num_refs; ++j) {
     read_hitcounts[indicators[j]] += pseudos.ec_configs[ec_id][j];
   }
@@ -161,8 +167,6 @@ void Sample::read_likelihood(const Grouping &grouping, std::istream &infile) {
   uint32_t n_groups = grouping.get_n_groups();
 
   std::vector<std::vector<double>> likelihoods(n_groups, std::vector<double>());
-  this->m_num_ecs = 0;
-  this->counts_total = 0;
   this->pseudos = KallistoAlignment();
 
   if (infile.good()) {
@@ -179,8 +183,6 @@ void Sample::read_likelihood(const Grouping &grouping, std::istream &infile) {
 	if (ec_count_col) {
 	  uint32_t ec_count = std::stol(part);
 	  this->pseudos.ec_counts.emplace_back(ec_count);
-	  this->counts_total += ec_count;
-	  this->log_ec_counts.emplace_back(std::log(ec_count));
 	  ec_count_col = false;
 	} else {
 	  likelihoods[group_id].emplace_back(std::stod(part));
@@ -188,7 +190,6 @@ void Sample::read_likelihood(const Grouping &grouping, std::istream &infile) {
 	}
       }
     }
-    this->m_num_ecs = line_nr;
   } else {
     throw std::runtime_error("Could not read from the likelihoods file.");
   }

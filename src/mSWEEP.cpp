@@ -74,7 +74,6 @@ int main (int argc, char *argv[]) {
       // Check that the number of reference sequences matches in the grouping and the alignment.
       reference.verify_kallisto_alignment(*args.infiles.run_info);
       ReadKallisto(reference.get_n_refs(), *args.infiles.ec, *args.infiles.tsv, &samples.back()->pseudos);
-      samples.back()->process_aln();
     } else if (!args.read_likelihood_mode) {
       if (!args.themisto_index_path.empty()) {
 	cxxio::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
@@ -84,12 +83,7 @@ int main (int argc, char *argv[]) {
       cxxio::In reverse_strand(args.tinfile2);
       std::vector<std::istream*> strands = { &forward_strand.stream(), &reverse_strand.stream() };
       ReadThemisto(get_mode(args.themisto_merge_mode), reference.get_n_refs(), strands, &samples.back()->pseudos);
-      samples.back()->process_aln();
 
-      if (!args.bootstrap_mode) {
-	samples.back()->pseudos.ec_counts.clear();
-	samples.back()->pseudos.ec_counts.shrink_to_fit();
-      }
     } else {
       if (reference.get_n_groupings() > 1) {
 	throw std::runtime_error("Using more than one grouping with --read-likelihood is not yet implemented.");
@@ -97,6 +91,7 @@ int main (int argc, char *argv[]) {
       cxxio::In likelihoods(args.likelihood_file);
       samples.back()->read_likelihood(reference.get_grouping(0), likelihoods.stream());
     }
+    samples.back()->process_aln(args.bootstrap_mode);
 
     std::cerr << "  read " << (args.batch_mode ? samples.size() : samples[0]->num_ecs()) << (args.batch_mode ? " samples from the batch" : " unique alignments") << std::endl;
   } catch (std::runtime_error &e) {

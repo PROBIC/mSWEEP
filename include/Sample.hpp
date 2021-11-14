@@ -14,7 +14,6 @@
 
 class Sample {
 private:
-  uint32_t m_num_refs;
   uint32_t m_num_ecs;
   std::string cell_id;
 
@@ -32,7 +31,7 @@ public:
   KallistoAlignment pseudos;
 
   // Calculate log_ec_counts and counts_total.
-  void process_aln();
+  void process_aln(const bool bootstrap_mode);
 
   // Write estimated relative abundances
   void write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile) const;

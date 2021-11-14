@@ -43,7 +43,6 @@ public:
   // Getters
   std::string cell_name() const { return cell_id; };
   uint32_t num_ecs() const { return m_num_ecs; };
-  uint32_t total_counts() const { return counts_total; };
 
   // Read in the likelihoods from a file
   void read_likelihood(const Grouping &grouping, std::istream &infile);
@@ -51,6 +50,7 @@ public:
 
 class BootstrapSample : public Sample {
 private:
+  std::mt19937_64 gen;
   std::discrete_distribution<uint32_t> ec_distribution;
   std::vector<std::vector<double>> relative_abundances;
 
@@ -60,6 +60,9 @@ private:
   void resample_counts(const uint32_t how_many, std::mt19937_64 &rng);
 
 public:
+  // Set seed in constructor
+  BootstrapSample(const int32_t seed);
+
   void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string &outfile, const unsigned iters, const bool batch_mode) const;
   void bootstrap_abundances(const Grouping &grouping, const Arguments &args);
 

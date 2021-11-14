@@ -7,6 +7,15 @@
 #include "rcgpar.hpp"
 #include "bxzstr.hpp"
 
+BootstrapSample::BootstrapSample(const int32_t seed) {
+  if (seed == -1) {
+    std::random_device rd;
+    this->gen = std::mt19937_64(rd());
+  } else {
+    this->gen = std::mt19937_64(seed);
+  }
+}
+
 void BootstrapSample::resample_counts(const uint32_t how_many, std::mt19937_64 &generator) {
   std::vector<uint32_t> tmp_counts(num_ecs());
   for (uint32_t i = 0; i < how_many; ++i) {
@@ -27,13 +36,6 @@ void BootstrapSample::bootstrap_iter(const std::vector<double> &alpha0, const do
 }
 
 void BootstrapSample::bootstrap_abundances(const Grouping &grouping, const Arguments &args) {
-  std::mt19937_64 gen;
-  if (args.seed == -1) {
-    std::random_device rd;
-    gen = std::mt19937_64(rd());
-  } else {
-    gen = std::mt19937_64(args.seed);
-  }
   std::cerr << "Running estimation with " << args.iters << " bootstrap iterations" << '\n';
   // Which sample are we processing?
   std::string name = (args.batch_mode ? cell_name() : "0");

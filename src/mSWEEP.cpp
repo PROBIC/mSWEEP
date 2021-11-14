@@ -66,7 +66,7 @@ int main (int argc, char *argv[]) {
 
     std::cerr << (args.read_likelihood_mode ? "  reading likelihoods from file" : "  reading pseudoalignments") << '\n';
     if (args.bootstrap_mode) {
-      samples.emplace_back(new BootstrapSample());
+      samples.emplace_back(new BootstrapSample(args.seed));
     } else {
       samples.emplace_back(new Sample());
     }

@@ -59,29 +59,16 @@ void Sample::write_probabilities(const std::vector<std::string> &cluster_indicat
   }
 }
 
-void Sample::write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile) const {
-  // Write relative abundances to a file,
-  // outputs to std::cout if outfile is empty.
-  const std::vector<double> &abundances = rcgpar::mixture_components(this->ec_probs, this->log_ec_counts);
-
-  std::streambuf *buf;
-  std::ofstream of;
-  if (outfile.empty()) {
-    buf = std::cout.rdbuf();
-  } else {
-    outfile += "_abundances.txt";
-    of.open(outfile);
-    buf = of.rdbuf();
-  }
-  std::ostream out(buf);
-  if (out.good()) {
-    out << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
-    out << "#total_hits:" << '\t' << this->counts_total << '\n';
-    out << "#c_id" << '\t' << "mean_theta" << '\n';
-    for (size_t i = 0; i < abundances.size(); ++i) {
-      out << cluster_indicators_to_string[i] << '\t' << abundances[i] << '\n';
+void Sample::write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::ostream &of) const {
+  // Write relative abundances to &of,
+  if (of.good()) {
+    of << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
+    of << "#total_hits:" << '\t' << this->counts_total << '\n';
+    of << "#c_id" << '\t' << "mean_theta" << '\n';
+    for (size_t i = 0; i < relative_abundances.size(); ++i) {
+      of << cluster_indicators_to_string[i] << '\t' << relative_abundances[i] << '\n';
     }
-    out.flush();
+    of.flush();
   } else {
     throw std::runtime_error("Can't write to abundances file.");
   }

@@ -152,16 +152,22 @@ int main (int argc, char *argv[]) {
 	  bs->bootstrap_abundances((*grouping), args);
 	  bs->write_bootstrap(grouping->get_names(), args.outfile, args.iters, args.batch_mode);
 	} else {
-	  // Process pseudoalignments.
+	  // Estimate relative abundances
 	  samples[i]->ec_probs = rcgpar::rcg_optl_omp(samples[i]->ll_mat, samples[i]->log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters, std::cerr);
+	  samples[i]->relative_abundances = rcgpar::mixture_components(samples[i]->ec_probs, samples[i]->log_ec_counts);
 
+	  // Write to file or cout
 	  std::string outfile(args.outfile);
 	  if (samples.size() > 1) {
 	    // Legacy kallisto batch mode support in outfile names.
 	    outfile = (args.outfile.empty() ? args.outfile : args.outfile + "/" + samples[i]->cell_name());
 	  }
-
-	  samples[i]->write_abundances(grouping->get_names(), outfile);
+	  cxxio::Out of;
+	  if (!outfile.empty()) {
+	    outfile += "_abundances.txt";
+	    of.open(outfile);
+	  }
+	  samples[i]->write_abundances(grouping->get_names(), (outfile.empty() ? std::cout : of.stream()));
 	}
 	// Write the probability matrix
 	std::string probs_outfile(args.outfile);

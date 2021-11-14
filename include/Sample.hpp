@@ -23,6 +23,7 @@ public:
   rcgpar::Matrix<double> ec_probs;
   rcgpar::Matrix<double> ll_mat;
   std::vector<double> log_ec_counts;
+  std::vector<double> relative_abundances;
 
   // Alignments class from telescope
   KallistoAlignment pseudos;
@@ -34,7 +35,7 @@ public:
   std::vector<uint16_t> group_counts(const std::vector<uint32_t> indicators, const uint32_t ec_id, const uint32_t n_groups) const;
 
   // Write estimated relative abundances
-  void write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile) const;
+  void write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::ostream &of) const;
   // Write estimated read-reference posterior probabilities (gamma_Z)
   void write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, std::ostream &outfile) const;
   // Write likelihoods

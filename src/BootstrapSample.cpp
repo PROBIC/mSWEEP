@@ -1,12 +1,9 @@
 #include "Sample.hpp"
 
-#include "likelihood.hpp"
-#include "rcg.hpp"
-#include "version.h"
-
 #include "rcgpar.hpp"
-#include "bxzstr.hpp"
 #include "cxxio.hpp"
+
+#include "version.h"
 
 BootstrapSample::BootstrapSample(const int32_t seed) {
   if (seed == -1) {
@@ -17,10 +14,10 @@ BootstrapSample::BootstrapSample(const int32_t seed) {
   }
 }
 
-std::vector<double> BootstrapSample::resample_counts(const uint32_t how_many, std::mt19937_64 &generator) {
+std::vector<double> BootstrapSample::resample_counts(const uint32_t how_many) {
   std::vector<uint32_t> tmp_counts(num_ecs());
   for (uint32_t i = 0; i < how_many; ++i) {
-    uint32_t ec_id = ec_distribution(generator);
+    uint32_t ec_id = ec_distribution(this->gen);
     tmp_counts[ec_id] += 1;
   }
   std::vector<double> resampled_log_ec_counts(num_ecs());
@@ -40,14 +37,6 @@ void BootstrapSample::bootstrap_iter(const std::vector<double> &resampled_log_ec
 }
 
 void BootstrapSample::bootstrap_abundances(const Grouping &grouping, const Arguments &args) {
-  std::cerr << "Running estimation with " << args.iters << " bootstrap iterations" << '\n';
-  // Which sample are we processing?
-  std::string name = (args.batch_mode ? cell_name() : "0");
-  std::cout << "Processing " << (args.batch_mode ? name : "the sample") << std::endl;
-
-  // Initialize ec_distribution for bootstrapping
-  ec_distribution = std::discrete_distribution<uint32_t>(pseudos.ec_counts.begin(), pseudos.ec_counts.end());
-
   // Clear the abundances in case we're estimating the same sample again.
   this->relative_abundances = std::vector<std::vector<double>>();
 
@@ -56,30 +45,34 @@ void BootstrapSample::bootstrap_abundances(const Grouping &grouping, const Argum
   this->ec_probs = rcgpar::rcg_optl_omp(this->ll_mat, this->log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters, std::cerr);
   this->relative_abundances.emplace_back(rcgpar::mixture_components(this->ec_probs, this->log_ec_counts));
 
+  // Initialize ec_distribution for bootstrapping
+  ec_distribution = std::discrete_distribution<uint32_t>(pseudos.ec_counts.begin(), pseudos.ec_counts.end());
+
   for (uint16_t i = 0; i <= args.iters; ++i) {
     std::cout << "Bootstrap" << " iter " << i << "/" << args.iters << std::endl;
 
     // Resample the pseudoalignment counts
-    const std::vector<double> resampled_log_ec_counts = resample_counts((args.bootstrap_count == 0 ? this->get_counts_total() : args.bootstrap_count), gen);
+    const std::vector<double> &resampled_log_ec_counts = resample_counts((args.bootstrap_count == 0 ? this->get_counts_total() : args.bootstrap_count));
 
     // Estimate with the resampled counts
     bootstrap_iter(resampled_log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters);
   }
 }
 
-
-void BootstrapSample::write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile, const unsigned iters, const bool batch_mode) const {
+void BootstrapSample::write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string,
+				      std::string outfile, const uint16_t iters,
+				      const bool batch_mode) const {
   // Write relative abundances to a file,
   // outputs to std::cout if outfile is empty.
   outfile = (outfile.empty() || !batch_mode ? outfile : outfile + '/' + cell_name());
   std::streambuf *buf;
-  std::ofstream of;
+  cxxio::Out of;
   if (outfile.empty()) {
     buf = std::cout.rdbuf();
   } else {
     outfile += "_abundances.txt";
     of.open(outfile);
-    buf = of.rdbuf();
+    buf = of.stream().rdbuf();
   }
   std::ostream out(buf);
   out << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
@@ -89,7 +82,7 @@ void BootstrapSample::write_bootstrap(const std::vector<std::string> &cluster_in
 
   for (size_t i = 0; i < cluster_indicators_to_string.size(); ++i) {
     out << cluster_indicators_to_string[i] << '\t';
-    for (unsigned j = 0; j <= iters; ++j) {
+    for (uint16_t j = 0; j <= iters; ++j) {
       out << relative_abundances[j][i] << (j == iters ? '\n' : '\t');
     }
   }

@@ -147,6 +147,7 @@ int main (int argc, char *argv[]) {
       std::cerr << "Estimating relative abundances" << std::endl;
       for (uint32_t i = 0; i < samples.size(); ++i) {
 	if (args.bootstrap_mode) {
+	  std::cerr << "Running estimation with " << args.iters << " bootstrap iterations" << '\n';
 	  BootstrapSample* bs = static_cast<BootstrapSample*>(&(*samples[i]));
 	  bs->bootstrap_abundances((*grouping), args);
 	  bs->write_bootstrap(grouping->get_names(), args.outfile, args.iters, args.batch_mode);

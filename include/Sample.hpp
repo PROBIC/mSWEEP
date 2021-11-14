@@ -1,15 +1,16 @@
 #ifndef MSWEEP_SAMPLE_HPP
 #define MSWEEP_SAMPLE_HPP
 
+#include <cstddef>
 #include <string>
 #include <vector>
 #include <fstream>
 #include <random>
 
 #include "telescope.hpp"
-
 #include "Matrix.hpp"
-#include "Reference.hpp"
+
+#include "Grouping.hpp"
 #include "parse_arguments.hpp"
 
 class Sample {
@@ -59,7 +60,7 @@ private:
 		      const uint16_t max_iters);
 
   // Resample the equivalence class counts
-  std::vector<double> resample_counts(const uint32_t how_many, std::mt19937_64 &rng);
+  std::vector<double> resample_counts(const uint32_t how_many);
 
 public:
   // Set seed in constructor

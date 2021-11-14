@@ -6,6 +6,7 @@
 
 #include "rcgpar.hpp"
 #include "bxzstr.hpp"
+#include "cxxio.hpp"
 
 BootstrapSample::BootstrapSample(const int32_t seed) {
   if (seed == -1) {
@@ -62,15 +63,15 @@ void BootstrapSample::bootstrap_abundances(const Grouping &grouping, const Argum
     if (i == 0) {
       if (args.optimizer.write_probs && !args.outfile.empty()) {
 	std::string outfile = args.outfile;
-	std::unique_ptr<std::ostream> of;
+	cxxio::Out of;
+	outfile += "_probs.csv";
 	if (args.optimizer.gzip_probs) {
-	  outfile += "_probs.csv.gz";
-	  of = std::unique_ptr<std::ostream>(new bxz::ofstream(outfile));
+	  outfile += ".gz";
+	  of.open_compressed(outfile);
 	} else {
-	  outfile += "_probs.csv";
-	  of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));
+	  of.open(outfile);
 	}
-	write_probabilities(grouping.get_names(), (args.optimizer.print_probs ? std::cout : *of));
+	write_probabilities(grouping.get_names(), (args.optimizer.print_probs ? std::cout : of.stream()));
       }
     }
     // Resample the pseudoalignment counts (here because we want to include the original)

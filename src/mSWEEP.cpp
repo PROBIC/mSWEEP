@@ -162,19 +162,19 @@ int main (int argc, char *argv[]) {
 	  }
 
 	  samples[i]->write_abundances(grouping->get_names(), outfile);
-	  // Write the probability matrix
-	  std::string probs_outfile(outfile);
-	  if (args.optimizer.write_probs && !probs_outfile.empty()) {
-	    cxxio::Out of;
-	    probs_outfile += "_probs.csv";
-	    if (args.optimizer.gzip_probs) {
-	      probs_outfile += ".gz";
-	      of.open_compressed(probs_outfile);
-	    } else {
-	      of.open(probs_outfile);
-	    }
-	    samples[i]->write_probabilities(grouping->get_names(), (args.optimizer.print_probs ? std::cout : of.stream()));
+	}
+	// Write the probability matrix
+	std::string probs_outfile(args.outfile);
+	if ((args.optimizer.write_probs || args.optimizer.print_probs) && !args.outfile.empty()) {
+	  cxxio::Out of;
+	  probs_outfile += "_probs.csv";
+	  if (args.optimizer.gzip_probs) {
+	    probs_outfile += ".gz";
+	    of.open_compressed(probs_outfile);
+	  } else if (!args.optimizer.print_probs){
+	    of.open(probs_outfile);
 	  }
+	  samples[i]->write_probabilities(grouping->get_names(), (args.optimizer.print_probs ? std::cout : of.stream()));
 	}
       }
     }

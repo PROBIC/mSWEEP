@@ -47,7 +47,7 @@ public:
   uint32_t total_counts() const { return counts_total; };
 
   // Read in the likelihoods from a file
-  void ReadLikelihood(const Grouping &grouping, std::istream &infile);
+  void read_likelihood(const Grouping &grouping, std::istream &infile);
 };
 
 class BootstrapSample : public Sample {
@@ -56,13 +56,13 @@ private:
   std::vector<std::vector<double>> relative_abundances;
 
   // Run estimation and add results to relative_abundances
-  void BootstrapIter(const std::vector<double> &alpha0, const double tolerance, const uint16_t max_iters);
+  void bootstrap_iter(const std::vector<double> &alpha0, const double tolerance, const uint16_t max_iters);
   // Resample the equivalence class counts
-  void ResampleCounts(const uint32_t how_many, std::mt19937_64 &rng);
+  void resample_counts(const uint32_t how_many, std::mt19937_64 &rng);
 
 public:
-  void WriteBootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string &outfile, const unsigned iters, const bool batch_mode) const;
-  void BootstrapAbundances(const Grouping &grouping, const Arguments &args);
+  void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string &outfile, const unsigned iters, const bool batch_mode) const;
+  void bootstrap_abundances(const Grouping &grouping, const Arguments &args);
 
 };
 

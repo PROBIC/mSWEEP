@@ -95,7 +95,7 @@ int main (int argc, char *argv[]) {
 	throw std::runtime_error("Using more than one grouping with --read-likelihood is not yet implemented.");
       }
       cxxio::In likelihoods(args.likelihood_file);
-      samples.back()->ReadLikelihood(reference.get_grouping(0), likelihoods.stream());
+      samples.back()->read_likelihood(reference.get_grouping(0), likelihoods.stream());
     }
 
     std::cerr << "  read " << (args.batch_mode ? samples.size() : samples[0]->num_ecs()) << (args.batch_mode ? " samples from the batch" : " unique alignments") << std::endl;
@@ -153,8 +153,8 @@ int main (int argc, char *argv[]) {
       for (uint32_t i = 0; i < samples.size(); ++i) {
 	if (args.bootstrap_mode) {
 	  BootstrapSample* bs = static_cast<BootstrapSample*>(&(*samples[i]));
-	  bs->BootstrapAbundances((*grouping), args);
-	  bs->WriteBootstrap(grouping->get_names(), args.outfile, args.iters, args.batch_mode);
+	  bs->bootstrap_abundances((*grouping), args);
+	  bs->write_bootstrap(grouping->get_names(), args.outfile, args.iters, args.batch_mode);
 	} else {
 	  // Process pseudoalignments.
 	  samples[i]->ec_probs = rcgpar::rcg_optl_omp(samples[i]->ll_mat, samples[i]->log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters, std::cerr);

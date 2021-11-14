@@ -157,7 +157,7 @@ void Sample::write_likelihood_bitseq(const bool gzip_output, const uint32_t n_gr
   }
 }
 
-void Sample::ReadLikelihood(const Grouping &grouping, std::istream &infile) {
+void Sample::read_likelihood(const Grouping &grouping, std::istream &infile) {
   uint32_t n_groups = grouping.get_n_groups();
 
   std::vector<std::vector<double>> likelihoods(n_groups, std::vector<double>());

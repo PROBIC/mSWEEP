@@ -7,7 +7,7 @@
 #include "rcgpar.hpp"
 #include "bxzstr.hpp"
 
-void BootstrapSample::ResampleCounts(const uint32_t how_many, std::mt19937_64 &generator) {
+void BootstrapSample::resample_counts(const uint32_t how_many, std::mt19937_64 &generator) {
   std::vector<uint32_t> tmp_counts(num_ecs());
   for (uint32_t i = 0; i < how_many; ++i) {
     uint32_t ec_id = ec_distribution(generator);
@@ -20,13 +20,13 @@ void BootstrapSample::ResampleCounts(const uint32_t how_many, std::mt19937_64 &g
   counts_total = how_many;
 }
 
-void BootstrapSample::BootstrapIter(const std::vector<double> &alpha0, const double tolerance, const uint16_t max_iters) {
+void BootstrapSample::bootstrap_iter(const std::vector<double> &alpha0, const double tolerance, const uint16_t max_iters) {
   // Process pseudoalignments but return the abundances rather than writing.
   ec_probs = rcgpar::rcg_optl_omp(ll_mat, this->log_ec_counts, alpha0, tolerance, max_iters, std::cerr);
   this->relative_abundances.emplace_back(rcgpar::mixture_components(this->ec_probs, this->log_ec_counts));
 }
 
-void BootstrapSample::BootstrapAbundances(const Grouping &grouping, const Arguments &args) {
+void BootstrapSample::bootstrap_abundances(const Grouping &grouping, const Arguments &args) {
   std::mt19937_64 gen;
   if (args.seed == -1) {
     std::random_device rd;
@@ -55,7 +55,7 @@ void BootstrapSample::BootstrapAbundances(const Grouping &grouping, const Argume
     } else {
       std::cerr << "Estimating relative abundances without bootstrapping" << std::endl;
     }
-    BootstrapIter(args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters);
+    bootstrap_iter(args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters);
 
     if (i == 0) {
       if (args.optimizer.write_probs && !args.outfile.empty()) {
@@ -72,7 +72,7 @@ void BootstrapSample::BootstrapAbundances(const Grouping &grouping, const Argume
       }
     }
     // Resample the pseudoalignment counts (here because we want to include the original)
-    ResampleCounts((args.bootstrap_count == 0 ? counts_total : args.bootstrap_count), gen);
+    resample_counts((args.bootstrap_count == 0 ? counts_total : args.bootstrap_count), gen);
   }
 
   // Restore original values
@@ -81,7 +81,7 @@ void BootstrapSample::BootstrapAbundances(const Grouping &grouping, const Argume
 }
 
 
-void BootstrapSample::WriteBootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string &outfile, const unsigned iters, const bool batch_mode) const {
+void BootstrapSample::write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string &outfile, const unsigned iters, const bool batch_mode) const {
   // Write relative abundances to a file,
   // outputs to std::cout if outfile is empty.
   outfile = (outfile.empty() || !batch_mode ? outfile : outfile + '/' + cell_name());

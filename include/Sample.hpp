@@ -24,13 +24,14 @@ public:
   rcgpar::Matrix<double> ll_mat;
   std::vector<double> log_ec_counts;
 
-  // Count the number of pseudoalignments in groups defined by the given indicators.
-  std::vector<uint16_t> group_counts(const std::vector<uint32_t> indicators, const uint32_t ec_id, const uint32_t n_groups) const;
-
+  // Alignments class from telescope
   KallistoAlignment pseudos;
 
   // Calculate log_ec_counts and counts_total.
   void process_aln(const bool bootstrap_mode);
+
+  // Count the number of pseudoalignments in groups defined by the given indicators.
+  std::vector<uint16_t> group_counts(const std::vector<uint32_t> indicators, const uint32_t ec_id, const uint32_t n_groups) const;
 
   // Write estimated relative abundances
   void write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile) const;
@@ -38,14 +39,16 @@ public:
   void write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, std::ostream &outfile) const;
   // Write likelihoods
   void write_likelihood(const bool gzip_output, const uint32_t n_groups, std::string outfile) const;
+  // Write likelihoods in BitSeq-compatible format
   void write_likelihood_bitseq(const bool gzip_output, const uint32_t n_groups, std::string outfile) const;
+
+  // Read in the likelihoods from a file
+  void read_likelihood(const Grouping &grouping, std::istream &infile);
+
   // Getters
   std::string cell_name() const { return cell_id; };
   uint32_t num_ecs() const { return m_num_ecs; };
   uint32_t get_counts_total() const { return this->counts_total; };
-
-  // Read in the likelihoods from a file
-  void read_likelihood(const Grouping &grouping, std::istream &infile);
 };
 
 class BootstrapSample : public Sample {
@@ -66,7 +69,9 @@ public:
   // Set seed in constructor
   BootstrapSample(const int32_t seed);
 
-  void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile, const unsigned iters, const bool batch_mode) const;
+  void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string,
+		       std::string outfile, const uint16_t iters,
+		       const bool batch_mode) const;
   void bootstrap_abundances(const Grouping &grouping, const Arguments &args);
 
 };

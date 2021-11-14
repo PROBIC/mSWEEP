@@ -26,7 +26,8 @@ void Sample::process_aln(const bool bootstrap_mode) {
   }
 }
 
-std::vector<uint16_t> Sample::group_counts(const std::vector<uint32_t> indicators, const uint32_t ec_id, const uint32_t n_groups) const {
+std::vector<uint16_t> Sample::group_counts(const std::vector<uint32_t> indicators,
+					   const uint32_t ec_id, const uint32_t n_groups) const {
   std::vector<uint16_t> read_hitcounts(n_groups);
   uint32_t m_num_refs = this->pseudos.n_targets();
   for (uint32_t j = 0; j < m_num_refs; ++j) {
@@ -35,7 +36,8 @@ std::vector<uint16_t> Sample::group_counts(const std::vector<uint32_t> indicator
   return read_hitcounts;
 }
 
-void Sample::write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, std::ostream &of) const {
+void Sample::write_probabilities(const std::vector<std::string> &cluster_indicators_to_string,
+				 std::ostream &of) const {
   // Write the probability matrix to a file.
   if (of.good()) {
     of << "ec_id" << ',';
@@ -50,9 +52,11 @@ void Sample::write_probabilities(const std::vector<std::string> &cluster_indicat
 	of << (j < this->ec_probs.get_rows() - 1 ? ',' : '\n');
       }
     }
+    of << std::endl;
+    of.flush();
+  } else {
+    throw std::runtime_error("Can't write to probs file.");
   }
-  of << std::endl;
-  of.flush();
 }
 
 void Sample::write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::string outfile) const {
@@ -70,14 +74,16 @@ void Sample::write_abundances(const std::vector<std::string> &cluster_indicators
     buf = of.rdbuf();
   }
   std::ostream out(buf);
-  out << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
-  out << "#total_hits:" << '\t' << this->counts_total << '\n';
-  out << "#c_id" << '\t' << "mean_theta" << '\n';
-  for (size_t i = 0; i < abundances.size(); ++i) {
-    out << cluster_indicators_to_string[i] << '\t' << abundances[i] << '\n';
-  }
-  if (!outfile.empty()) {
-    of.close();
+  if (out.good()) {
+    out << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
+    out << "#total_hits:" << '\t' << this->counts_total << '\n';
+    out << "#c_id" << '\t' << "mean_theta" << '\n';
+    for (size_t i = 0; i < abundances.size(); ++i) {
+      out << cluster_indicators_to_string[i] << '\t' << abundances[i] << '\n';
+    }
+    out.flush();
+  } else {
+    throw std::runtime_error("Can't write to abundances file.");
   }
 }
 
@@ -85,34 +91,33 @@ void Sample::write_likelihood(const bool gzip_output, const uint32_t n_groups, s
   // Write likelihoods to a file
 
   std::streambuf *buf;
-  std::unique_ptr<std::ostream> of;
+  cxxio::Out of;
   if (outfile.empty()) {
     buf = std::cout.rdbuf();
   } else {
     outfile += "_likelihoods.txt";
-    switch(gzip_output) { // might want to use other compressions in the future
-    case 1:
+    if (gzip_output) {
       outfile += ".gz";
-      of = std::unique_ptr<std::ostream>(new bxz::ofstream(outfile));
-      break;
-    default:
-      of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));
-      break;
+      of.open_compressed(outfile);
+    } else {
+      of.open(outfile);
     }
-    buf = of->rdbuf();
+    buf = of.stream().rdbuf();
   }
   std::ostream out(buf);
 
-  for (uint32_t i = 0; i < this->m_num_ecs; ++i){
-    uint32_t ec_hit_count = std::round(std::exp(this->log_ec_counts[i]));
-    out << ec_hit_count << '\t';
+  if (out.good()) {
+    for (uint32_t i = 0; i < this->m_num_ecs; ++i){
+      uint32_t ec_hit_count = std::round(std::exp(this->log_ec_counts[i]));
+      out << ec_hit_count << '\t';
       for (uint32_t j = 0; j < n_groups; ++j) {
 	out << this->ll_mat(j, i);
 	out << (j == n_groups - 1 ? '\n' : '\t');
       }
-  }
-  if (!outfile.empty()) {
-    of->flush();
+    }
+    out.flush();
+  } else {
+    throw std::runtime_error("Can't write to likelihoods file.");
   }
 }
 
@@ -122,44 +127,43 @@ void Sample::write_likelihood_bitseq(const bool gzip_output, const uint32_t n_gr
   // Use Sample::write_likelihoods if tab-separated matrix format is needed.
 
   std::streambuf *buf;
-  std::unique_ptr<std::ostream> of;
+  cxxio::Out of;
   if (outfile.empty()) {
     buf = std::cout.rdbuf();
   } else {
     outfile += "_bitseq_likelihoods.txt";
-    switch(gzip_output) { // might want to use other compressions in the future
-    case 1:
+    if (gzip_output) {
       outfile += ".gz";
-      of = std::unique_ptr<std::ostream>(new bxz::ofstream(outfile));
-      break;
-    default:
-      of = std::unique_ptr<std::ostream>(new std::ofstream(outfile));
-      break;
+      of.open_compressed(outfile);
+    } else {
+      of.open(outfile);
     }
-    buf = of->rdbuf();
+    buf = of.stream().rdbuf();
   }
   std::ostream out(buf);
-  out << "# Ntotal " << this->counts_total << '\n';
-  out << "# Nmap " << this->counts_total << '\n';
-  out << "# M " << n_groups << '\n';
-  out << "# LOGFORMAT (probabilities saved on log scale.)" << '\n';
-  out << "# r_name num_alignments (tr_id prob )^*{num_alignments}" << '\n';
+  if (out.good()) {
+    out << "# Ntotal " << this->counts_total << '\n';
+    out << "# Nmap " << this->counts_total << '\n';
+    out << "# M " << n_groups << '\n';
+    out << "# LOGFORMAT (probabilities saved on log scale.)" << '\n';
+    out << "# r_name num_alignments (tr_id prob )^*{num_alignments}" << '\n';
 
-  uint32_t read_id = 1;
-  for (uint32_t i = 0; i < this->m_num_ecs; ++i) {
-    uint32_t ec_hit_count = std::round(std::exp(this->log_ec_counts[i]));
-    for (uint32_t k = 0; k < ec_hit_count; ++k) {
-      out << read_id << ' ';
-      out << n_groups + 1 << ' ';
-      for (uint32_t j = 0; j < n_groups; ++j) {
-	out << j + 1 << ' ' << this->ll_mat(j, i) << ' ';
+    uint32_t read_id = 1;
+    for (uint32_t i = 0; i < this->m_num_ecs; ++i) {
+      uint32_t ec_hit_count = std::round(std::exp(this->log_ec_counts[i]));
+      for (uint32_t k = 0; k < ec_hit_count; ++k) {
+	out << read_id << ' ';
+	out << n_groups + 1 << ' ';
+	for (uint32_t j = 0; j < n_groups; ++j) {
+	  out << j + 1 << ' ' << this->ll_mat(j, i) << ' ';
+	}
+	out << 0 << ' ' << "-10000.00" << '\n';
+	++read_id;
       }
-      out << 0 << ' ' << "-10000.00" << '\n';
-      ++read_id;
     }
-  }
-  if (!outfile.empty()) {
-    of->flush();
+    out.flush();
+  } else {
+    throw std::runtime_error("Can't write to likelihoods file (bitseq format).");
   }
 }
 

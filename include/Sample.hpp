@@ -19,11 +19,14 @@ private:
   uint32_t counts_total;
   std::string cell_id;
 
-public:
   rcgpar::Matrix<double> ec_probs;
-  rcgpar::Matrix<double> ll_mat;
   std::vector<double> log_ec_counts;
+
+protected:
   std::vector<double> relative_abundances;
+
+public:
+  rcgpar::Matrix<double> ll_mat;
 
   // Alignments class from telescope
   KallistoAlignment pseudos;
@@ -33,6 +36,9 @@ public:
 
   // Count the number of pseudoalignments in groups defined by the given indicators.
   std::vector<uint16_t> group_counts(const std::vector<uint32_t> indicators, const uint32_t ec_id, const uint32_t n_groups) const;
+
+  // Estimate the mixture components
+  void estimate_abundances(const Arguments &args);
 
   // Write estimated relative abundances
   void write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::ostream &of) const;
@@ -56,7 +62,7 @@ class BootstrapSample : public Sample {
 private:
   std::mt19937_64 gen;
   std::discrete_distribution<uint32_t> ec_distribution;
-  std::vector<std::vector<double>> relative_abundances;
+  std::vector<std::vector<double>> bootstrap_results;
 
   // Run estimation and add results to relative_abundances
   void bootstrap_iter(const std::vector<double> &resampled_log_ec_counts,
@@ -69,6 +75,9 @@ private:
 public:
   // Set seed in constructor
   BootstrapSample(const int32_t seed);
+
+  // Estimate the mixture components with bootstrap iterations
+  void estimate_abundances(const Arguments &args);
 
   void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string,
 		       const uint16_t iters, std::ostream &of) const;

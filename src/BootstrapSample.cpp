@@ -32,23 +32,18 @@ void BootstrapSample::bootstrap_iter(const std::vector<double> &resampled_log_ec
 				     const uint16_t max_iters) {
   // Process pseudoalignments but return the abundances rather than writing.
   const rcgpar::Matrix<double> &bootstrapped_ec_probs = rcgpar::rcg_optl_omp(this->ll_mat, resampled_log_ec_counts, alpha0, tolerance, max_iters, std::cerr);
-  this->relative_abundances.emplace_back(rcgpar::mixture_components(bootstrapped_ec_probs, resampled_log_ec_counts));
+  this->bootstrap_results.emplace_back(rcgpar::mixture_components(bootstrapped_ec_probs, resampled_log_ec_counts));
 }
 
 void BootstrapSample::bootstrap_abundances(const Arguments &args) {
-  // Clear the abundances in case we're estimating the same sample again.
-  this->relative_abundances = std::vector<std::vector<double>>();
-
-  // Estimate the relative abundances from the input data
-  std::cerr << "Estimating relative abundances without bootstrapping" << std::endl;
-  this->ec_probs = rcgpar::rcg_optl_omp(this->ll_mat, this->log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters, std::cerr);
-  this->relative_abundances.emplace_back(rcgpar::mixture_components(this->ec_probs, this->log_ec_counts));
+  // Clear the bootstrap abundances in case we're estimating the same sample again.
+  this->bootstrap_results = std::vector<std::vector<double>>();
 
   // Initialize ec_distribution for bootstrapping
   ec_distribution = std::discrete_distribution<uint32_t>(pseudos.ec_counts.begin(), pseudos.ec_counts.end());
 
-  for (uint16_t i = 0; i <= args.iters; ++i) {
-    std::cout << "Bootstrap" << " iter " << i << "/" << args.iters << std::endl;
+  for (uint16_t i = 0; i < args.iters; ++i) {
+    std::cout << "Bootstrap" << " iter " << i + 1 << "/" << args.iters << std::endl;
 
     // Resample the pseudoalignment counts
     const std::vector<double> &resampled_log_ec_counts = resample_counts((args.bootstrap_count == 0 ? this->get_counts_total() : args.bootstrap_count));
@@ -70,8 +65,9 @@ void BootstrapSample::write_bootstrap(const std::vector<std::string> &cluster_in
 
     for (size_t i = 0; i < cluster_indicators_to_string.size(); ++i) {
       of << cluster_indicators_to_string[i] << '\t';
-      for (uint16_t j = 0; j <= iters; ++j) {
-	of << relative_abundances[j][i] << (j == iters ? '\n' : '\t');
+      of << relative_abundances[i] << '\t';
+      for (uint16_t j = 0; j < iters; ++j) {
+	of << bootstrap_results[j][i] << (j == iters - 1 ? '\n' : '\t');
       }
     }
     of.flush();

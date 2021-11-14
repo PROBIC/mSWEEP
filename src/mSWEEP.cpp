@@ -205,14 +205,11 @@ int main (int argc, char *argv[]) {
       // Initialize the prior counts on the groups
       args.optimizer.alphas = std::vector<double>(reference.get_grouping(i).get_n_groups(), 1.0);
       for (uint32_t i = 0; i < samples.size(); ++i) {
+	samples[i]->estimate_abundances(args);
 	if (args.bootstrap_mode) {
 	  std::cerr << "Running estimation with " << args.iters << " bootstrap iterations" << '\n';
 	  BootstrapSample* bs = static_cast<BootstrapSample*>(&(*samples[i]));
 	  bs->bootstrap_abundances(args);
-	} else {
-	  // Estimate relative abundances
-	  samples[i]->ec_probs = rcgpar::rcg_optl_omp(samples[i]->ll_mat, samples[i]->log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters, std::cerr);
-	  samples[i]->relative_abundances = rcgpar::mixture_components(samples[i]->ec_probs, samples[i]->log_ec_counts);
 	}
       }
     }

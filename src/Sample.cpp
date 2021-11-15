@@ -36,11 +36,6 @@ std::vector<uint16_t> Sample::group_counts(const std::vector<uint32_t> indicator
   return read_hitcounts;
 }
 
-void Sample::estimate_abundances(const Arguments &args) {
-  this->ec_probs = rcgpar::rcg_optl_omp(this->ll_mat, this->log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters, std::cerr);
-  this->relative_abundances = rcgpar::mixture_components(this->ec_probs, this->log_ec_counts);
-}
-
 void Sample::write_probabilities(const std::vector<std::string> &cluster_indicators_to_string,
 				 std::ostream &of) const {
   // Write the probability matrix to a file.

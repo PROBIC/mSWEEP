@@ -113,7 +113,6 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
   if (argc < 3) {
     throw std::runtime_error("Error: Specify at least the infile and indicators file.\n");
   }
-  std::cerr << "Parsing arguments" << std::endl;
 
   args.optimizer.write_probs = CmdOptionPresent(argv, argv+argc, "--write-probs");
   args.optimizer.gzip_probs = CmdOptionPresent(argv, argv+argc, "--gzip-probs");

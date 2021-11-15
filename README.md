@@ -366,7 +366,7 @@ mSWEEP accepts the following flags:
 	--write-probs
 	If specified, write the read equivalence class probabilities in a .csv matrix
 	--print-probs
-	Print the equivalence class probabilities rather than writing when using --write-probs
+	Print the read equivalence class probabilities to cout
 	--write-likelihood
 	Write the likelihood matrix to a file with "_likelihoods.txt" suffix if -o option is specified, print to cout if -o is not.
 	--write-likelihood-bitseq

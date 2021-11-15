@@ -49,7 +49,7 @@ void PrintHelpMessage() {
             << "\t--write-probs\n"
             << "\tIf specified, write the read equivalence class probabilities in a .csv matrix\n"
             << "\t--print-probs\n"
-            << "\tPrint the equivalence class probabilities rather than writing when using --write-probs\n"
+            << "\tPrint the read equivalence class probabilities to cout\n"
             << "\t--write-likelihood\n"
             << "\tWrite the likelihood matrix to a file if -o option is specified, print to cout if -o is not.\n"
             << "\t--write-likelihood-bitseq\n"

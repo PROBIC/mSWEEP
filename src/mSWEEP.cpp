@@ -106,15 +106,18 @@ void WriteResults(const Arguments &args, const std::unique_ptr<Sample> &sample, 
   }
 
   // Probability matrix
-  std::string probs_outfile(outfile);
-  if ((args.optimizer.write_probs || args.optimizer.print_probs) && !args.outfile.empty()) {
+  if (args.optimizer.print_probs) {
+    sample->write_probabilities(grouping.get_names(), std::cout);
+  }
+  if (args.optimizer.write_probs) {
+    std::string probs_outfile(outfile);
     probs_outfile += "_probs.csv";
     if (args.optimizer.gzip_probs) {
       probs_outfile += ".gz";
       of.open_compressed(probs_outfile);
-    } else if (!args.optimizer.print_probs){
+    } else {
       of.open(probs_outfile);
     }
-    sample->write_probabilities(grouping.get_names(), (args.optimizer.print_probs ? std::cout : of.stream()));
+    sample->write_probabilities(grouping.get_names(), (outfile.empty() ? std::cout : of.stream()));
   }
 }

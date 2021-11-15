@@ -155,7 +155,7 @@ int main (int argc, char *argv[]) {
 	  for (uint16_t k = 0; k < args.iters; ++k) {
 	    // Bootstrap the counts
 	    std::vector<double> resampled_log_ec_counts;
-	    log << "Bootstrap" << " iter " << i + 1 << "/" << args.iters << '\n';
+	    log << "Bootstrap" << " iter " << k + 1 << "/" << args.iters << '\n';
 	    if (rank == 0)
 	      resampled_log_ec_counts = bs->resample_counts((args.bootstrap_count == 0 ? bs->counts_total : args.bootstrap_count));
 

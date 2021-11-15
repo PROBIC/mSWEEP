@@ -52,7 +52,41 @@ enter the directory and run
 ```
 - This will compile the mSWEEP executable in build/bin/mSWEEP.
 
-### Compilation tips for improving performance
+#### MPI support
+mSWEEP can be compiled with MPI support, distributing the mixture
+component estimation part of the program to several processes. To
+compile with MPI support, set your environment appropriately and build
+mSWEEP with the following commands (example case for Open MPI):
+```
+> mkdir build
+> cd build
+> module load mpi/openmpi
+> cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx ..
+> make
+```
+
+The project should configure itself appropriately. To distribute the
+computation to 4 processes after compiling, call mSWEEP with:
+```
+mpirun -np 4 mSWEEP --themisto-1 forward_aln.gz --themisto-2 reverse_aln.gz -i cluster_indicators.txt
+```
+
+In some cases it might be useful to use hybrid parallellization with
+multiple threads per process. This can be accomplished through use of
+the `-t` flag:
+```
+mpirun -np 2 mSWEEP --themisto-1 forward_aln.gz --themisto-2 reverse_aln.gz -i cluster_indicators.txt -t 2
+```
+
+which will distribute computation to two processes with two
+threads. The optimal configuration will depend on the size and
+structure of your data.
+
+Note that when mSWEEP is called through MPI, the root process will
+handle all read and write operations and only the estimation part is
+distributed.
+
+#### Compilation tips for improving performance
 1. If you intend to run mSWEEP on the machine used in compiling the
 source code, you might want to add the '-march=native -mtune=native'
 flags if compiling with GCC by running

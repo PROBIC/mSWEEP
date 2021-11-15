@@ -77,7 +77,7 @@ void WriteResults(const Arguments &args, const std::unique_ptr<Sample> &sample, 
   if (args.optimizer.write_likelihood || args.optimizer.write_likelihood_bitseq) {
     std::string ll_outfile(outfile);
     ll_outfile += (args.optimizer.write_likelihood_bitseq ? "_bitseq" : "");
-    ll_outfile += "likelihoods.txt";
+    ll_outfile += "_likelihoods.txt";
     if (args.optimizer.gzip_probs) {
       ll_outfile += ".gz";
       of.open_compressed(ll_outfile);

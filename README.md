@@ -126,6 +126,24 @@ build_index and pseudoalign commands from Themisto. The --mem-megas
 option controls the maximum amount of RAM used in constructing the
 index (if the limit is exceeded, Themisto will use disk storage), and
 --n-threads the number of threads to use.
+
+__Themisto version v2.0.0 or newer__
+
+```
+## Build the Themisto index without clustering
+mkdir themisto_index
+mkdir tmp
+
+## Index using at most 2048 megabytes of memory and 2 threads.
+themisto build -k 31 -i example.fasta -o themisto_index/index --temp-dir tmp --mem-megas 2048 --n-threads 2
+
+## Pseudoalign reads using 2 threads
+themisto pseudoalign -q 215_1.fastq.gz -o 215_1_alignment.txt -i themisto_index/index --temp-dir tmp --n-threads 2 --rc --sort-output
+themisto pseudoalign -q 215_2.fastq.gz -o 215_2_alignment.txt -i themisto_index/index --temp-dir tmp --n-threads 2 --rc --sort-output
+```
+
+__Themisto versions v0.1.1 to v1.2.0__
+
 ```
 ## Build the Themisto index without clustering
 mkdir themisto_index
@@ -150,8 +168,9 @@ file in the folder mSWEEP was run in. If the '-o' option is not
 specified, the abundances will print to cout.
 
 Note that supplying the --themisto-index is optional but highly
-recommended (running mSWEEP without this option will *not* validate
-the input 'clustering.txt' and may cause undefined behaviour).
+recommended for Themisto versions v1.2.0 and older (running mSWEEP
+without this option will *not* validate the input 'clustering.txt' and
+may cause undefined behaviour).
 
 ### Experimental usage
 #### Bootstrapping confidence intervals
@@ -188,6 +207,22 @@ group as if the read aligned to all sequences in the group. This
 approach will in most cases produce different results than the recommended one, but will
 reduce the RAM, CPU, and disk space requirements for running Themisto
 and mSWEEP.
+
+__Themisto version v2.0.0 or newer__
+
+```
+## Build grouped Themisto index
+mkdir themisto_grouped_index
+mkdir tmp
+themisto build -k 31 -i example.fasta -c clustering.txt -o themisto_grouped_index --temp-dir tmp
+
+## Pseudoalign reads
+themisto pseudoalign -query-file 215_1.fastq.gz -o 215_1_alignment.txt -i themisto_grouped_index --rc --temp-dir tmp --sort-output
+themisto pseudoalign -query-file 215_2.fastq.gz -o 215_2_alignment.txt -i themisto_grouped_index --rc --temp-dir tmp --sort-output
+```
+
+__Themisto versions v0.1.1 to v1.2.0__
+
 ```
 ## Build grouped Themisto index
 mkdir themisto_grouped_index
@@ -197,7 +232,11 @@ build_index --k 31 --input-file example.fasta --color-file clustering.txt --inde
 ## Pseudoalign reads
 pseudoalign --query-file 215_1.fastq.gz --outfile 215_1_alignment.txt --rc --index-dir themisto_grouped_index --temp-dir tmp --sort-output
 pseudoalign --query-file 215_2.fastq.gz --outfile 215_2_alignment.txt --rc --index-dir themisto_grouped_index --temp-dir tmp --sort-output
+```
 
+##### Using embedded colors with mSWEEP
+
+```
 ## Extract unique cluster indicators from the clustering.txt file
 awk '!seen[$0]++' clustering.txt > unique_clusters.txt
 
@@ -221,7 +260,9 @@ You should see that roughly 90% of the reads are assigned to group "clust2".
 # General pipeline
 ## Preprocessing
 - Obtain a set of reference sequences. (See the steps under Usage -> Reference data)
-- Index the reference sequences for pseudoalignment with Themisto:
+- Index the reference sequences for pseudoalignment with Themisto (__v2.0.0 or newer__):
+> themisto build -k 31 -i reference_sequences.fasta -o themisto_index --temp-dir tmp
+- Index the reference sequences for pseudoalignment with Themisto (__v0.1.1 to v1.2.0__):
 > build_index --k 31 --input-file reference_sequences.fasta --auto-colors --index-dir themisto_index --temp-dir tmp
 - ... or with kallisto
 > kallisto pseudo -i reference_kmi reference_sequences.fasta
@@ -302,6 +343,17 @@ which will instruct mSWEEP to estimate relative abundances for both groupings.
 
 ## Analysing reads (with Themisto)
 - Pseudomap paired-end reads:
+
+__Themisto version v2.0.0 or newer__
+
+```
+mkdir tmp
+themisto pseudoalign -i themisto_index -q reads_1.fastq.gz -o reads_1_out.txt --temp-dir tmp --rc --sort-output
+themisto pseudoalign -i themisto_index -q reads_2.fastq.gz -o reads_2_out.txt --temp-dir tmp --rc --sort-output
+```
+
+__Themisto versions v0.1.1 to v1.2.0__
+
 ```
 mkdir tmp
 pseudoalign --index-dir themisto_index --query-file reads_1.fastq.gz --outfile reads_1_out.txt --temp-dir tmp --rc --sort-output
@@ -356,7 +408,7 @@ mSWEEP accepts the following flags:
 	--themisto-mode <PairedEndMergeMode>
 	How to merge Themisto pseudoalignments for paired-end reads	(intersection or union, default: intersection).
 	--themisto-index <ThemistoIndex>
-	Path to the Themisto index the pseudoalignment was performed against (optional).
+	Path to the Themisto index the pseudoalignment was performed against (optional, Themisto v1.2.0 or older only).
 
 	--fasta <ReferenceSequences>
 	Path to the reference sequences the pseudoalignment index was constructed from (optional)

@@ -70,14 +70,20 @@ int main (int argc, char *argv[]) {
       ReadPseudoalignment(args.infiles, reference.get_n_refs(), samples, args.bootstrap_mode);
     } else {
       if (!args.themisto_index_path.empty()) {
-	cxxio::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
-	reference.verify_themisto_index(themisto_index);
+	try {
+	  cxxio::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
+	  reference.verify_themisto_index(themisto_index);
+	} catch (const std::runtime_error &e) {
+	  throw std::runtime_error("--themisto-index flag is not supported for Themisto v2.0.0 or newer:\n" + std::string(e.what()));
+	} catch (const std::domain_error &e) {
+	  throw e;
+	}
       }
       ReadPseudoalignment(args.tinfile1, args.tinfile2, args.themisto_merge_mode, args.bootstrap_mode, reference.get_n_refs(), samples);
     }
 
     std::cerr << "  read " << (args.batch_mode ? samples.size() : samples[0]->num_ecs()) << (args.batch_mode ? " samples from the batch" : " unique alignments") << std::endl;
-  } catch (std::runtime_error &e) {
+  } catch (const std::exception &e) {
     std::cerr << "Reading the input files failed:\n  ";
     std::cerr << e.what();
     std::cerr << "\nexiting" << std::endl;

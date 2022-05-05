@@ -33,7 +33,7 @@ void PrintHelpMessage() {
 	    << "\tPath to the Themisto index the pseudoalignment was performed against (optional).\n"
 	    << "\n"
     	    << "\t--fasta <ReferenceSequences>\n"
-	    << "\tPath to the reference sequences the pseudoalignment index was constructed from (optional)\n"
+	    << "\tPath to the reference sequences the pseudoalignment index was constructed from (optional, Themisto v1.2.0 or older only)\n"
     	    << "\t--groups-list <groupIndicatorsList>\n"
 	    << "\tTable containing names of the reference sequences (1st column) and their group assignments (2nd column) (optional)\n"
     	    << "\t--groups-delimiter <groupIndicatorsListDelimiter>\n"

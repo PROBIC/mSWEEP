@@ -31,8 +31,14 @@ void ReadInput(const Arguments &args, std::vector<std::unique_ptr<Sample>> *samp
     ReadKallisto(reference->get_n_refs(), *args.infiles.ec, *args.infiles.tsv, &samples->back()->pseudos);
   } else if (!args.read_likelihood_mode) {
     if (!args.themisto_index_path.empty()) {
-      cxxio::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
-      reference->verify_themisto_index(themisto_index);
+      try {
+	  cxxio::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
+	  reference->verify_themisto_index(themisto_index);
+      } catch (const std::runtime_error &e) {
+	  throw std::runtime_error("--themisto-index flag is not supported for Themisto v2.0.0 or newer:\n" + std::string(e.what()));
+      } catch (const std::domain_error &e) {
+	  throw e;
+      }
     }
     cxxio::In forward_strand(args.tinfile1);
     cxxio::In reverse_strand(args.tinfile2);

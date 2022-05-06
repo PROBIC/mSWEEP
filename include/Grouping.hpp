@@ -1,9 +1,10 @@
 #ifndef MSWEEP_GROUPING_HPP
 #define MSWEEP_GROUPING_HPP
 
+#include <cstddef>
 #include <vector>
-#include <array>
 #include <string>
+#include <array>
 #include <unordered_map>
 
 class Grouping {

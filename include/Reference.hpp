@@ -1,9 +1,10 @@
 #ifndef MSWEEP_REFERENCE_HPP
 #define MSWEEP_REFERENCE_HPP
 
+#include <cstddef>
 #include <vector>
-#include <fstream>
 #include <string>
+#include <fstream>
 
 #include "cxxio.hpp"
 

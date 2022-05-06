@@ -33,6 +33,7 @@ struct Arguments {
   std::string tinfile2;
   std::string themisto_index_path;
   std::vector<std::string> kallisto_files;
+  std::string likelihood_file;
 
   std::string fasta_file;
   std::string groups_list_file;
@@ -42,6 +43,7 @@ struct Arguments {
   bool bootstrap_mode = false;
   bool compressed_input = false;
   bool themisto_mode = false;
+  bool read_likelihood_mode = false;
 
   std::string themisto_merge_mode = "union";
 

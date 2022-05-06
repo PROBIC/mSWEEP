@@ -1,139 +1,129 @@
+#include "mSWEEP.hpp"
+
 #include <iostream>
-#include <vector>
 #include <exception>
-#include <memory>
+#include <fstream>
 
-#include "bxzstr.hpp"
 #include "cxxio.hpp"
+#include "rcgpar.hpp"
 
-#include "parse_arguments.hpp"
-#include "read_pseudoalignment.hpp"
-#include "process_reads.hpp"
-#include "Sample.hpp"
-#include "Reference.hpp"
+#include "likelihood.hpp"
 #include "version.h"
-#include "openmp_config.hpp"
 
-#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
-#include <omp.h>
-#endif
-
-int main (int argc, char *argv[]) {
-  std::cerr << "mSWEEP-" << MSWEEP_BUILD_VERSION << " abundance estimation" << std::endl;
-  Arguments args;
-  if (CmdOptionPresent(argv, argv+argc, "--version")) {
-    std::cerr << "mSWEEP-" << MSWEEP_BUILD_VERSION << std::endl;
-  }
-  if (CmdOptionPresent(argv, argv+argc, "--help")) {
-    PrintHelpMessage();
-  }
-  if (CmdOptionPresent(argv, argv+argc, "--cite")) {
-    PrintCitationInfo();
-  }
-  if (CmdOptionPresent(argv, argv+argc, "--version") || CmdOptionPresent(argv, argv+argc, "--help") || CmdOptionPresent(argv, argv+argc, "--cite")) {
-    return 0;
-  }
-  try {
-    ParseArguments(argc, argv, args);
-  }
-  catch (std::runtime_error &e) {
-    std::cerr << "Error in parsing arguments:\n  "
-	      << e.what()
-	      << "\nexiting" << std::endl;
-    return 1;
+void ReadInput(const Arguments &args, std::vector<std::unique_ptr<Sample>> *samples, std::ostream &log, Reference *reference) {
+  log << "Reading the input files" << '\n';
+  log << "  reading group indicators" << '\n';
+  if (args.fasta_file.empty()) {
+    cxxio::In indicators_file(args.indicators_file);
+    reference->read_from_file(indicators_file.stream(), args.groups_list_delimiter);
+  } else {
+    cxxio::In groups_file(args.groups_list_file);
+    cxxio::In fasta_file(args.fasta_file);
+    reference->match_with_fasta(args.groups_list_delimiter, groups_file.stream(), fasta_file.stream());
   }
 
-#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
-  omp_set_num_threads(args.optimizer.nr_threads);
-#endif
+  log << "  read " << reference->get_n_refs() << " group indicators" << '\n';
 
-  std::vector<std::unique_ptr<Sample>> samples;
-  Reference reference;
-  try {
-    std::cerr << "Reading the input files" << '\n';
-    std::cerr << "  reading group indicators" << '\n';
-    if (args.fasta_file.empty()) {
-      cxxio::In indicators_file(args.indicators_file);
-      reference.read_from_file(indicators_file.stream(), args.groups_list_delimiter);
-    } else {
-      cxxio::In groups_file(args.groups_list_file);
-      cxxio::In fasta_file(args.fasta_file);
-      reference.match_with_fasta(args.groups_list_delimiter, groups_file.stream(), fasta_file.stream());
-    }
-
-    std::cerr << "  read " << reference.get_n_refs() << " group indicators" << std::endl;
-
-    std::cerr << "  reading pseudoalignments" << '\n';
-    if (!args.themisto_mode) {
-      // Check that the number of reference sequences matches in the grouping and the alignment.
-      reference.verify_kallisto_alignment(*args.infiles.run_info);
-      ReadPseudoalignment(args.infiles, reference.get_n_refs(), samples, args.bootstrap_mode);
-    } else {
-      if (!args.themisto_index_path.empty()) {
-	try {
+  log << (args.read_likelihood_mode ? "  reading likelihoods from file" : "  reading pseudoalignments") << '\n';
+  if (!args.themisto_mode && !args.read_likelihood_mode) {
+    // Check that the number of reference sequences matches in the grouping and the alignment.
+    reference->verify_kallisto_alignment(*args.infiles.run_info);
+    ReadKallisto(reference->get_n_refs(), *args.infiles.ec, *args.infiles.tsv, &samples->back()->pseudos);
+  } else if (!args.read_likelihood_mode) {
+    if (!args.themisto_index_path.empty()) {
+      try {
 	  cxxio::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
-	  reference.verify_themisto_index(themisto_index);
-	} catch (const std::runtime_error &e) {
+	  reference->verify_themisto_index(themisto_index);
+      } catch (const std::runtime_error &e) {
 	  throw std::runtime_error("--themisto-index flag is not supported for Themisto v2.0.0 or newer:\n" + std::string(e.what()));
-	} catch (const std::domain_error &e) {
+      } catch (const std::domain_error &e) {
 	  throw e;
-	}
       }
-      ReadPseudoalignment(args.tinfile1, args.tinfile2, args.themisto_merge_mode, args.bootstrap_mode, reference.get_n_refs(), samples);
     }
+    cxxio::In forward_strand(args.tinfile1);
+    cxxio::In reverse_strand(args.tinfile2);
+    std::vector<std::istream*> strands = { &forward_strand.stream(), &reverse_strand.stream() };
+    ReadThemisto(get_mode(args.themisto_merge_mode), reference->get_n_refs(), strands, &samples->back()->pseudos);
+  } else {
+    if (reference->get_n_groupings() > 1) {
+      throw std::runtime_error("Using more than one grouping with --read-likelihood is not yet implemented.");
+    }
+    cxxio::In likelihoods(args.likelihood_file);
+    samples->back()->read_likelihood(reference->get_grouping(0), likelihoods.stream());
+  }
+  samples->back()->process_aln(args.bootstrap_mode);
 
-    std::cerr << "  read " << (args.batch_mode ? samples.size() : samples[0]->num_ecs()) << (args.batch_mode ? " samples from the batch" : " unique alignments") << std::endl;
-  } catch (const std::exception &e) {
-    std::cerr << "Reading the input files failed:\n  ";
-    std::cerr << e.what();
-    std::cerr << "\nexiting" << std::endl;
-    return 1;
+  log << "  read " << (args.batch_mode ? samples->size() : (*samples)[0]->num_ecs()) << (args.batch_mode ? " samples from the batch" : " unique alignments") << '\n';
+  log.flush();
+}
+
+void ConstructLikelihood(const Arguments &args, const Grouping &grouping, const std::vector<uint32_t> &group_indicators, const std::unique_ptr<Sample> &sample, bool free_ec_counts) {
+  if (!args.read_likelihood_mode) {
+    likelihood_array_mat(grouping, group_indicators, args.optimizer.bb_constants, (*sample));
+  }
+  if (free_ec_counts) {
+    // Free memory used by the configs after all likelihood matrices are built.
+    sample->pseudos.ec_configs.clear();
+    sample->pseudos.ec_configs.shrink_to_fit();
+  }
+}
+
+void WriteResults(const Arguments &args, const std::unique_ptr<Sample> &sample, const Grouping &grouping, const uint16_t n_groupings, const uint16_t current_grouping) {
+  cxxio::Out of;
+
+  // Set output file name correctly
+  // for backwards compatibility with v1.4.0 or older
+  std::string outfile = args.outfile;
+  if (n_groupings > 1 && !args.outfile.empty()) {
+    outfile += "_";
+    outfile += std::to_string(current_grouping);
   }
 
-
-  // Estimate abundances with all groupings that were provided
-  uint16_t n_groupings = reference.get_n_groupings();
-  std::string outfile_name = args.outfile;
-  for (uint16_t i = 0; i < n_groupings; ++i) {
-    uint32_t n_groups = reference.get_grouping(i).get_n_groups();
-
-    // Initialize the prior counts on the groups
-    args.optimizer.alphas = std::vector<double>(n_groups, 1.0);
-
-    args.outfile = outfile_name;
-    // Set output file name correctly
-    if (n_groupings > 1 && !outfile_name.empty()) { // Backwards compatibility with v1.4.0 or older in output names
-      args.outfile += "_";
-      args.outfile += std::to_string(i);
-    }
-
-    std::cerr << "Building log-likelihood array" << std::endl;
-    for (uint16_t j = 0; j < samples.size(); ++j) {
-      samples[j]->CalcLikelihood(reference.get_grouping(i), args.optimizer.bb_constants, reference.get_group_indicators(i), n_groupings == 1);
-
-      if (args.optimizer.write_likelihood || args.optimizer.write_likelihood_bitseq) {
-	std::cerr << "Writing likelihood matrix" << std::endl;
-	if (args.optimizer.write_likelihood) {
-	  samples[j]->write_likelihood(args.optimizer.gzip_probs, n_groups, args.outfile);
-	}
-	if (args.optimizer.write_likelihood_bitseq) {
-	  samples[j]->write_likelihood_bitseq(args.optimizer.gzip_probs, n_groups, args.outfile);
-	}
-      }
-    }
-
-    // Process the reads accordingly
-    if (args.optimizer.no_fit_model) {
-      std::cerr << "Skipping relative abundance estimation (--no-fit-model toggled)" << std::endl;
+  // Write likelihoods
+  if (args.optimizer.write_likelihood || args.optimizer.write_likelihood_bitseq) {
+    std::string ll_outfile(outfile);
+    ll_outfile += (args.optimizer.write_likelihood_bitseq ? "_bitseq" : "");
+    ll_outfile += "_likelihoods.txt";
+    if (args.optimizer.gzip_probs) {
+      ll_outfile += ".gz";
+      of.open_compressed(ll_outfile);
     } else {
-      std::cerr << "Estimating relative abundances" << std::endl;
-      if (args.bootstrap_mode) {
-	ProcessBootstrap(reference.get_grouping(i), args, samples);
-      } else {
-	ProcessReads(reference.get_grouping(i), args, samples);
-      }
+      of.open(ll_outfile);
+    }
+    if (args.optimizer.write_likelihood_bitseq) {
+      sample->write_likelihood_bitseq(grouping.get_n_groups(), of.stream());
+    } else {
+      sample->write_likelihood(grouping.get_n_groups(), of.stream());
     }
   }
 
-  return 0;
+  // Relative abundances
+  std::string abundances_outfile(outfile);
+  abundances_outfile = (args.outfile.empty() || !args.batch_mode ? abundances_outfile : abundances_outfile + '/' + sample->cell_name());
+  if (!args.outfile.empty()) {
+    abundances_outfile += "_abundances.txt";
+    of.open(abundances_outfile);
+  }
+  if (args.bootstrap_mode) {
+    BootstrapSample* bs = static_cast<BootstrapSample*>(&(*sample));
+    bs->write_bootstrap(grouping.get_names(), args.iters, (args.outfile.empty() ? std::cout : of.stream()));
+  } else {
+    sample->write_abundances(grouping.get_names(), (args.outfile.empty() ? std::cout : of.stream()));
+  }
+
+  // Probability matrix
+  if (args.optimizer.print_probs) {
+    sample->write_probabilities(grouping.get_names(), std::cout);
+  }
+  if (args.optimizer.write_probs) {
+    std::string probs_outfile(outfile);
+    probs_outfile += "_probs.csv";
+    if (args.optimizer.gzip_probs) {
+      probs_outfile += ".gz";
+      of.open_compressed(probs_outfile);
+    } else {
+      of.open(probs_outfile);
+    }
+    sample->write_probabilities(grouping.get_names(), (outfile.empty() ? std::cout : of.stream()));
+  }
 }

@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include "rcgpar.hpp"
+#include "msweep_log.hpp"
 
 #include "mSWEEP.hpp"
 #include "parse_arguments.hpp"
@@ -13,7 +14,6 @@
 #include "version.h"
 #include "openmp_config.hpp"
 #include "mpi_config.hpp"
-#include "log.hpp"
 
 void finalize(const std::string &msg, Log &log, bool abort = false) {
   log << msg;

@@ -125,7 +125,7 @@ void Sample::read_likelihood(const Grouping &grouping, std::istream &infile) {
   uint32_t n_groups = grouping.get_n_groups();
 
   std::vector<std::vector<double>> likelihoods(n_groups, std::vector<double>());
-  this->pseudos = KallistoAlignment();
+  this->pseudos = telescope::KallistoAlignment();
 
   if (infile.good()) {
     std::string newline;

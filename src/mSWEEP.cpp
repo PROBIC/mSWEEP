@@ -28,7 +28,7 @@ void ReadInput(const Arguments &args, std::vector<std::unique_ptr<Sample>> *samp
   if (!args.themisto_mode && !args.read_likelihood_mode) {
     // Check that the number of reference sequences matches in the grouping and the alignment.
     reference->verify_kallisto_alignment(*args.infiles.run_info);
-    ReadKallisto(reference->get_n_refs(), *args.infiles.ec, *args.infiles.tsv, &samples->back()->pseudos);
+    telescope::read::Kallisto(reference->get_n_refs(), *args.infiles.ec, *args.infiles.tsv, &samples->back()->pseudos);
   } else if (!args.read_likelihood_mode) {
     if (!args.themisto_index_path.empty()) {
       try {
@@ -43,7 +43,7 @@ void ReadInput(const Arguments &args, std::vector<std::unique_ptr<Sample>> *samp
     cxxio::In forward_strand(args.tinfile1);
     cxxio::In reverse_strand(args.tinfile2);
     std::vector<std::istream*> strands = { &forward_strand.stream(), &reverse_strand.stream() };
-    ReadThemisto(get_mode(args.themisto_merge_mode), reference->get_n_refs(), strands, &samples->back()->pseudos);
+    telescope::read::Themisto(telescope::get_mode(args.themisto_merge_mode), reference->get_n_refs(), strands, &samples->back()->pseudos);
   } else {
     if (reference->get_n_groupings() > 1) {
       throw std::runtime_error("Using more than one grouping with --read-likelihood is not yet implemented.");

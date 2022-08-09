@@ -165,11 +165,10 @@ int main (int argc, char *argv[]) {
 	      bs->bootstrap_results.emplace_back(rcgpar::mixture_components(bootstrapped_ec_probs, resampled_log_ec_counts));
 	  }
 	}
-
-	// Write results to file from the root process
-	if (rank == 0)
-	  WriteResults(args, samples[j], reference.get_grouping(i), n_groupings, i);
       }
+      // Write results to file from the root process
+      if (rank == 0)
+	WriteResults(args, samples[j], reference.get_grouping(i), n_groupings, i);
     }
   }
   finalize("", log);

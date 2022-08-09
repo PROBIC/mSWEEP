@@ -99,24 +99,26 @@ void WriteResults(const Arguments &args, const std::unique_ptr<Sample> &sample, 
   }
 
   // Relative abundances
-  std::string abundances_outfile(outfile);
-  abundances_outfile = (args.outfile.empty() || !args.batch_mode ? abundances_outfile : abundances_outfile + '/' + sample->cell_name());
-  if (!args.outfile.empty()) {
-    abundances_outfile += "_abundances.txt";
-    of.open(abundances_outfile);
-  }
-  if (args.bootstrap_mode) {
-    BootstrapSample* bs = static_cast<BootstrapSample*>(&(*sample));
-    bs->write_bootstrap(grouping.get_names(), args.iters, (args.outfile.empty() ? std::cout : of.stream()));
-  } else {
-    sample->write_abundances(grouping.get_names(), (args.outfile.empty() ? std::cout : of.stream()));
+  if (!args.optimizer.no_fit_model) {
+    std::string abundances_outfile(outfile);
+    abundances_outfile = (args.outfile.empty() || !args.batch_mode ? abundances_outfile : abundances_outfile + '/' + sample->cell_name());
+    if (!args.outfile.empty()) {
+      abundances_outfile += "_abundances.txt";
+      of.open(abundances_outfile);
+    }
+    if (args.bootstrap_mode) {
+      BootstrapSample* bs = static_cast<BootstrapSample*>(&(*sample));
+      bs->write_bootstrap(grouping.get_names(), args.iters, (args.outfile.empty() ? std::cout : of.stream()));
+    } else {
+      sample->write_abundances(grouping.get_names(), (args.outfile.empty() ? std::cout : of.stream()));
+    }
   }
 
   // Probability matrix
-  if (args.optimizer.print_probs) {
+  if (args.optimizer.print_probs && !args.optimizer.no_fit_model) {
     sample->write_probabilities(grouping.get_names(), std::cout);
   }
-  if (args.optimizer.write_probs) {
+  if (args.optimizer.write_probs && !args.optimizer.no_fit_model) {
     std::string probs_outfile(outfile);
     probs_outfile += "_probs.csv";
     if (args.optimizer.gzip_probs) {

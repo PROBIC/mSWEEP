@@ -35,6 +35,10 @@ endif()
 set (CMAKE_CXX_STANDARD 11)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
+## Suppress c++17 warnings from BitMagic, which uses `if constexpr`.
+set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++17-extensions")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++17-extensions")
+
 ### MPI
 find_package(MPI)
 if (MPI_FOUND)
@@ -275,6 +279,11 @@ endif()
 
 add_library(msweeptools ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/matchfasta.cpp)
 add_executable(matchfasta ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/main.cpp)
+
+if(MPI_FOUND)
+  add_dependencies(mSWEEP rcgmpi bigmpi)
+  target_link_libraries(mSWEEP rcgmpi ${LIBRARY_OUTPUT_PATH}/libbigmpi.a)
+endif()
 
 # Link libraries
 target_link_libraries(mSWEEP ${ZLIB} msweeptools)

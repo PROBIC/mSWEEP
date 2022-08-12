@@ -35,10 +35,6 @@ endif()
 set (CMAKE_CXX_STANDARD 11)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
-## Suppress c++17 warnings from BitMagic, which uses `if constexpr`.
-set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++17-extensions")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++17-extensions")
-
 ### MPI
 find_package(MPI)
 if (MPI_FOUND)
@@ -147,27 +143,6 @@ else()
 endif()
 include_directories(${CMAKE_BXZSTR_HEADERS})
 
-## BitMagic
-if (DEFINED CMAKE_BITMAGIC_HEADERS)
-  message(STATUS "BitMagic headers provided in: ${CMAKE_BITMAGIC_HEADERS}")
-else()
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-bitmagic.txt.in ${CMAKE_BINARY_DIR}/external/bitmagic-download/CMakeLists.txt)
-  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-    RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/bitmagic-download )
-  if(result)
-    message(FATAL_ERROR "CMake step for BitMagic failed: ${result}")
-  endif()
-  execute_process(COMMAND ${CMAKE_COMMAND} --build .
-    RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/bitmagic-download )
-  if(result)
-    message(FATAL_ERROR "Build step for BitMagic failed: ${result}")
-  endif()
-  set(CMAKE_BITMAGIC_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/bitmagic/src/)
-endif()
-include_directories(${CMAKE_BITMAGIC_HEADERS})
-
 ## Check dependencies and download them if not given
 ## cxxio
 if (DEFINED CMAKE_CXXIO_HEADERS)
@@ -234,8 +209,9 @@ else()
   set_target_properties(telescope PROPERTIES EXCLUDE_FROM_ALL 1)
   target_link_libraries(mSWEEP libtelescope)
   set(CMAKE_TELESCOPE_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/include)
+  set(CMAKE_BITMAGIC_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/external/BitMagic-7.12.3/src)
 endif()
-include_directories(${CMAKE_TELESCOPE_HEADERS})
+include_directories(${CMAKE_TELESCOPE_HEADERS} ${CMAKE_BITMAGIC_HEADERS})
 
 ## rcgpar
 if (DEFINED CMAKE_RCGPAR_LIBRARY AND DEFINED CMAKE_RCGPAR_HEADERS)

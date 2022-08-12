@@ -28,7 +28,8 @@ void ReadInput(const Arguments &args, std::vector<std::unique_ptr<Sample>> *samp
   if (!args.themisto_mode && !args.read_likelihood_mode) {
     // Check that the number of reference sequences matches in the grouping and the alignment.
     reference->verify_kallisto_alignment(*args.infiles.run_info);
-    ReadKallisto(reference->get_n_refs(), *args.infiles.ec, *args.infiles.tsv, &samples->back()->pseudos);
+    samples->back()->pseudos = telescope::KallistoAlignment(reference->get_n_refs());
+    telescope::read::Kallisto(*args.infiles.ec, *args.infiles.tsv, &samples->back()->pseudos);
   } else if (!args.read_likelihood_mode) {
     if (!args.themisto_index_path.empty()) {
       try {
@@ -43,7 +44,8 @@ void ReadInput(const Arguments &args, std::vector<std::unique_ptr<Sample>> *samp
     cxxio::In forward_strand(args.tinfile1);
     cxxio::In reverse_strand(args.tinfile2);
     std::vector<std::istream*> strands = { &forward_strand.stream(), &reverse_strand.stream() };
-    ReadThemisto(get_mode(args.themisto_merge_mode), reference->get_n_refs(), strands, &samples->back()->pseudos);
+    samples->back()->pseudos = telescope::KallistoAlignment(reference->get_n_refs());
+    telescope::read::ThemistoToKallisto(telescope::get_mode(args.themisto_merge_mode), strands, &samples->back()->pseudos);
   } else {
     if (reference->get_n_groupings() > 1) {
       throw std::runtime_error("Using more than one grouping with --read-likelihood is not yet implemented.");
@@ -63,8 +65,7 @@ void ConstructLikelihood(const Arguments &args, const Grouping &grouping, const 
   }
   if (free_ec_counts) {
     // Free memory used by the configs after all likelihood matrices are built.
-    sample->pseudos.ec_configs.clear();
-    sample->pseudos.ec_configs.shrink_to_fit();
+    sample->pseudos.clear_configs();
   }
 }
 
@@ -98,24 +99,26 @@ void WriteResults(const Arguments &args, const std::unique_ptr<Sample> &sample, 
   }
 
   // Relative abundances
-  std::string abundances_outfile(outfile);
-  abundances_outfile = (args.outfile.empty() || !args.batch_mode ? abundances_outfile : abundances_outfile + '/' + sample->cell_name());
-  if (!args.outfile.empty()) {
-    abundances_outfile += "_abundances.txt";
-    of.open(abundances_outfile);
-  }
-  if (args.bootstrap_mode) {
-    BootstrapSample* bs = static_cast<BootstrapSample*>(&(*sample));
-    bs->write_bootstrap(grouping.get_names(), args.iters, (args.outfile.empty() ? std::cout : of.stream()));
-  } else {
-    sample->write_abundances(grouping.get_names(), (args.outfile.empty() ? std::cout : of.stream()));
+  if (!args.optimizer.no_fit_model) {
+    std::string abundances_outfile(outfile);
+    abundances_outfile = (args.outfile.empty() || !args.batch_mode ? abundances_outfile : abundances_outfile + '/' + sample->cell_name());
+    if (!args.outfile.empty()) {
+      abundances_outfile += "_abundances.txt";
+      of.open(abundances_outfile);
+    }
+    if (args.bootstrap_mode) {
+      BootstrapSample* bs = static_cast<BootstrapSample*>(&(*sample));
+      bs->write_bootstrap(grouping.get_names(), args.iters, (args.outfile.empty() ? std::cout : of.stream()));
+    } else {
+      sample->write_abundances(grouping.get_names(), (args.outfile.empty() ? std::cout : of.stream()));
+    }
   }
 
   // Probability matrix
-  if (args.optimizer.print_probs) {
+  if (args.optimizer.print_probs && !args.optimizer.no_fit_model) {
     sample->write_probabilities(grouping.get_names(), std::cout);
   }
-  if (args.optimizer.write_probs) {
+  if (args.optimizer.write_probs && !args.optimizer.no_fit_model) {
     std::string probs_outfile(outfile);
     probs_outfile += "_probs.csv";
     if (args.optimizer.gzip_probs) {

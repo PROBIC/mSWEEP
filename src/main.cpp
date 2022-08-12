@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include "rcgpar.hpp"
+#include "msweep_log.hpp"
 
 #include "mSWEEP.hpp"
 #include "parse_arguments.hpp"
@@ -13,7 +14,6 @@
 #include "version.h"
 #include "openmp_config.hpp"
 #include "mpi_config.hpp"
-#include "log.hpp"
 
 void finalize(const std::string &msg, Log &log, bool abort = false) {
   log << msg;
@@ -165,11 +165,10 @@ int main (int argc, char *argv[]) {
 	      bs->bootstrap_results.emplace_back(rcgpar::mixture_components(bootstrapped_ec_probs, resampled_log_ec_counts));
 	  }
 	}
-
-	// Write results to file from the root process
-	if (rank == 0)
-	  WriteResults(args, samples[j], reference.get_grouping(i), n_groupings, i);
       }
+      // Write results to file from the root process
+      if (rank == 0)
+	WriteResults(args, samples[j], reference.get_grouping(i), n_groupings, i);
     }
   }
   finalize("", log);

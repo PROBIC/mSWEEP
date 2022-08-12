@@ -36,8 +36,8 @@ set (CMAKE_CXX_STANDARD 11)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ### MPI
-find_package(MPI)
-if (MPI_FOUND)
+if (CMAKE_ENABLE_MPI_SUPPORT)
+  find_package(MPI REQUIRED)
   set(MSWEEP_MPI_SUPPORT 1)
   include_directories(MPI_C_INCLUDE_DIRS)
   if (CMAKE_MPI_MAX_PROCESSES)
@@ -209,8 +209,9 @@ else()
   set_target_properties(telescope PROPERTIES EXCLUDE_FROM_ALL 1)
   target_link_libraries(mSWEEP libtelescope)
   set(CMAKE_TELESCOPE_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/include)
+  set(CMAKE_BITMAGIC_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/external/BitMagic-7.12.3/src)
 endif()
-include_directories(${CMAKE_TELESCOPE_HEADERS})
+include_directories(${CMAKE_TELESCOPE_HEADERS} ${CMAKE_BITMAGIC_HEADERS})
 
 ## rcgpar
 if (DEFINED CMAKE_RCGPAR_LIBRARY AND DEFINED CMAKE_RCGPAR_HEADERS)
@@ -254,6 +255,11 @@ endif()
 
 add_library(msweeptools ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/matchfasta.cpp)
 add_executable(matchfasta ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/main.cpp)
+
+if(MPI_FOUND)
+  add_dependencies(mSWEEP rcgmpi bigmpi)
+  target_link_libraries(mSWEEP rcgmpi ${LIBRARY_OUTPUT_PATH}/libbigmpi.a)
+endif()
 
 # Link libraries
 target_link_libraries(mSWEEP ${ZLIB} msweeptools)

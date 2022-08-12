@@ -32,7 +32,7 @@ void BootstrapSample::init_bootstrap() {
   this->bootstrap_results = std::vector<std::vector<double>>();
 
   // Initialize ec_distribution for bootstrapping
-  ec_distribution = std::discrete_distribution<uint32_t>(pseudos.ec_counts.begin(), pseudos.ec_counts.end());
+  ec_distribution = std::discrete_distribution<uint32_t>(pseudos.ec_counts_begin(), pseudos.ec_counts_end());
 }
 
 void BootstrapSample::write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string,

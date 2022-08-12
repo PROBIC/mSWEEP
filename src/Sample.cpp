@@ -9,20 +9,19 @@
 
 void Sample::process_aln(const bool bootstrap_mode) {
   cell_id = "";
-  m_num_ecs = pseudos.ec_counts.size();
+  m_num_ecs = pseudos.compressed_size();
   log_ec_counts.resize(m_num_ecs, 0.0);
   uint32_t aln_counts_total = 0;
 #pragma omp parallel for schedule(static) reduction(+:aln_counts_total)
   for (uint32_t i = 0; i < m_num_ecs; ++i) {
-    log_ec_counts[i] = std::log(pseudos.ec_counts[i]);
-    aln_counts_total += pseudos.ec_counts[i];
+    log_ec_counts[i] = std::log(pseudos.reads_in_ec(i));
+    aln_counts_total += pseudos.reads_in_ec(i);
   }
   counts_total = aln_counts_total;
 
   if (!bootstrap_mode) {
     // EC counts aren't needed when not bootstrapping.
-    this->pseudos.ec_counts.clear();
-    this->pseudos.ec_counts.shrink_to_fit();
+    this->pseudos.clear_counts();
   }
 }
 
@@ -31,7 +30,7 @@ std::vector<uint16_t> Sample::group_counts(const std::vector<uint32_t> indicator
   std::vector<uint16_t> read_hitcounts(n_groups);
   uint32_t m_num_refs = this->pseudos.n_targets();
   for (uint32_t j = 0; j < m_num_refs; ++j) {
-    read_hitcounts[indicators[j]] += pseudos.ec_configs[ec_id][j];
+    read_hitcounts[indicators[j]] += pseudos(ec_id, j);
   }
   return read_hitcounts;
 }
@@ -125,7 +124,7 @@ void Sample::read_likelihood(const Grouping &grouping, std::istream &infile) {
   uint32_t n_groups = grouping.get_n_groups();
 
   std::vector<std::vector<double>> likelihoods(n_groups, std::vector<double>());
-  this->pseudos = KallistoAlignment();
+  this->pseudos = telescope::KallistoAlignment();
 
   if (infile.good()) {
     std::string newline;
@@ -140,7 +139,7 @@ void Sample::read_likelihood(const Grouping &grouping, std::istream &infile) {
       while (std::getline(partition, part, '\t')) {
 	if (ec_count_col) {
 	  uint32_t ec_count = std::stol(part);
-	  this->pseudos.ec_counts.emplace_back(ec_count);
+	  this->pseudos.add_counts(ec_count);
 	  ec_count_col = false;
 	} else {
 	  likelihoods[group_id].emplace_back(std::stod(part));

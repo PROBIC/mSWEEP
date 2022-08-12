@@ -70,7 +70,7 @@ mSWEEP with the following commands (example case for Open MPI):
 > mkdir build
 > cd build
 > module load mpi/openmpi
-> cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx ..
+> cmake -DCMAKE_ENABLE_MPI_SUPPORT=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx ..
 > make
 ```
 

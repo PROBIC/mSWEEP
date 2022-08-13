@@ -60,6 +60,8 @@ void PrintHelpMessage() {
 	    << "\t--read-likelihood\n"
 	    << "\tRead in a likelihood matrix that has been written to file with the --write-likelihood toggle.\n"
 	    << "\n"
+            << "\t--read-compact\n"
+            << "\tInput alignments are in compact format.\n"
 	    << "\t--help\n"
 	    << "\tPrint this message.\n"
 	    << "\t--version\n"
@@ -121,6 +123,8 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
   args.optimizer.write_likelihood = CmdOptionPresent(argv, argv+argc, "--write-likelihood");
   args.optimizer.write_likelihood_bitseq = CmdOptionPresent(argv, argv+argc, "--write-likelihood-bitseq");
   args.optimizer.no_fit_model = CmdOptionPresent(argv, argv+argc, "--no-fit-model");
+
+  args.compact_alignments = CmdOptionPresent(argv, argv+argc, "--read-compact");
 
   if ((CmdOptionPresent(argv, argv+argc, "-f") || CmdOptionPresent(argv, argv+argc, "--file"))  && CmdOptionPresent(argv, argv+argc, "-b")) {
     throw std::runtime_error("infile and batchfile found, specify only one");

@@ -29,6 +29,9 @@ void ReadInput(const Arguments &args, std::vector<std::unique_ptr<Sample>> *samp
     // Check that the number of reference sequences matches in the grouping and the alignment.
     reference->verify_kallisto_alignment(*args.infiles.run_info);
     samples->back()->pseudos = telescope::KallistoAlignment(reference->get_n_refs());
+    if (args.compact_alignments) {
+      samples->back()->pseudos.set_parse_from_buffered();
+    }
     telescope::read::Kallisto(*args.infiles.ec, *args.infiles.tsv, &samples->back()->pseudos);
   } else if (!args.read_likelihood_mode) {
     if (!args.themisto_index_path.empty()) {
@@ -45,6 +48,9 @@ void ReadInput(const Arguments &args, std::vector<std::unique_ptr<Sample>> *samp
     cxxio::In reverse_strand(args.tinfile2);
     std::vector<std::istream*> strands = { &forward_strand.stream(), &reverse_strand.stream() };
     samples->back()->pseudos = telescope::KallistoAlignment(reference->get_n_refs());
+    if (args.compact_alignments) {
+      samples->back()->pseudos.set_parse_from_buffered();
+    }
     telescope::read::ThemistoToKallisto(telescope::get_mode(args.themisto_merge_mode), strands, &samples->back()->pseudos);
   } else {
     if (reference->get_n_groupings() > 1) {

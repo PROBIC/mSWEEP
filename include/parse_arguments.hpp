@@ -44,6 +44,7 @@ struct Arguments {
   bool compressed_input = false;
   bool themisto_mode = false;
   bool read_likelihood_mode = false;
+  bool compact_alignments = false;
 
   std::string themisto_merge_mode = "union";
 

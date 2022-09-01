@@ -10,8 +10,21 @@
 #include "likelihood.hpp"
 #include "version.h"
 
-void ReadInput(const Arguments &args, std::unique_ptr<Sample> *sample, std::ostream &log, Reference *reference) {
-  log << "Reading the input files" << '\n';
+void VerifyThemistoIndex(const std::string &themisto_index_path, const Reference &reference) {
+  // TODO merge with reference.verify_themisto_index
+  if (!themisto_index_path.empty()) {
+    try {
+      cxxio::In themisto_index(themisto_index_path + "/coloring-names.txt");
+      reference.verify_themisto_index(themisto_index);
+    } catch (const std::runtime_error &e) {
+      throw std::runtime_error("--themisto-index flag is not supported for Themisto v2.0.0 or newer:\n" + std::string(e.what()));
+    } catch (const std::domain_error &e) {
+      throw e;
+    }
+  }
+}
+
+void ReadGroupIndicators(const Arguments &args, std::ostream &log, Reference *reference) {
   log << "  reading group indicators" << '\n';
   if (args.fasta_file.empty()) {
     cxxio::In indicators_file(args.indicators_file);
@@ -23,44 +36,35 @@ void ReadInput(const Arguments &args, std::unique_ptr<Sample> *sample, std::ostr
   }
 
   log << "  read " << reference->get_n_refs() << " group indicators" << '\n';
+
   if (reference->get_n_groupings() > 1) {
     throw std::runtime_error("Using more than one grouping is currently unsupported.");
   }
+}
 
-  log << (args.read_likelihood_mode ? "  reading likelihoods from file" : "  reading pseudoalignments") << '\n';
-  if (!args.read_likelihood_mode) {
-    if (!args.themisto_index_path.empty()) {
-      try {
-	cxxio::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
-	reference->verify_themisto_index(themisto_index);
-      } catch (const std::runtime_error &e) {
-	throw std::runtime_error("--themisto-index flag is not supported for Themisto v2.0.0 or newer:\n" + std::string(e.what()));
-      } catch (const std::domain_error &e) {
-	throw e;
-      }
-    }
-    cxxio::In forward_strand(args.tinfile1);
-    cxxio::In reverse_strand(args.tinfile2);
-    std::vector<std::istream*> strands = { &forward_strand.stream(), &reverse_strand.stream() };
+void ReadPseudoalignments(const Arguments &args, const Reference &reference, telescope::GroupedAlignment *alignment) {
+  VerifyThemistoIndex(args.themisto_index_path, reference);
+  cxxio::In forward_strand(args.tinfile1);
+  cxxio::In reverse_strand(args.tinfile2);
+  std::vector<std::istream*> strands = { &forward_strand.stream(), &reverse_strand.stream() };
 
-    // TODO implement for multiple groupings
-    (*sample)->pseudos = telescope::GroupedAlignment(reference->get_n_refs(), reference->get_grouping(0).get_n_groups(), reference->get_group_indicators(0));
+  // TODO implement for multiple groupings
+  alignment->resize(reference.get_n_refs(), reference.get_grouping(0).get_n_groups());
+  alignment->reset_group_indicators(reference.get_group_indicators(0));
 
-    if (args.compact_alignments) {
-      (*sample)->pseudos.set_parse_from_buffered();
-    }
-    telescope::read::ThemistoGrouped(telescope::get_mode(args.themisto_merge_mode), strands, &(*sample)->pseudos);
-  } else {
-    if (reference->get_n_groupings() > 1) {
-      throw std::runtime_error("Using more than one grouping with --read-likelihood is not yet implemented.");
-    }
-    cxxio::In likelihoods(args.likelihood_file);
-    (*sample)->read_likelihood(reference->get_grouping(0), likelihoods.stream());
+  if (args.compact_alignments) {
+    alignment->set_parse_from_buffered();
   }
-  (*sample)->process_aln(args.bootstrap_mode);
+  telescope::read::ThemistoGrouped(telescope::get_mode(args.themisto_merge_mode), strands, alignment);
+}
 
-  log << "  read " << (*sample)->num_ecs() << " unique alignments" << '\n';
-  log.flush();
+void ReadLikelihoodFromFile(const Arguments &args, const Reference &reference, std::ostream &log, Sample *sample) {
+  log << "  reading likelihoods from file" << '\n';
+  if (reference.get_n_groupings() > 1) {
+    throw std::runtime_error("Using more than one grouping with --read-likelihood is not yet implemented.");
+  }
+  cxxio::In likelihoods(args.likelihood_file);
+  sample->read_likelihood(reference.get_grouping(0), likelihoods.stream());
 }
 
 void ConstructLikelihood(const Arguments &args, const Grouping &grouping, const std::vector<uint32_t> &group_indicators, const std::unique_ptr<Sample> &sample, bool free_ec_counts) {

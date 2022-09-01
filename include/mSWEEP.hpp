@@ -10,9 +10,13 @@
 #include "Reference.hpp"
 #include "Grouping.hpp"
 
-void ReadInput(const Arguments &args,
-	       std::unique_ptr<Sample> *samples,
-	       std::ostream &log, Reference *reference);
+void ReadGroupIndicators(const Arguments &args, std::ostream &log, Reference *reference);
+
+void ReadPseudoalignments(const Arguments &args,
+			  const Reference &reference,
+			  telescope::GroupedAlignment *alignment);
+
+void ReadLikelihoodFromFile(const Arguments &args, const Reference &reference, std::ostream &log, Sample *sample);
 
 void ConstructLikelihood(const Arguments &args, const Grouping &grouping,
 			 const std::vector<uint32_t> &group_indicators,

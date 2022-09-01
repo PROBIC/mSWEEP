@@ -101,8 +101,19 @@ int main (int argc, char *argv[]) {
   }
 
   try {
-    if (rank == 0) // rank 0
-      ReadInput(args, &sample, log.stream(), &reference);
+    log << "Reading the input files" << '\n';
+    if (rank == 0) { // Only root reads in data
+      ReadGroupIndicators(args, log.stream(), &reference);
+      if (!args.read_likelihood_mode) {
+	log << "  reading pseudoalignments" << '\n';
+	ReadPseudoalignments(args, reference, &sample->pseudos);
+	sample->process_aln(args.bootstrap_mode);
+	log << "  read " << sample->num_ecs() << " unique alignments" << '\n';
+	log.flush();
+      } else {
+	ReadLikelihoodFromFile(args, reference, log.stream(), &(*sample));
+      }
+    }
   } catch (std::exception &e) {
     finalize("Reading the input files failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
     return 1;

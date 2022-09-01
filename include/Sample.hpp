@@ -27,7 +27,7 @@ public:
   std::vector<double> relative_abundances;
 
   // Alignments class from telescope
-    telescope::KallistoAlignment pseudos;
+    telescope::GroupedAlignment pseudos;
 
   // Calculate log_ec_counts and counts_total.
   void process_aln(const bool bootstrap_mode);

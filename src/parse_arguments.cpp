@@ -113,7 +113,7 @@ double ParseDoubleOption(char **begin, char **end, const std::string &option) {
 
 void ParseArguments(int argc, char *argv[], Arguments &args) {
   if (argc < 3) {
-    throw std::runtime_error("Error: Specify at least the infile and indicators file.\n");
+    throw std::runtime_error("Error: Specify at least the infiles and the indicators file.\n");
   }
 
   args.optimizer.write_probs = CmdOptionPresent(argv, argv+argc, "--write-probs");
@@ -126,19 +126,9 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
 
   args.compact_alignments = CmdOptionPresent(argv, argv+argc, "--read-compact");
 
-  if ((CmdOptionPresent(argv, argv+argc, "-f") || CmdOptionPresent(argv, argv+argc, "--file"))  && CmdOptionPresent(argv, argv+argc, "-b")) {
-    throw std::runtime_error("infile and batchfile found, specify only one");
-  } else if (CmdOptionPresent(argv, argv+argc, "-f")) {
-    args.infile = std::string(GetCmdOption(argv, argv+argc, "-f"));
-  } else if (CmdOptionPresent(argv, argv+argc, "--file")) {
-    args.infile = std::string(GetCmdOption(argv, argv+argc, "--file"));
-  } else if (CmdOptionPresent(argv, argv+argc, "-b")) {
-    args.batch_infile = std::string(GetCmdOption(argv, argv+argc, "-b"));
-    args.batch_mode = true;
-  } else if (CmdOptionPresent(argv, argv+argc, "--themisto-1") && CmdOptionPresent(argv, argv+argc, "--themisto-2")) {
+  if (CmdOptionPresent(argv, argv+argc, "--themisto-1") && CmdOptionPresent(argv, argv+argc, "--themisto-2")) {
     args.tinfile1 = std::string(GetCmdOption(argv, argv+argc, "--themisto-1"));
     args.tinfile2 = std::string(GetCmdOption(argv, argv+argc, "--themisto-2"));
-    args.themisto_mode = true;
     if (CmdOptionPresent(argv, argv+argc, "--themisto-mode")) {
       args.themisto_merge_mode = std::string(GetCmdOption(argv, argv+argc, "--themisto-mode"));
     } else {
@@ -157,26 +147,6 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
       }
     } else {
     throw std::runtime_error("infile not found.");
-  }
-
-  // Fill the kallisto_files vector
-  args.kallisto_files = std::vector<std::string>((args.batch_mode ? 4 : 3));
-  if (args.batch_mode) {
-    args.infiles = KallistoFiles(args.batch_infile, args.batch_mode);
-    args.kallisto_files[0] = args.batch_infile + "/run_info.json";
-    args.kallisto_files[1] = args.batch_infile + "/matrix.ec";
-    args.kallisto_files[2] = args.batch_infile + "/matrix.tsv";
-    args.kallisto_files[3] = args.batch_infile + "/matrix.cells";
-  } else if (!args.themisto_mode && !args.read_likelihood_mode) {
-    args.infiles = KallistoFiles(args.infile, args.batch_mode);
-    args.kallisto_files[0] = args.infile + "/run_info.json";
-    args.kallisto_files[1] = args.infile + "/pseudoalignments.ec";
-    args.kallisto_files[2] = args.infile + "/pseudoalignments.tsv";
-  }
-  if (CmdOptionPresent(argv, argv+argc, "--compressed-input") && !args.themisto_mode) {
-    for (size_t i = 1; i < args.kallisto_files.size(); ++i) {
-      args.kallisto_files[i] += ".gz";
-    }
   }
 
   if (CmdOptionPresent(argv, argv+argc, "-i")) {

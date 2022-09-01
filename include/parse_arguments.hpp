@@ -25,24 +25,18 @@ struct Arguments {
   OptimizerArgs optimizer;
 
   KallistoFiles infiles;
-  std::string infile;
-  std::string batch_infile;
   std::string indicators_file;
   std::string outfile;
   std::string tinfile1;
   std::string tinfile2;
   std::string themisto_index_path;
-  std::vector<std::string> kallisto_files;
   std::string likelihood_file;
 
   std::string fasta_file;
   std::string groups_list_file;
   char groups_list_delimiter = '\t';
 
-  bool batch_mode = false;
   bool bootstrap_mode = false;
-  bool compressed_input = false;
-  bool themisto_mode = false;
   bool read_likelihood_mode = false;
   bool compact_alignments = false;
 

@@ -44,9 +44,8 @@ void likelihood_array_mat(const Grouping &grouping, const std::vector<uint32_t> 
 
 #pragma omp parallel for schedule(static)
   for (unsigned j = 0; j < num_ecs; ++j) {
-      const std::vector<short unsigned> &counts = sample.group_counts(group_indicators, j, n_groups);
     for (unsigned short i = 0; i < n_groups; ++i) {
-      sample.ll_mat(i, j) = precalc_lls_mat(i, counts[i]);
+      sample.ll_mat(i, j) = precalc_lls_mat(i, sample.pseudos.ec_group_counts[j][i]);
     }
   }
 }

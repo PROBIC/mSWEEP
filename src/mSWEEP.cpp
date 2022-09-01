@@ -10,7 +10,7 @@
 #include "likelihood.hpp"
 #include "version.h"
 
-void ReadInput(const Arguments &args, std::vector<std::unique_ptr<Sample>> *samples, std::ostream &log, Reference *reference) {
+void ReadInput(const Arguments &args, std::unique_ptr<Sample> *sample, std::ostream &log, Reference *reference) {
   log << "Reading the input files" << '\n';
   log << "  reading group indicators" << '\n';
   if (args.fasta_file.empty()) {
@@ -23,45 +23,43 @@ void ReadInput(const Arguments &args, std::vector<std::unique_ptr<Sample>> *samp
   }
 
   log << "  read " << reference->get_n_refs() << " group indicators" << '\n';
+  if (reference->get_n_groupings() > 1) {
+    throw std::runtime_error("Using more than one grouping is currently unsupported.");
+  }
 
   log << (args.read_likelihood_mode ? "  reading likelihoods from file" : "  reading pseudoalignments") << '\n';
-  if (!args.themisto_mode && !args.read_likelihood_mode) {
-    // Check that the number of reference sequences matches in the grouping and the alignment.
-    reference->verify_kallisto_alignment(*args.infiles.run_info);
-    samples->back()->pseudos = telescope::KallistoAlignment(reference->get_n_refs());
-    if (args.compact_alignments) {
-      samples->back()->pseudos.set_parse_from_buffered();
-    }
-    telescope::read::Kallisto(*args.infiles.ec, *args.infiles.tsv, &samples->back()->pseudos);
-  } else if (!args.read_likelihood_mode) {
+  if (!args.read_likelihood_mode) {
     if (!args.themisto_index_path.empty()) {
       try {
-	  cxxio::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
-	  reference->verify_themisto_index(themisto_index);
+	cxxio::In themisto_index(args.themisto_index_path + "/coloring-names.txt");
+	reference->verify_themisto_index(themisto_index);
       } catch (const std::runtime_error &e) {
-	  throw std::runtime_error("--themisto-index flag is not supported for Themisto v2.0.0 or newer:\n" + std::string(e.what()));
+	throw std::runtime_error("--themisto-index flag is not supported for Themisto v2.0.0 or newer:\n" + std::string(e.what()));
       } catch (const std::domain_error &e) {
-	  throw e;
+	throw e;
       }
     }
     cxxio::In forward_strand(args.tinfile1);
     cxxio::In reverse_strand(args.tinfile2);
     std::vector<std::istream*> strands = { &forward_strand.stream(), &reverse_strand.stream() };
-    samples->back()->pseudos = telescope::KallistoAlignment(reference->get_n_refs());
+
+    // TODO implement for multiple groupings
+    (*sample)->pseudos = telescope::GroupedAlignment(reference->get_n_refs(), reference->get_grouping(0).get_n_groups(), reference->get_group_indicators(0));
+
     if (args.compact_alignments) {
-      samples->back()->pseudos.set_parse_from_buffered();
+      (*sample)->pseudos.set_parse_from_buffered();
     }
-    telescope::read::ThemistoToKallisto(telescope::get_mode(args.themisto_merge_mode), strands, &samples->back()->pseudos);
+    telescope::read::ThemistoGrouped(telescope::get_mode(args.themisto_merge_mode), strands, &(*sample)->pseudos);
   } else {
     if (reference->get_n_groupings() > 1) {
       throw std::runtime_error("Using more than one grouping with --read-likelihood is not yet implemented.");
     }
     cxxio::In likelihoods(args.likelihood_file);
-    samples->back()->read_likelihood(reference->get_grouping(0), likelihoods.stream());
+    (*sample)->read_likelihood(reference->get_grouping(0), likelihoods.stream());
   }
-  samples->back()->process_aln(args.bootstrap_mode);
+  (*sample)->process_aln(args.bootstrap_mode);
 
-  log << "  read " << (args.batch_mode ? samples->size() : (*samples)[0]->num_ecs()) << (args.batch_mode ? " samples from the batch" : " unique alignments") << '\n';
+  log << "  read " << (*sample)->num_ecs() << " unique alignments" << '\n';
   log.flush();
 }
 
@@ -107,9 +105,8 @@ void WriteResults(const Arguments &args, const std::unique_ptr<Sample> &sample, 
   // Relative abundances
   if (!args.optimizer.no_fit_model) {
     std::string abundances_outfile(outfile);
-    abundances_outfile = (args.outfile.empty() || !args.batch_mode ? abundances_outfile : abundances_outfile + '/' + sample->cell_name());
     if (!args.outfile.empty()) {
-      abundances_outfile += "_abundances.txt";
+      std::string abundances_outfile = outfile + "_abundances.txt";
       of.open(abundances_outfile);
     }
     if (args.bootstrap_mode) {

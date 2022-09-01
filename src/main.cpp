@@ -89,18 +89,18 @@ int main (int argc, char *argv[]) {
   omp_set_num_threads(args.optimizer.nr_threads);
 #endif
 
-  std::vector<std::unique_ptr<Sample>> samples;
+  std::unique_ptr<Sample> sample;
   Reference reference;
 
   if (args.bootstrap_mode) {
-    samples.emplace_back(new BootstrapSample(args.seed));
+    sample.reset(new BootstrapSample(args.seed));
   } else {
-    samples.emplace_back(new Sample());
+    sample.reset(new Sample());
   }
 
   try {
     if (rank == 0) // rank 0
-      ReadInput(args, &samples, log.stream(), &reference);
+      ReadInput(args, &sample, log.stream(), &reference);
   } catch (std::exception &e) {
     finalize("Reading the input files failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
     return 1;
@@ -108,19 +108,15 @@ int main (int argc, char *argv[]) {
 
   // Estimate abundances with all groupings that were provided
   uint16_t n_groupings;
-  uint16_t n_samples;
   if (rank == 0) { // rank 0
     n_groupings = reference.get_n_groupings();
-    n_samples = samples.size();
   }
 #if defined(MSWEEP_MPI_SUPPORT) && (MSWEEP_MPI_SUPPORT) == 1
   // Only root process has read in the input.
   MPI_Bcast(&n_groupings, 1, MPI_UINT16_T, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&n_samples, 1, MPI_UINT16_T, 0, MPI_COMM_WORLD);
 #endif
 
   for (uint16_t i = 0; i < n_groupings; ++i) {
-    for (uint16_t j = 0; j < n_samples; ++j) {
       // Send the number of groups from root to all processes
       uint16_t n_groups;
       if (rank == 0) // rank 0
@@ -131,7 +127,7 @@ int main (int argc, char *argv[]) {
 
       log << "Building log-likelihood array" << '\n';
       if (rank == 0) // rank 0
-	ConstructLikelihood(args, reference.get_grouping(i), reference.get_group_indicators(i), samples[j], (i == n_groupings - 1));
+	ConstructLikelihood(args, reference.get_grouping(i), reference.get_group_indicators(i), sample, (i == n_groupings - 1));
 
       // Process the reads accordingly
       if (args.optimizer.no_fit_model == 1) {
@@ -141,14 +137,14 @@ int main (int argc, char *argv[]) {
 	args.optimizer.alphas = std::vector<double>(n_groups, 1.0); // Prior parameters
 
 	// Run estimation
-	samples[j]->ec_probs = rcg_optl(args, samples[j]->ll_mat, samples[j]->log_ec_counts, log);
+	sample->ec_probs = rcg_optl(args, sample->ll_mat, sample->log_ec_counts, log);
 	if (rank == 0) // rank 0
-	  samples[j]->relative_abundances = rcgpar::mixture_components(samples[j]->ec_probs, samples[j]->log_ec_counts);
+	  sample->relative_abundances = rcgpar::mixture_components(sample->ec_probs, sample->log_ec_counts);
 
 	if (args.bootstrap_mode) {
 	  // Bootstrap the ec_counts and estimate from the bootstrapped data
 	  log << "Running estimation with " << args.iters << " bootstrap iterations" << '\n';
-	  BootstrapSample* bs = static_cast<BootstrapSample*>(&(*samples[j]));
+	  BootstrapSample* bs = static_cast<BootstrapSample*>(&(*sample));
 	  if (rank == 0)
 	    bs->init_bootstrap();
 
@@ -168,8 +164,7 @@ int main (int argc, char *argv[]) {
       }
       // Write results to file from the root process
       if (rank == 0)
-	WriteResults(args, samples[j], reference.get_grouping(i), n_groupings, i);
-    }
+	WriteResults(args, sample, reference.get_grouping(i), n_groupings, i);
   }
   finalize("", log);
   return 0;

@@ -11,7 +11,7 @@
 #include "Grouping.hpp"
 
 void ReadInput(const Arguments &args,
-	       std::vector<std::unique_ptr<Sample>> *samples,
+	       std::unique_ptr<Sample> *samples,
 	       std::ostream &log, Reference *reference);
 
 void ConstructLikelihood(const Arguments &args, const Grouping &grouping,

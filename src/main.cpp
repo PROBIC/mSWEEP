@@ -11,6 +11,8 @@
 #include "Sample.hpp"
 #include "Reference.hpp"
 
+#include "Matrix.hpp"
+
 #include "version.h"
 #include "openmp_config.hpp"
 #include "mpi_config.hpp"
@@ -28,18 +30,18 @@ void finalize(const std::string &msg, Log &log, bool abort = false) {
   log.flush();
 }
 
-rcgpar::Matrix<double> rcg_optl(const Arguments &args, const rcgpar::Matrix<double> &ll_mat, const std::vector<double> &log_ec_counts, Log &log) {
+seamat::DenseMatrix<double> rcg_optl(const Arguments &args, const seamat::DenseMatrix<double> &ll_mat, const std::vector<double> &log_ec_counts, Log &log) {
   // Wrapper for calling rcgpar with omp or mpi depending on config
 #if defined(MSWEEP_MPI_SUPPORT) && (MSWEEP_MPI_SUPPORT) == 1
   // MPI parallellization
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   std::ofstream of; // Silence output from ranks > 1 with an empty ofstream
-  const rcgpar::Matrix<double> &ec_probs = rcgpar::rcg_optl_mpi(ll_mat, log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters, (rank == 0 ? log.stream() : of));
+  const seamat::DenseMatrix<double> &ec_probs = rcgpar::rcg_optl_mpi(ll_mat, log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters, (rank == 0 ? log.stream() : of));
 
 #else
   // OpenMP parallelllization
-  const rcgpar::Matrix<double> &ec_probs = rcgpar::rcg_optl_omp(ll_mat, log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters, log.stream());
+  const seamat::DenseMatrix<double> &ec_probs = rcgpar::rcg_optl_omp(ll_mat, log_ec_counts, args.optimizer.alphas, args.optimizer.tolerance, args.optimizer.max_iters, log.stream());
 #endif
   return ec_probs;
 }
@@ -156,7 +158,7 @@ int main (int argc, char *argv[]) {
 	      resampled_log_ec_counts = bs->resample_counts((args.bootstrap_count == 0 ? bs->counts_total : args.bootstrap_count));
 
 	    // Estimate with the bootstrapped counts
-	    const rcgpar::Matrix<double> &bootstrapped_ec_probs = rcg_optl(args, bs->ll_mat, resampled_log_ec_counts, log);
+	    const seamat::DenseMatrix<double> &bootstrapped_ec_probs = rcg_optl(args, bs->ll_mat, resampled_log_ec_counts, log);
 	    if (rank == 0)
 	      bs->bootstrap_results.emplace_back(rcgpar::mixture_components(bootstrapped_ec_probs, resampled_log_ec_counts));
 	  }
@@ -167,5 +169,6 @@ int main (int argc, char *argv[]) {
 	WriteResults(args, sample, reference.get_grouping(i), n_groupings, i);
   }
   finalize("", log);
+  sample.release();
   return 0;
 }

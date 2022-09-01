@@ -22,6 +22,11 @@ if(CMAKE_BUILD_TYPE MATCHES Release)
   endif()
 endif()
 
+## Seamat
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/seamat)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/seamat/include/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/seamat/external/BitMagic-7.12.3/src/)
+
 ## Check dependencies
 find_package(OpenMP)
 if (OPENMP_FOUND)

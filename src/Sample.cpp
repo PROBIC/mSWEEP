@@ -150,5 +150,5 @@ void Sample::read_likelihood(const Grouping &grouping, std::istream &infile) {
   } else {
     throw std::runtime_error("Could not read from the likelihoods file.");
   }
-  this->ll_mat = rcgpar::Matrix<double>(likelihoods);
+  this->ll_mat = seamat::DenseMatrix<double>(likelihoods);
 }

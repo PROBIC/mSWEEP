@@ -1,6 +1,7 @@
 #include "likelihood.hpp"
 
 #include "rcgpar.hpp"
+#include "Matrix.hpp"
 
 #include <vector>
 #include <cmath>
@@ -17,7 +18,7 @@ inline double ldbb_scaled(uint16_t k, uint16_t n, double alpha, double beta) {
   return (log_bin_coeff(n, k) + lbeta(k + alpha, n - k + beta) - lbeta(n + alpha, beta));
 }
 
-void precalc_lls(const Grouping &grouping, const double bb_constants[2], rcgpar::Matrix<double> &ll_mat) {
+void precalc_lls(const Grouping &grouping, const double bb_constants[2], seamat::DenseMatrix<double> &ll_mat) {
   const std::vector<std::array<double, 2>> &bb_params = grouping.bb_parameters(bb_constants);
   uint32_t n_groups = grouping.get_n_groups();
 
@@ -38,7 +39,7 @@ void precalc_lls(const Grouping &grouping, const double bb_constants[2], rcgpar:
 void likelihood_array_mat(const Grouping &grouping, const std::vector<uint32_t> &group_indicators, const double bb_constants[2], Sample &sample) {
   uint32_t num_ecs = sample.num_ecs();
   uint16_t n_groups = grouping.get_n_groups();
-  rcgpar::Matrix<double> precalc_lls_mat;
+  seamat::DenseMatrix<double> precalc_lls_mat;
   precalc_lls(grouping, bb_constants, precalc_lls_mat);
   sample.ll_mat.resize(n_groups, num_ecs, -4.60517);
 

@@ -21,8 +21,8 @@ private:
 public:
   uint32_t counts_total;
 
-  rcgpar::Matrix<double> ll_mat;
-  rcgpar::Matrix<double> ec_probs;
+  seamat::DenseMatrix<double> ll_mat;
+  seamat::DenseMatrix<double> ec_probs;
   std::vector<double> log_ec_counts;
   std::vector<double> relative_abundances;
 

@@ -43,10 +43,15 @@ void likelihood_array_mat(const Grouping &grouping, const std::vector<uint32_t> 
   precalc_lls(grouping, bb_constants, precalc_lls_mat);
   sample.ll_mat.resize(n_groups, num_ecs, -4.60517);
 
-#pragma omp parallel for schedule(static)
-  for (unsigned j = 0; j < num_ecs; ++j) {
-    for (unsigned short i = 0; i < n_groups; ++i) {
-      sample.ll_mat(i, j) = precalc_lls_mat(i, sample.pseudos.get_group_count(j, i));
-    }
-  }
+  seamat::DenseMatrix<uint16_t> counts(sample.pseudos.get_ec_group_counts(), num_ecs, n_groups);
+  // TODO: fix MPI distribution for indexmatrix
+  seamat::IndexMatrix<double, uint16_t> lls(precalc_lls_mat, counts.transpose(), true);
+
+// #pragma omp parallel for schedule(static)
+//   for (unsigned j = 0; j < num_ecs; ++j) {
+//     for (unsigned short i = 0; i < n_groups; ++i) {
+//       sample.ll_mat(i, j) = precalc_lls_mat(i, sample.pseudos.get_group_count(j, i));
+//     }
+//   }
+  sample.ll_mat = lls;
 }

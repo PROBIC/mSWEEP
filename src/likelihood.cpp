@@ -47,11 +47,6 @@ void likelihood_array_mat(const Grouping &grouping, const std::vector<uint32_t> 
   // TODO: fix MPI distribution for indexmatrix
   seamat::IndexMatrix<double, uint16_t> lls(precalc_lls_mat, counts.transpose(), true);
 
-// #pragma omp parallel for schedule(static)
-//   for (unsigned j = 0; j < num_ecs; ++j) {
-//     for (unsigned short i = 0; i < n_groups; ++i) {
-//       sample.ll_mat(i, j) = precalc_lls_mat(i, sample.pseudos.get_group_count(j, i));
-//     }
-//   }
+  sample.pseudos.free_counts();
   sample.ll_mat = lls;
 }

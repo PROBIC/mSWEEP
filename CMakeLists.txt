@@ -22,11 +22,6 @@ if(CMAKE_BUILD_TYPE MATCHES Release)
   endif()
 endif()
 
-## Seamat
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/seamat)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/seamat/include/)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/seamat/external/BitMagic-7.12.3/src/)
-
 ## Check dependencies
 find_package(OpenMP)
 if (OPENMP_FOUND)
@@ -37,7 +32,7 @@ if (OPENMP_FOUND)
 else()
   set(MSWEEP_OPENMP_SUPPORT 0)
 endif()
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ### MPI
@@ -218,6 +213,30 @@ else()
 endif()
 include_directories(${CMAKE_TELESCOPE_HEADERS} ${CMAKE_BITMAGIC_HEADERS})
 
+## seamat
+if (DEFINED CMAKE_SEAMAT_HEADERS)
+  message(STATUS "seamat headers provided in: ${CMAKE_SEAMAT_HEADERS}")
+else()
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-seamat.txt.in ${CMAKE_BINARY_DIR}/external/seamat-download/CMakeLists.txt)
+  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/seamat-download )
+  if(result)
+    message(FATAL_ERROR "CMake step for seamat failed: ${result}")
+  endif()
+  execute_process(COMMAND ${CMAKE_COMMAND} --build .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/seamat-download )
+  if(result)
+    message(FATAL_ERROR "Build step for seamat failed: ${result}")
+  endif()
+  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/external/seamat
+                   ${CMAKE_CURRENT_BINARY_DIR}/external/seamat/build)
+  target_link_libraries(mSWEEP rcgomp)
+  set(CMAKE_SEAMAT_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/seamat/include)
+endif()
+include_directories(${CMAKE_SEAMAT_HEADERS})
+
 ## rcgpar
 if (DEFINED CMAKE_RCGPAR_LIBRARY AND DEFINED CMAKE_RCGPAR_HEADERS)
   find_library(RCGPAR NAMES rcgpar HINTS ${CMAKE_RCGPAR_LIBRARY})
@@ -242,6 +261,10 @@ else()
   set(CMAKE_RCGPAR_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/rcgpar/include)
 endif()
 include_directories(${CMAKE_RCGPAR_HEADERS})
+
+## BitMagic
+set(CMAKE_BITMAGIC_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/external/BitMagic-7.12.3/src)
+include_directories(${CMAKE_BITMAGIC_HEADERS})
 
 include_directories(${CMAKE_SOURCE_DIR}/include
 ${CMAKE_SOURCE_DIR}/external ${CMAKE_SOURCE_DIR}/include/tools

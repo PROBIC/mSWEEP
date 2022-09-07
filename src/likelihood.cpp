@@ -41,12 +41,7 @@ void likelihood_array_mat(const Grouping &grouping, const std::vector<uint32_t> 
   uint16_t n_groups = grouping.get_n_groups();
   seamat::DenseMatrix<double> precalc_lls_mat;
   precalc_lls(grouping, bb_constants, precalc_lls_mat);
-  sample.ll_mat.resize(n_groups, num_ecs, -4.60517);
 
-  seamat::DenseMatrix<uint16_t> counts(sample.pseudos.get_ec_group_counts(), num_ecs, n_groups);
-  // TODO: fix MPI distribution for indexmatrix
-  seamat::IndexMatrix<double, uint16_t> lls(precalc_lls_mat, counts.transpose(), true);
-
-  sample.pseudos.free_counts();
-  sample.ll_mat = lls;
+  sample.ll_mat = seamat::IndexMatrix<double, uint16_t>(precalc_lls_mat, sample.pseudos.get_group_counts(), n_groups, num_ecs);
+  sample.pseudos.clear_counts();
 }

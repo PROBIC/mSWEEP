@@ -25,15 +25,15 @@ void Sample::process_aln(const bool bootstrap_mode) {
   }
 }
 
-std::vector<uint16_t> Sample::group_counts(const std::vector<uint32_t> indicators,
-					   const uint32_t ec_id, const uint32_t n_groups) const {
-  std::vector<uint16_t> read_hitcounts(n_groups);
-  uint32_t m_num_refs = this->pseudos.n_targets();
-  for (uint32_t j = 0; j < m_num_refs; ++j) {
-    read_hitcounts[indicators[j]] += pseudos(ec_id, j);
-  }
-  return read_hitcounts;
-}
+// std::vector<uint16_t> Sample::group_counts(const std::vector<uint32_t> indicators,
+// 					   const uint32_t ec_id, const uint32_t n_groups) const {
+//   std::vector<uint16_t> read_hitcounts(n_groups);
+//   uint32_t m_num_refs = this->pseudos.n_targets();
+//   for (uint32_t j = 0; j < m_num_refs; ++j) {
+//     read_hitcounts[indicators[j]] += pseudos(ec_id, j);
+//   }
+//   return read_hitcounts;
+// }
 
 void Sample::write_probabilities(const std::vector<std::string> &cluster_indicators_to_string,
 				 std::ostream &of) const {
@@ -45,7 +45,7 @@ void Sample::write_probabilities(const std::vector<std::string> &cluster_indicat
       of << (i < this->ec_probs.get_rows() - 1 ? ',' : '\n');
     }
     for (uint32_t i = 0; i < this->ec_probs.get_cols(); ++i) {
-      of << pseudos.ec_ids[i] << ',';
+      of << i << ',';
       for (uint32_t j = 0; j < this->ec_probs.get_rows(); ++j) {
 	of << std::exp(this->ec_probs(j, i));
 	of << (j < this->ec_probs.get_rows() - 1 ? ',' : '\n');
@@ -130,7 +130,6 @@ void Sample::read_likelihood(const Grouping &grouping, std::istream &infile) {
     std::string newline;
     uint32_t line_nr = 0;
     while (std::getline(infile, newline)) {
-      this->pseudos.ec_ids.emplace_back(line_nr);
       ++line_nr;
       std::string part;
       std::stringstream partition(newline);
@@ -150,5 +149,5 @@ void Sample::read_likelihood(const Grouping &grouping, std::istream &infile) {
   } else {
     throw std::runtime_error("Could not read from the likelihoods file.");
   }
-  this->ll_mat = seamat::DenseMatrix<double>(likelihoods);
+  //this->ll_mat = seamat::DenseMatrix<double>(likelihoods);
 }

@@ -35,23 +35,20 @@ void ReadGroupIndicators(const Arguments &args, Reference *reference) {
   }
 }
 
-void ReadPseudoalignments(const Arguments &args, const Reference &reference, telescope::GroupedAlignment *alignment) {
+void ReadPseudoalignments(const Arguments &args, const Reference &reference, std::unique_ptr<Sample> &sample) {
+  sample.reset(new Sample(reference)); // For some reason the sample needs to be reset here ??
   VerifyThemistoIndex(args.themisto_index_path, reference);
   cxxio::In forward_strand(args.tinfile1);
   cxxio::In reverse_strand(args.tinfile2);
   std::vector<std::istream*> strands = { &forward_strand.stream(), &reverse_strand.stream() };
 
-  // TODO implement for multiple groupings
-  alignment->resize(reference.get_n_refs(), reference.get_grouping(0).get_n_groups());
-  alignment->reset_group_indicators(reference.get_group_indicators(0));
-
   if (args.compact_alignments) {
-    alignment->set_parse_from_buffered();
+    sample->pseudos.set_parse_from_buffered();
   }
-  telescope::read::ThemistoGrouped(telescope::get_mode(args.themisto_merge_mode), strands, alignment);
+  telescope::read::ThemistoGrouped(telescope::get_mode(args.themisto_merge_mode), strands, &sample->pseudos);
 }
 
-void ReadLikelihoodFromFile(const Arguments &args, const Reference &reference, std::ostream &log, Sample *sample) {
+void ReadLikelihoodFromFile(const Arguments &args, const Reference &reference, std::ostream &log, const std::unique_ptr<Sample> &sample) {
   log << "  reading likelihoods from file" << '\n';
   if (reference.get_n_groupings() > 1) {
     throw std::runtime_error("Using more than one grouping with --read-likelihood is not yet implemented.");
@@ -66,7 +63,7 @@ void ConstructLikelihood(const Arguments &args, const Grouping &grouping, const 
   }
   if (free_ec_counts) {
     // Free memory used by the configs after all likelihood matrices are built.
-    sample->pseudos.clear_configs();
+    //    sample->pseudos.clear_configs();
   }
 }
 

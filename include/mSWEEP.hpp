@@ -14,9 +14,9 @@ void ReadGroupIndicators(const Arguments &args, Reference *reference);
 
 void ReadPseudoalignments(const Arguments &args,
 			  const Reference &reference,
-			  telescope::GroupedAlignment *alignment);
+			  std::unique_ptr<Sample> &sample);
 
-void ReadLikelihoodFromFile(const Arguments &args, const Reference &reference, std::ostream &log, Sample *sample);
+void ReadLikelihoodFromFile(const Arguments &args, const Reference &reference, std::ostream &log, const std::unique_ptr<Sample> &sample);
 
 void ConstructLikelihood(const Arguments &args, const Grouping &grouping,
 			 const std::vector<uint32_t> &group_indicators,

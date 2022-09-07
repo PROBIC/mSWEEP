@@ -17,6 +17,16 @@
 #include "openmp_config.hpp"
 #include "mpi_config.hpp"
 
+#define MSWEEP_OPENMP_SUPPORT 1
+
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
+#include <omp.h>
+#include <algorithm>
+#pragma omp declare reduction(vec_double_plus : std::vector<double> :	\
+                              std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<double>())) \
+                    initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
+#endif
+
 void finalize(const std::string &msg, Log &log, bool abort = false) {
   log << msg;
   if (abort != 0)  {
@@ -96,7 +106,7 @@ int main (int argc, char *argv[]) {
   try {
     if (rank == 0) { // Only root reads in data
       log << "  reading group indicators" << '\n';
-      ReadGroupIndicators(args, log.stream(), &reference);
+      ReadGroupIndicators(args, &reference);
       if (reference.get_n_groupings() > 1) {
 	throw std::runtime_error("Using more than one grouping is currently unsupported.");
       }
@@ -112,18 +122,18 @@ int main (int argc, char *argv[]) {
   if (args.bootstrap_mode) {
     sample.reset(new BootstrapSample(args.seed));
   } else {
-    sample.reset(new Sample());
+    sample.reset(new Sample(reference));
   }
 
   try {
       if (!args.read_likelihood_mode) {
 	log << "  reading pseudoalignments" << '\n';
-	ReadPseudoalignments(args, reference, &sample->pseudos);
+	ReadPseudoalignments(args, reference, sample);
 	sample->process_aln(args.bootstrap_mode);
 	log << "  read " << sample->num_ecs() << " unique alignments" << '\n';
 	log.flush();
       } else {
-	ReadLikelihoodFromFile(args, reference, log.stream(), &(*sample));
+	ReadLikelihoodFromFile(args, reference, log.stream(), sample);
       }
   } catch (std::exception &e) {
     finalize("Reading the input files failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
@@ -191,6 +201,6 @@ int main (int argc, char *argv[]) {
 	WriteResults(args, sample, reference.get_grouping(i), n_groupings, i);
   }
   finalize("", log);
-  sample.release();
+  // sample.release();
   return 0;
 }

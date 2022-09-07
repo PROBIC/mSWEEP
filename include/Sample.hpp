@@ -11,6 +11,7 @@
 #include "Matrix.hpp"
 
 #include "Grouping.hpp"
+#include "Reference.hpp"
 #include "parse_arguments.hpp"
 
 class Sample {
@@ -19,15 +20,20 @@ private:
   std::string cell_id;
 
 public:
+  Sample() = default;
+  Sample(const Reference &reference)
+    : pseudos(telescope::GroupedAlignment(reference.get_n_refs(), reference.get_grouping(0).get_n_groups(), reference.get_group_indicators(0)))
+  { };
+
   uint32_t counts_total;
 
-  seamat::DenseMatrix<double> ll_mat;
+  seamat::IndexMatrix<double, uint16_t> ll_mat;
   seamat::DenseMatrix<double> ec_probs;
   std::vector<double> log_ec_counts;
   std::vector<double> relative_abundances;
 
   // Alignments class from telescope
-    telescope::GroupedAlignment pseudos;
+  telescope::GroupedAlignment pseudos;
 
   // Calculate log_ec_counts and counts_total.
   void process_aln(const bool bootstrap_mode);

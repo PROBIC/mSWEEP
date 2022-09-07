@@ -24,8 +24,7 @@ void VerifyThemistoIndex(const std::string &themisto_index_path, const Reference
   }
 }
 
-void ReadGroupIndicators(const Arguments &args, std::ostream &log, Reference *reference) {
-  log << "  reading group indicators" << '\n';
+void ReadGroupIndicators(const Arguments &args, Reference *reference) {
   if (args.fasta_file.empty()) {
     cxxio::In indicators_file(args.indicators_file);
     reference->read_from_file(indicators_file.stream(), args.groups_list_delimiter);
@@ -33,12 +32,6 @@ void ReadGroupIndicators(const Arguments &args, std::ostream &log, Reference *re
     cxxio::In groups_file(args.groups_list_file);
     cxxio::In fasta_file(args.fasta_file);
     reference->match_with_fasta(args.groups_list_delimiter, groups_file.stream(), fasta_file.stream());
-  }
-
-  log << "  read " << reference->get_n_refs() << " group indicators" << '\n';
-
-  if (reference->get_n_groupings() > 1) {
-    throw std::runtime_error("Using more than one grouping is currently unsupported.");
   }
 }
 

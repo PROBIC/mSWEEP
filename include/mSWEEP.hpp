@@ -10,7 +10,7 @@
 #include "Reference.hpp"
 #include "Grouping.hpp"
 
-void ReadGroupIndicators(const Arguments &args, std::ostream &log, Reference *reference);
+void ReadGroupIndicators(const Arguments &args, Reference *reference);
 
 void ReadPseudoalignments(const Arguments &args,
 			  const Reference &reference,

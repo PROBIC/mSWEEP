@@ -91,8 +91,23 @@ int main (int argc, char *argv[]) {
   omp_set_num_threads(args.optimizer.nr_threads);
 #endif
 
-  std::unique_ptr<Sample> sample;
   Reference reference;
+  log << "Reading the input files" << '\n';
+  try {
+    if (rank == 0) { // Only root reads in data
+      log << "  reading group indicators" << '\n';
+      ReadGroupIndicators(args, log.stream(), &reference);
+      if (reference.get_n_groupings() > 1) {
+	throw std::runtime_error("Using more than one grouping is currently unsupported.");
+      }
+      log << "  read " << reference.get_n_refs() << " group indicators" << '\n';
+    }
+  } catch (std::exception &e) {
+    finalize("Reading the input files failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
+    return 1;
+  }
+
+  std::unique_ptr<Sample> sample;
 
   if (args.bootstrap_mode) {
     sample.reset(new BootstrapSample(args.seed));
@@ -101,9 +116,6 @@ int main (int argc, char *argv[]) {
   }
 
   try {
-    log << "Reading the input files" << '\n';
-    if (rank == 0) { // Only root reads in data
-      ReadGroupIndicators(args, log.stream(), &reference);
       if (!args.read_likelihood_mode) {
 	log << "  reading pseudoalignments" << '\n';
 	ReadPseudoalignments(args, reference, &sample->pseudos);
@@ -113,7 +125,6 @@ int main (int argc, char *argv[]) {
       } else {
 	ReadLikelihoodFromFile(args, reference, log.stream(), &(*sample));
       }
-    }
   } catch (std::exception &e) {
     finalize("Reading the input files failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
     return 1;

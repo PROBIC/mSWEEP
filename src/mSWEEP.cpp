@@ -10,20 +10,6 @@
 #include "likelihood.hpp"
 #include "version.h"
 
-void VerifyThemistoIndex(const std::string &themisto_index_path, const Reference &reference) {
-  // TODO merge with reference.verify_themisto_index
-  if (!themisto_index_path.empty()) {
-    try {
-      cxxio::In themisto_index(themisto_index_path + "/coloring-names.txt");
-      reference.verify_themisto_index(themisto_index);
-    } catch (const std::runtime_error &e) {
-      throw std::runtime_error("--themisto-index flag is not supported for Themisto v2.0.0 or newer:\n" + std::string(e.what()));
-    } catch (const std::domain_error &e) {
-      throw e;
-    }
-  }
-}
-
 void ReadGroupIndicators(const Arguments &args, Reference *reference) {
   if (args.fasta_file.empty()) {
     cxxio::In indicators_file(args.indicators_file);
@@ -37,7 +23,6 @@ void ReadGroupIndicators(const Arguments &args, Reference *reference) {
 
 void ReadPseudoalignments(const Arguments &args, const Reference &reference, std::unique_ptr<Sample> &sample) {
   sample.reset(new Sample(reference)); // For some reason the sample needs to be reset here ??
-  VerifyThemistoIndex(args.themisto_index_path, reference);
   cxxio::In forward_strand(args.tinfile1);
   cxxio::In reverse_strand(args.tinfile2);
   std::vector<std::istream*> strands = { &forward_strand.stream(), &reverse_strand.stream() };

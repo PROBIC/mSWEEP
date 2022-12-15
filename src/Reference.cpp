@@ -6,15 +6,6 @@
 
 #include "tools/matchfasta.hpp"
 
-void Reference::verify_themisto_index(cxxio::In &themisto_index) const {
-  uint32_t lines_in_grouping = themisto_index.count_lines<uint32_t>();
-  if (lines_in_grouping > this->n_refs) {
-    throw std::domain_error("pseudoalignment has more reference sequences than the grouping.");
-  } else if (lines_in_grouping < this->n_refs) {
-    throw std::domain_error("grouping has more reference sequences than the pseudoalignment.");
-  }
-}
-
 void Reference::add_sequence(const std::string &indicator_s, const uint16_t grouping_id) {
   this->groupings[grouping_id].add_sequence(indicator_s);
   if (grouping_id == 0) {

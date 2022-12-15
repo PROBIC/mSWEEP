@@ -29,7 +29,6 @@ struct Arguments {
   std::string outfile;
   std::string tinfile1;
   std::string tinfile2;
-  std::string themisto_index_path;
   std::string likelihood_file;
 
   std::string fasta_file;

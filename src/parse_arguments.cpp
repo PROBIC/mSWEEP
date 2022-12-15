@@ -24,8 +24,6 @@ void PrintHelpMessage() {
 	    << "\n"
 	    << "\t--themisto-mode <PairedEndMergeMode>\n"
 	    << "\tHow to merge Themisto pseudoalignments for paired-end reads	(default: intersection).\n"
-    	    << "\t--themisto-index <ThemistoIndex>\n"
-	    << "\tPath to the Themisto index the pseudoalignment was performed against (optional).\n"
 	    << "\n"
     	    << "\t--fasta <ReferenceSequences>\n"
 	    << "\tPath to the reference sequences the pseudoalignment index was constructed from (optional, Themisto v1.2.0 or older only)\n"
@@ -129,17 +127,9 @@ void ParseArguments(int argc, char *argv[], Arguments &args) {
     } else {
       args.themisto_merge_mode = std::string("intersection");
     }
-    if (CmdOptionPresent(argv, argv+argc, "--themisto-index")) {
-      args.themisto_index_path = std::string(GetCmdOption(argv, argv+argc, "--themisto-index"));
-      cxxio::directory_exists(args.themisto_index_path);
-    }
   } else if (CmdOptionPresent(argv, argv+argc, "--read-likelihood")) {
       args.likelihood_file = std::string(GetCmdOption(argv, argv+argc, "--read-likelihood"));
       args.read_likelihood_mode = true;
-      if (CmdOptionPresent(argv, argv+argc, "--themisto-index")) {
-	args.themisto_index_path = std::string(GetCmdOption(argv, argv+argc, "--themisto-index"));
-	cxxio::directory_exists(args.themisto_index_path);
-      }
     } else {
     throw std::runtime_error("infile not found.");
   }

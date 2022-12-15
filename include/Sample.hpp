@@ -27,7 +27,7 @@ public:
 
   uint32_t counts_total;
 
-  seamat::IndexMatrix<double, uint16_t> ll_mat;
+  seamat::IndexMatrix<double, uint16_t, seamat::SparseMatrix, seamat::SparseMatrix> ll_mat;
   seamat::DenseMatrix<double> ec_probs;
   std::vector<double> log_ec_counts;
   std::vector<double> relative_abundances;

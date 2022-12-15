@@ -12,7 +12,6 @@
 
 #include "Grouping.hpp"
 #include "Reference.hpp"
-#include "parse_arguments.hpp"
 
 class Sample {
 private:
@@ -80,12 +79,8 @@ public:
 
   void init_bootstrap();
 
-  // Estimate the mixture components with bootstrap iterations
-  void estimate_abundances(const Arguments &args);
-
   void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string,
 		       const uint16_t iters, std::ostream &of) const;
-  void bootstrap_ec_counts(const Arguments &args);
 
 };
 

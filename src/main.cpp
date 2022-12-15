@@ -174,6 +174,9 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   args.add_long_argument<std::vector<double>>("alphas", "Prior parameters for the relative abundances, supply as comma-separated values (default: all 1.0).");
   args.set_not_required("alphas");
 
+  // Print output or not.
+  args.add_long_argument<bool>("verbose", "Print status messages to cerr.", false);
+
   args.add_long_argument<bool>("help", "Print the help message.", false);
   if (CmdOptionPresent(argv, argv+argc, "--help")) {
       std::cerr << "\n" + args.help() << '\n' << '\n';
@@ -195,23 +198,23 @@ void finalize(const std::string &msg, Log &log, bool abort = false) {
 
 seamat::DenseMatrix<double> rcg_optl(const cxxargs::Arguments &args, const seamat::Matrix<double> &ll_mat, const std::vector<double> &log_ec_counts, const std::vector<double> &prior_counts, Log &log) {
   // Wrapper for calling rcgpar with omp or mpi depending on config
+  std::ofstream of; // Silence output from ranks > 1 with an empty ofstream
 #if defined(MSWEEP_MPI_SUPPORT) && (MSWEEP_MPI_SUPPORT) == 1
   // MPI parallellization
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-  std::ofstream of; // Silence output from ranks > 1 with an empty ofstream
-  const seamat::DenseMatrix<double> &ec_probs = rcgpar::rcg_optl_mpi(ll_mat, log_ec_counts, prior_counts, args.value<double>("tol"), args.value<size_t>("max-iters"), (rank == 0 ? log.stream() : of));
+  const seamat::DenseMatrix<double> &ec_probs = rcgpar::rcg_optl_mpi(ll_mat, log_ec_counts, prior_counts, args.value<double>("tol"), args.value<size_t>("max-iters"), (rank == 0 && args.value<bool>("verbose") ? log.stream() : of));
 
 #else
   // OpenMP parallelllization
-  const seamat::DenseMatrix<double> &ec_probs = rcgpar::rcg_optl_omp(ll_mat, log_ec_counts, prior_counts, args.value<double>("tol"), args.value<size_t>("max-iters"), log.stream());
+  const seamat::DenseMatrix<double> &ec_probs = rcgpar::rcg_optl_omp(ll_mat, log_ec_counts, prior_counts, args.value<double>("tol"), args.value<size_t>("max-iters"), (args.value<bool>("verbose") ? log.stream() : of));
 #endif
   return ec_probs;
 }
 
 int main (int argc, char *argv[]) {
   int rank = 0; // If MPI is not supported then we are always on the root process
-  Log log(std::cerr, true, false);
+  Log log(std::cerr, CmdOptionPresent(argv, argv+argc, "--verbose"), false);
 
 #if defined(MSWEEP_MPI_SUPPORT) && (MSWEEP_MPI_SUPPORT) == 1
   // Initialize MPI

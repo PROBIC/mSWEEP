@@ -24,12 +24,6 @@ public:
   void read_from_file(std::istream &indicator_file, const char delimiter = '\t');
   void match_with_fasta(const char delimiter, std::istream &groups_file, std::istream &fasta_file);
 
-  // Check that the reference has same number of sequences as ...
-  // ... the themisto index.
-  void verify_themisto_index(cxxio::In &themisto_index) const;
-  // ... the kallisto pseudoalignment.
-  void verify_kallisto_alignment(std::istream &kallisto_run_info) const;
-
   // Getters
   const Grouping& get_grouping(const uint16_t grouping_id) const { return this->groupings[grouping_id]; };
   const std::vector<uint32_t>& get_group_indicators(const uint16_t grouping_id) const { return this->groups_indicators[grouping_id]; };

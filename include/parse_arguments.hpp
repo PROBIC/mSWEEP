@@ -4,8 +4,6 @@
 #include <vector>
 #include <string>
 
-#include "KallistoFiles.hpp"
-
 struct OptimizerArgs {
   uint16_t max_iters = 5000;
   double tolerance = 1e-06;
@@ -24,7 +22,6 @@ struct OptimizerArgs {
 struct Arguments {
   OptimizerArgs optimizer;
 
-  KallistoFiles infiles;
   std::string indicators_file;
   std::string outfile;
   std::string tinfile1;

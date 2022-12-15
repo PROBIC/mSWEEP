@@ -233,7 +233,7 @@ int main (int argc, char *argv[]) {
 
   log << "mSWEEP-" << MSWEEP_BUILD_VERSION << " abundance estimation" << '\n';
   if (CmdOptionPresent(argv, argv+argc, "--version")) {
-    log << "mSWEEP-" << MSWEEP_BUILD_VERSION << '\n';
+    log.status(std::string("mSWEEP-") + std::string(MSWEEP_BUILD_VERSION));
   }
   if (CmdOptionPresent(argv, argv+argc, "--cite")) {
     PrintCitationInfo();

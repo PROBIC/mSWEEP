@@ -34,6 +34,10 @@ class Log : public cxxio::Out {
       *this << end_s << " elapsed_time: " << elapsed_seconds.count() << "s\n";
     }
   }
+
+  void status(const std::string &message) {
+    this->stream() << message << std::endl;
+  }
 };
 
 template <typename T>

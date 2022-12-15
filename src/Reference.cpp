@@ -15,40 +15,6 @@ void Reference::verify_themisto_index(cxxio::In &themisto_index) const {
   }
 }
 
-void Reference::verify_kallisto_alignment(std::istream &run_info) const {
-  // Get the number of reference sequences in the pseudoalignment
-  // contained in the 'n_targets' variable in run_info.json file.
-  short unsigned line_nr = 0; // number of reference seqs is on line 2 (kallisto v0.43)
-  if (run_info.good()) {
-    std::string line;
-    while (getline(run_info, line)) {
-      if (line_nr == 0) {
-	++line_nr;
-      } else {
-	std::string part;
-	std::stringstream partition(line);
-	unsigned n_targets = 0;
-	while (getline(partition, part, ':')) {
-	  if (n_targets == 0) {
-	    ++n_targets;
-	  } else {
-	    part.pop_back(); // the number ends in a ','; get rid of it.
-	    unsigned n_targets = std::stoi(part);
-	    if (n_targets > this->n_refs) {
-	      throw std::runtime_error("pseudoalignment has more reference sequences than the grouping.");
-	    } else if (n_targets < this->n_refs) {
-	      throw std::runtime_error("grouping has more reference sequences than the pseudoalignment.");
-	    }
-	    return;
-	  }
-	}
-      }
-    }
-  } else {
-    throw std::runtime_error("Could not read run_info.json found.");
-  }
-}
-
 void Reference::add_sequence(const std::string &indicator_s, const uint16_t grouping_id) {
   this->groupings[grouping_id].add_sequence(indicator_s);
   if (grouping_id == 0) {

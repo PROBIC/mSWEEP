@@ -28,7 +28,6 @@
 #endif
 
 void finalize(const std::string &msg, Log &log, bool abort = false) {
-  log << msg;
   if (abort != 0)  {
 #if defined(MSWEEP_MPI_SUPPORT) && (MSWEEP_MPI_SUPPORT) == 1
     MPI_Abort(MPI_COMM_WORLD, 1);
@@ -40,7 +39,7 @@ void finalize(const std::string &msg, Log &log, bool abort = false) {
   log.flush();
 }
 
-seamat::DenseMatrix<double> rcg_optl(const Arguments &args, const seamat::DenseMatrix<double> &ll_mat, const std::vector<double> &log_ec_counts, Log &log) {
+seamat::DenseMatrix<double> rcg_optl(const Arguments &args, const seamat::Matrix<double> &ll_mat, const std::vector<double> &log_ec_counts, Log &log) {
   // Wrapper for calling rcgpar with omp or mpi depending on config
 #if defined(MSWEEP_MPI_SUPPORT) && (MSWEEP_MPI_SUPPORT) == 1
   // MPI parallellization

@@ -123,10 +123,13 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   // Pseudoalignments are not required if reading likelihood from a file
   args.add_long_argument<std::string>("read-likelihood", "Read in a likelihood matrix that has been written to file with the --write-likelihood toggle.");
   args.set_not_required("read-likelihood");
-  if (CmdOptionPresent(argv, argv+argc, "--read-likelihood")) {
+  if (CmdOptionPresent(argv, argv+argc, "--read-likelihood") || CmdOptionPresent(argv, argv+argc, "--themisto")) {
       args.set_not_required("themisto-1");
       args.set_not_required("themisto-2");
   }
+  // Separate pseudoalignment files are not required if supplied via a list
+  args.add_long_argument<std::vector<std::string>>("themisto", "Single themisto alignment file.");
+  args.set_not_required("themisto");
 
   // How to merge paired alignments
   args.add_long_argument<std::string>("themisto-mode", "How to merge Themisto pseudoalignments for paired-end reads (default: intersection).", "intersection");
@@ -182,6 +185,10 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
       std::cerr << "\n" + args.help() << '\n' << '\n';
   }
   args.parse(argc, argv);
+
+  if (!CmdOptionPresent(argv, argv+argc, "--themisto")) {
+    args.set_val<std::vector<std::string>>("themisto", std::vector<std::string>({ args.value<std::string>("themisto-1"), args.value<std::string>("themisto-2") }));
+  }
 }
 
 void finalize(const std::string &msg, Log &log, bool abort = false) {
@@ -286,8 +293,7 @@ int main (int argc, char *argv[]) {
   try {
     if (!likelihood_mode) {
 	log << "  reading pseudoalignments" << '\n';
-	std::vector<std::string> input_paths = { args.value<std::string>("themisto-1"), args.value<std::string>("themisto-2") };
-	ReadPseudoalignments(input_paths, args.value<std::string>("themisto-mode"), args.value<bool>("read-compact"), reference, sample);
+	ReadPseudoalignments(args.value<std::vector<std::string>>("themisto"), args.value<std::string>("themisto-mode"), args.value<bool>("read-compact"), reference, sample);
 	sample->process_aln(bootstrap_mode);
 	log << "  read " << sample->num_ecs() << " unique alignments" << '\n';
 	log.flush();

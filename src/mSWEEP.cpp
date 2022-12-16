@@ -17,10 +17,14 @@ void ReadGroupIndicators(const std::string &indicators_path, Reference *referenc
 
 void ReadPseudoalignments(const std::vector<std::string> &alignment_paths, const std::string &themisto_merge_mode, const bool compact_alignments, const Reference &reference, std::unique_ptr<Sample> &sample) {
   sample.reset(new Sample(reference)); // For some reason the sample needs to be reset here ??
-  // TODO need to update the telescope function to use smart pointers.
-  cxxio::In forward_strand(alignment_paths[0]);
-  cxxio::In reverse_strand(alignment_paths[1]);
-  std::vector<std::istream*> strands = { &forward_strand.stream(), &reverse_strand.stream() };
+  size_t n_files = alignment_paths.size();
+  std::vector<cxxio::In> infiles;
+  infiles.reserve(n_files);
+  std::vector<std::istream*> strands(n_files);
+  for (size_t i = 0; i < n_files; ++i) {
+    infiles.emplace_back(cxxio::In(alignment_paths[i]));
+    strands[i] = &infiles[i].stream();
+  }
 
   if (compact_alignments) {
     sample->pseudos.set_parse_from_buffered();

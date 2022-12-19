@@ -131,7 +131,12 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   // }
 
   // Run the mGEMS binning algorithm
-  args.add_long_argument<bool>("bin-reads", "Run the mGEMS binning algorithm and write bins to the directory `-o` points to (default: false).\n\nOutput options:", false);
+  args.add_long_argument<bool>("bin-reads", "Run the mGEMS binning algorithm and write bins to the directory `-o` points to (default: false).", false);
+  args.add_long_argument<std::vector<std::string>>("target-groups", "Only extract these groups, supply as comma separated list (default: extract all groups).");
+  args.set_not_required("target-groups");
+  args.set_not_required("target-groups");
+  args.add_long_argument<double>("min-abundance", "Only extract groups that have a relative abundance higher than this value (default: 0).\n\nOutput options:");
+  args.set_not_required("min-abundance");
 
   // Options for outputting the probability matrix
   args.add_long_argument<bool>("write-probs", "If specified, write the estimated read-to-group probabilities to a file with \"_probs.csv\" suffix (default:false).", false);
@@ -382,19 +387,20 @@ int main (int argc, char *argv[]) {
 
       // Bin the reads if requested
       if (rank == 0 && args.value<bool>("bin-reads")) {
-	std::vector<uint32_t> unassigned;
-	std::vector<std::vector<bool>> assignments_mat(sample->num_ecs(), std::vector<bool>(reference.get_grouping(i).get_n_groups(), false));
-	std::vector<long double> abundances(sample->relative_abundances.size());
-	for (size_t i = 0; i < abundances.size(); ++i) {
-	  abundances[i] = sample->relative_abundances[i];
+	std::vector<std::string> target_names;
+	if (CmdOptionPresent(argv, argv+argc, "--target-groups")) {
+	  target_names = std::move(args.value<std::vector<std::string>>("target-groups"));
+	} else {
+	  target_names = reference.get_grouping(i).get_names();
 	}
-	std::vector<std::string> names(std::move(reference.get_grouping(i).get_names()));
-	std::vector<std::string> target_names(names);
-	const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(sample->pseudos, abundances, (long double)1.0, false, sample->ec_probs, names, &target_names, &unassigned, &assignments_mat);
+	if (CmdOptionPresent(argv, argv+argc, "--min-abundance")) {
+	  mGEMS::FilterTargetGroups(reference.get_grouping(i).get_names(), sample->relative_abundances, args.value<double>("min-abundance"), &target_names);
+	}
+	const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(sample->pseudos, sample->relative_abundances, sample->ec_probs, reference.get_grouping(i).get_names(), &target_names);
 	std::string outfile_dir = args.value<std::string>('o');
 	outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size());
-	for (size_t j = 0; j < n_groups; ++j) {
-	  cxxio::Out of(outfile_dir + '/' + reference.get_grouping(i).get_names()[j] + ".bin");
+	for (size_t j = 0; j < bins.size(); ++j) {
+	  cxxio::Out of(outfile_dir + '/' + target_names[j] + ".bin");
 	  mGEMS::WriteBin(bins[j], of.stream());
 	}
       }

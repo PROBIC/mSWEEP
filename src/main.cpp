@@ -107,7 +107,7 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   args.add_long_argument<bool>("verbose", "Print status messages to cerr.", false);
   args.add_long_argument<bool>("version", "Print mSWEEP version.", false);
   args.add_long_argument<bool>("cite", "Print citation information.", false);
-  args.add_long_argument<bool>("help", "Print the help message.\n\nPseudoalignment files (required: -1 and -2, or only -x):", false);
+  args.add_long_argument<bool>("help", "Print the help message.\n\nPseudoalignment files (required: -1 and -2, or only -x; will try to read from cin if none are given):", false);
 
   // Pseudoalignment files
   args.add_long_argument<std::string>("themisto-1", "Pseudoalignment results from Themisto for the 1st strand of paired-end reads.");
@@ -116,6 +116,8 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   // Separate pseudoalignment files are not required if supplied via a list
   args.add_long_argument<std::vector<std::string>>("themisto", "Single themisto alignment file or a comma separated list of several files.\n\nGroup indicators (required):");
   args.set_not_required("themisto");
+  args.set_not_required("themisto-1");
+  args.set_not_required("themisto-2");
 
   // Cluster indicators
   args.add_short_argument<std::string>('i', "Group indicators for the pseudoalignment reference.\n\nOutput prefix:");
@@ -157,10 +159,6 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   // Pseudoalignments are not required if reading likelihood from a file
   args.add_long_argument<std::string>("read-likelihood", "Path to a precomputed likelihood file written with the --write-likelihood toggle. Can't be used with --bin-reads.\n\nEstimation options:");
   args.set_not_required("read-likelihood");
-  if (CmdOptionPresent(argv, argv+argc, "--read-likelihood") || CmdOptionPresent(argv, argv+argc, "--themisto")) {
-      args.set_not_required("themisto-1");
-      args.set_not_required("themisto-2");
-  }
 
   // Number of threads for parallel estimation
   args.add_short_argument<size_t>('t', "How many threads to use in abundance estimation (default: 1).", (size_t)1);
@@ -193,7 +191,7 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   }
   args.parse(argc, argv);
 
-  if (!CmdOptionPresent(argv, argv+argc, "--themisto")) {
+  if (!CmdOptionPresent(argv, argv+argc, "--themisto") && CmdOptionPresent(argv, argv+argc, "--themisto-1") && CmdOptionPresent(argv, argv+argc, "--themisto-2")) {
     args.set_val<std::vector<std::string>>("themisto", std::vector<std::string>({ args.value<std::string>("themisto-1"), args.value<std::string>("themisto-2") }));
   }
 }
@@ -398,7 +396,7 @@ int main (int argc, char *argv[]) {
 	}
 	const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(sample->pseudos, sample->relative_abundances, sample->ec_probs, reference.get_grouping(i).get_names(), &target_names);
 	std::string outfile_dir = args.value<std::string>('o');
-	outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size());
+	outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size()); // TODO check that path contains a /
 	for (size_t j = 0; j < bins.size(); ++j) {
 	  cxxio::Out of(outfile_dir + '/' + target_names[j] + ".bin");
 	  mGEMS::WriteBin(bins[j], of.stream());

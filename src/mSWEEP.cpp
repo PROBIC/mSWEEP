@@ -21,11 +21,14 @@ void ReadPseudoalignments(const std::vector<std::string> &alignment_paths, const
   std::vector<cxxio::In> infiles;
   infiles.reserve(n_files);
   std::vector<std::istream*> strands(n_files);
-  for (size_t i = 0; i < n_files; ++i) {
-    infiles.emplace_back(cxxio::In(alignment_paths[i]));
-    strands[i] = &infiles[i].stream();
+  if (n_files > 0) {
+    for (size_t i = 0; i < n_files; ++i) {
+      infiles.emplace_back(cxxio::In(alignment_paths[i]));
+      strands[i] = &infiles[i].stream();
+    }
+  } else {
+    strands.emplace_back(&std::cin);
   }
-
   if (compact_alignments) {
     sample->pseudos.set_parse_from_buffered();
   }

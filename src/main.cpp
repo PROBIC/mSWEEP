@@ -103,43 +103,25 @@ bool CmdOptionPresent(char **begin, char **end, const std::string &option) {
 }
 
 void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
-  // Options for outputting the probability matrix
-  args.add_long_argument<bool>("write-probs", "If specified, write the read equivalence class probabilities in a .csv matrix.", false);
-  args.add_long_argument<bool>("gzip-probs", "Gzip the .csv matrix output from --write-probs and the likelihoods from --write-likelihood or --write-likelihood-bitseq.", false);
-  args.add_long_argument<bool>("print-probs", "Print the read equivalence class probabilities to cout.", false);
-
-  // Write likelihood or not
-  args.add_long_argument<bool>("write-likelihood", "Write the likelihood matrix to a file if -o option is specified, print to cout if -o is not.", false);
-  args.add_long_argument<bool>("write-likelihood-bitseq", "Write the likelihoods in a format can be parsed by BitSeq's (https://github.com/bitseq/bitseq) functions.", false);
-
-  // Skip running the optimizer (useful for just writing the likelihood matrix)
-  args.add_long_argument<bool>("no-fit-model", "Skip fitting the model entirely. Useful if only the likelihood matrix is required.", false);
-
-  // Alignments have been compressed with alignment-writer
-  args.add_long_argument<bool>("read-compact", "Input alignments are in compact format.", false);
+  // Print output or not.
+  args.add_long_argument<bool>("verbose", "Print status messages to cerr.", false);
+  args.add_long_argument<bool>("version", "Print mSWEEP version.", false);
+  args.add_long_argument<bool>("cite", "Print citation information.", false);
+  args.add_long_argument<bool>("help", "Print the help message.\n\nPseudoalignment files (required: -1 and -2, or only -x):", false);
 
   // Pseudoalignment files
   args.add_long_argument<std::string>("themisto-1", "Pseudoalignment results from Themisto for the 1st strand of paired-end reads.");
   args.add_long_argument<std::string>("themisto-2", "Pseudoalignment results from Themisto for the 2nd strand of paired-end reads.");
-  // Pseudoalignments are not required if reading likelihood from a file
-  args.add_long_argument<std::string>("read-likelihood", "Read in a likelihood matrix that has been written to file with the --write-likelihood toggle.");
-  args.set_not_required("read-likelihood");
-  if (CmdOptionPresent(argv, argv+argc, "--read-likelihood") || CmdOptionPresent(argv, argv+argc, "--themisto")) {
-      args.set_not_required("themisto-1");
-      args.set_not_required("themisto-2");
-  }
+
   // Separate pseudoalignment files are not required if supplied via a list
-  args.add_long_argument<std::vector<std::string>>("themisto", "Single themisto alignment file.");
+  args.add_long_argument<std::vector<std::string>>("themisto", "Single themisto alignment file or a comma separated list of several files.\n\nGroup indicators (required):");
   args.set_not_required("themisto");
 
-  // How to merge paired alignments
-  args.add_long_argument<std::string>("themisto-mode", "How to merge Themisto pseudoalignments for paired-end reads (default: intersection).", "intersection");
-
   // Cluster indicators
-  args.add_short_argument<std::string>('i', "Group identifiers file.");
+  args.add_short_argument<std::string>('i', "Group indicators for the pseudoalignment reference.\n\nOutput prefix:");
 
   // Output prefix
-  args.add_short_argument<std::string>('o', "Prefix for output files written from mSWEEP.", "");
+  args.add_short_argument<std::string>('o', "Prefix for output files written from mSWEEP (default: print to cout).\n\nBinning options:", "");
   // TODO: check that the directory exists (outside of this function) using the following code:
   //   args.outfile = std::string(GetCmdOption(argv, argv+argc, "-o"));
   // if (args.outfile.find("/") != std::string::npos) {
@@ -148,43 +130,59 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   //   cxxio::directory_exists(outfile_dir);
   // }
 
-  // Number of iterations to run bootstrapping for
-  args.add_long_argument<size_t>("iters", "Number of times to rerun estimation with bootstrapped alignments.", (size_t)1);
+  // Run the mGEMS binning algorithm
+  args.add_long_argument<bool>("bin-reads", "Run the mGEMS binning algorithm and write bins to the directory `-o` points to (default: false).\n\nOutput options:", false);
 
+  // Options for outputting the probability matrix
+  args.add_long_argument<bool>("write-probs", "If specified, write the estimated read-to-group probabilities to a file with \"_probs.csv\" suffix (default:false).", false);
+  args.add_long_argument<bool>("print-probs", "Print the read equivalence class probabilities to cout even if `-o` is given (default: false).", false);
+
+  // Write likelihood or not
+  args.add_long_argument<bool>("write-likelihood", "Write the internal likelihood matrix to a file with \"_likelihoods.txt\" suffix (default: false).", false);
+  args.add_long_argument<bool>("write-likelihood-bitseq", "Write the likelihoods in a format can be parsed by BitSeq's (https://github.com/bitseq/bitseq) functions (default: false).", false);
+
+  // Toggle compression
+  args.add_long_argument<bool>("gzip-probs", "Compress the output from --write-probs, --write-likelihood, or --write-likelihood-bitseq with zlib (default: false).\n\nInput options:", false);
+
+  // Alignments have been compressed with alignment-writer
+  args.add_long_argument<bool>("read-compact", "Pseudoalignment files have been compressed with alignment-writer (https://github.com/tmaklin/alignment-writer; default: false).", false);
+  // How to merge paired alignments
+  args.add_long_argument<std::string>("themisto-mode", "How to merge pseudoalignments for paired-end reads (intersection, union, or unpaired; default: intersection).", "intersection");
+
+  // Pseudoalignments are not required if reading likelihood from a file
+  args.add_long_argument<std::string>("read-likelihood", "Path to a precomputed likelihood file written with the --write-likelihood toggle. Can't be used with --bin-reads.\n\nEstimation options:");
+  args.set_not_required("read-likelihood");
+  if (CmdOptionPresent(argv, argv+argc, "--read-likelihood") || CmdOptionPresent(argv, argv+argc, "--themisto")) {
+      args.set_not_required("themisto-1");
+      args.set_not_required("themisto-2");
+  }
+
+  // Number of threads for parallel estimation
+  args.add_short_argument<size_t>('t', "How many threads to use in abundance estimation (default: 1).", (size_t)1);
+  // Skip running the optimizer (useful for just writing the likelihood matrix)
+  args.add_long_argument<bool>("no-fit-model", "Do not estimate the abundances. Useful if only the likelihood matrix is required (default: false).", false);
+  // Maximum iterations to run the optimizer for
+  args.add_long_argument<size_t>("max-iters", "Maximum number of iterations to run the abundance estimation optimizer for (default: 5000).", (size_t)5000);
+  // Tolerance for abundance estimation convergence
+  args.add_long_argument<double>("tol", "Optimization terminates when the bound changes by less than the given tolerance (default: 0.000001).\n\nBootstrapping options:", (double)0.000001);
+
+  // Number of iterations to run bootstrapping for
+  args.add_long_argument<size_t>("iters", "Number of times to rerun estimation with bootstrapped alignments (default: 0).", (size_t)1);
   // Seed for bootstrapping
   args.add_long_argument<size_t>("seed", "Seed for the random generator used in bootstrapping (default: random).");
   args.set_not_required("seed");
-
   // How many reads to resample when bootstrapping
-  args.add_long_argument<size_t>("bootstrap-count", "How many reads to resample when bootstrapping (default: number of reads)");
+  args.add_long_argument<size_t>("bootstrap-count", "How many pseudoalignments to resample when bootstrapping (default: number of reads).\n\nLikelihood options:");
   args.set_not_required("bootstrap-count");
 
-  // Number of threads for parallel estimation
-  args.add_short_argument<size_t>('t', "How many threads to use in abundance estimation.", (size_t)1);
-
-  // Tolerance for abundance estimation convergence
-  args.add_long_argument<double>("tol", "Optimization has converged when the bound changes less than the given tolerance.", (double)0.000001);
-
-  // Maximum iterations to run the optimizer for
-  args.add_long_argument<size_t>("max-iters", "Maximum number of iterations to run the gradient optimizer.", (size_t)5000);
-
   // Mean fraction of aligned sequences for the likelihood
-  args.add_short_argument<double>('q', "Tuning parameter for the likelihood (mean seqs read should align against if from group).", 0.65);
-
+  args.add_short_argument<double>('q', "Mean for the beta-binomial component (default: 0.65).", 0.65);
   // Dispersion term for likelihood
-  args.add_short_argument<double>('e', "Tuning parameter for the likelihood (dispersion term in the beta-binomial part of the likelihood).", 0.01);
-
+  args.add_short_argument<double>('e', "Dispersion term for the beta-binomial component (default: 0.01).", 0.01);
   // Prior parameters for estimation
-  args.add_long_argument<std::vector<double>>("alphas", "Prior parameters for the relative abundances, supply as comma-separated values (default: all 1.0).");
+  args.add_long_argument<std::vector<double>>("alphas", "Prior counts for the relative abundances, supply as comma-separated nonzero values (default: all 1.0).");
   args.set_not_required("alphas");
 
-  // Run the mGEMS binning algorithm
-  args.add_long_argument<bool>("bin-reads", "Also run the mGEMS binning algorithm (default: false).", false);
-
-  // Print output or not.
-  args.add_long_argument<bool>("verbose", "Print status messages to cerr.", false);
-
-  args.add_long_argument<bool>("help", "Print the help message.", false);
   if (CmdOptionPresent(argv, argv+argc, "--help")) {
       std::cerr << "\n" + args.help() << '\n' << '\n';
   }

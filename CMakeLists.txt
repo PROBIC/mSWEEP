@@ -206,9 +206,10 @@ else()
   add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/external/telescope
                    ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/build)
   set_target_properties(telescope PROPERTIES EXCLUDE_FROM_ALL 1)
-  target_link_libraries(mSWEEP libtelescope)
   set(CMAKE_TELESCOPE_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/include)
   set(CMAKE_BITMAGIC_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/external/BitMagic-7.12.3/src)
+  get_property(CMAKE_TELESCOPE_LIBRARY TARGET telescope PROPERTY LOCATION)
+  target_link_libraries(mSWEEP libtelescope)
 endif()
 include_directories(${CMAKE_TELESCOPE_HEADERS} ${CMAKE_BITMAGIC_HEADERS})
 
@@ -264,6 +265,32 @@ include_directories(${CMAKE_RCGPAR_HEADERS})
 ## BitMagic
 set(CMAKE_BITMAGIC_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/external/BitMagic-7.12.3/src)
 include_directories(${CMAKE_BITMAGIC_HEADERS})
+
+## mGEMS
+if (DEFINED CMAKE_MGEMS_LIBRARY AND DEFINED CMAKE_MGEMS_HEADERS)
+  find_library(MGEMS NAMES mgems HINTS ${CMAKE_MGEMS_LIBRARY})
+  target_link_libraries(mSWEEP ${MGEMS})
+else()
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-mGEMS.txt.in ${CMAKE_BINARY_DIR}/external/mGEMS-download/CMakeLists.txt)
+  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/mGEMS-download )
+  if(result)
+    message(FATAL_ERROR "CMake step for libmgems failed: ${result}")
+  endif()
+  execute_process(COMMAND ${CMAKE_COMMAND} --build .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/mGEMS-download )
+  if(result)
+    message(FATAL_ERROR "Build step for libmgems failed: ${result}")
+  endif()
+  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS
+                   ${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS/build)
+  set_target_properties(mGEMS PROPERTIES EXCLUDE_FROM_ALL 1)
+  target_link_libraries(mSWEEP libmgems)
+  set(CMAKE_MGEMS_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS/include)
+endif()
+include_directories(${CMAKE_MGEMS_HEADERS})
 
 include_directories(${CMAKE_SOURCE_DIR}/include
 ${CMAKE_SOURCE_DIR}/external ${CMAKE_SOURCE_DIR}/include/tools

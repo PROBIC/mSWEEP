@@ -383,16 +383,21 @@ int main (int argc, char *argv[]) {
 	WriteResults(args, sample, reference.get_grouping(i), n_groupings, i);
 
       // Bin the reads if requested
-      if (rank == 0 && args.value<bool>("bin")) {
-	cxxio::In probs(std::string(args.value<std::string>('o') + "_probs.csv.gz"));
+      if (rank == 0 && args.value<bool>("bin-reads")) {
 	std::vector<uint32_t> unassigned;
-	std::vector<std::vector<bool>> assignments_mat;
-	const std::vector<std::vector<uint32_t>> &bins = mGEMS::Bin(sample->pseudos, sample->relative_abundances, (long double)1.0, false, probs.stream(), &reference.get_grouping(i).get_names(), &unassigned, &assignments_mat);
-	for (size_t i = 0; i < n_groups; ++i) {
-	  std::string outfile_dir = args.value<std::string>('o');
-	  outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size());
-	  cxxio::Out of(outfile_dir + '/' + reference.get_grouping(i).get_names()[i] + ".bin");
-	  mGEMS::WriteBin(bins[i], of.stream());
+	std::vector<std::vector<bool>> assignments_mat(sample->num_ecs(), std::vector<bool>(reference.get_grouping(i).get_n_groups(), false));
+	std::vector<long double> abundances(sample->relative_abundances.size());
+	for (size_t i = 0; i < abundances.size(); ++i) {
+	  abundances[i] = sample->relative_abundances[i];
+	}
+	std::vector<std::string> names(std::move(reference.get_grouping(i).get_names()));
+	std::vector<std::string> target_names(names);
+	const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(sample->pseudos, abundances, (long double)1.0, false, sample->ec_probs, names, &target_names, &unassigned, &assignments_mat);
+	std::string outfile_dir = args.value<std::string>('o');
+	outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size());
+	for (size_t j = 0; j < n_groups; ++j) {
+	  cxxio::Out of(outfile_dir + '/' + reference.get_grouping(i).get_names()[j] + ".bin");
+	  mGEMS::WriteBin(bins[j], of.stream());
 	}
       }
   }

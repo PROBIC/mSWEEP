@@ -43,5 +43,5 @@ void likelihood_array_mat(const Grouping &grouping, const std::vector<uint32_t> 
   precalc_lls(grouping, bb_constants, precalc_lls_mat);
 
   sample.ll_mat = seamat::IndexMatrix<double, uint16_t, seamat::SparseMatrix, seamat::SparseMatrix>(precalc_lls_mat, sample.pseudos.get_group_counts(), n_groups, num_ecs);
-  sample.pseudos.clear_counts();
+  //sample.pseudos.clear_counts();
 }

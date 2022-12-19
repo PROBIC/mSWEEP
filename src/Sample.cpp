@@ -21,7 +21,7 @@ void Sample::process_aln(const bool bootstrap_mode) {
 
   if (!bootstrap_mode) {
     // EC counts aren't needed when not bootstrapping.
-    this->pseudos.clear_counts();
+    //this->pseudos.clear_counts();
   }
 }
 

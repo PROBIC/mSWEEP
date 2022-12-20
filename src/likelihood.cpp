@@ -28,7 +28,7 @@ void precalc_lls(const Grouping &grouping, const double bb_constants[2], seamat:
   }
 
   ll_mat.resize(n_groups, max_size + 1, -4.60517);
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) shared(ll_mat)
   for (uint32_t i = 0; i < n_groups; ++i) {
     for (uint16_t j = 1; j <= max_size; ++j) {
       ll_mat(i, j) = ldbb_scaled(j, grouping.get_sizes()[i], bb_params[i][0], bb_params[i][1]) - 0.01005034; // log(0.99) = -0.01005034
@@ -42,6 +42,12 @@ void likelihood_array_mat(const Grouping &grouping, const std::vector<uint32_t> 
   seamat::DenseMatrix<double> precalc_lls_mat;
   precalc_lls(grouping, bb_constants, precalc_lls_mat);
 
-  sample.ll_mat = seamat::IndexMatrix<double, uint16_t, seamat::SparseMatrix, seamat::SparseMatrix>(precalc_lls_mat, sample.pseudos.get_group_counts(), n_groups, num_ecs);
+  sample.ll_mat.resize(n_groups, num_ecs, -4.60517);
+#pragma omp parallel for schedule(static) shared(sample, precalc_lls_mat)
+  for (size_t j = 0; j < num_ecs; ++j) {
+    for (size_t i = 0; i < n_groups; ++i) {
+      sample.ll_mat(i, j) = precalc_lls_mat(i, sample.pseudos.get_group_count(i, j));
+    }
+  }
   //sample.pseudos.clear_counts();
 }

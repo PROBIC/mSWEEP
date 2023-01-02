@@ -205,6 +205,8 @@ void finalize(const std::string &msg, Log &log, bool abort = false) {
 #if defined(MSWEEP_MPI_SUPPORT) && (MSWEEP_MPI_SUPPORT) == 1
   MPI_Finalize();
 #endif
+  if (!msg.empty())
+    std::cerr << msg;
   log.flush();
 }
 

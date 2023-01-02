@@ -185,6 +185,30 @@ else()
 endif()
 include_directories("${CMAKE_CXXARGS_HEADERS}")
 
+## alignment-writer
+if (DEFINED CMAKE_ALIGNMENT_WRITER_HEADERS)
+  message(STATUS "alignment-writer headers provided in: ${CMAKE_ALIGNMENT_WRITER_HEADERS}")
+else()
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-alignment-writer.txt.in ${CMAKE_BINARY_DIR}/external/alignment-writer-download/CMakeLists.txt)
+  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/alignment-writer-download )
+  if(result)
+    message(FATAL_ERROR "CMake step for alignment-writer failed: ${result}")
+  endif()
+  execute_process(COMMAND ${CMAKE_COMMAND} --build .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/alignment-writer-download )
+  if(result)
+    message(FATAL_ERROR "Build step for alignment-writer failed: ${result}")
+  endif()
+  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/external/alignment-writer
+                   ${CMAKE_CURRENT_BINARY_DIR}/external/alignment-writer/build)
+  set_target_properties(alignment-writer PROPERTIES EXCLUDE_FROM_ALL 1)
+  set(CMAKE_ALIGNMENT_WRITER_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/alignment-writer/include)
+endif()
+include_directories(${CMAKE_ALIGNMENT_WRITER_HEADERS})
+
 ## telescope
 if (DEFINED CMAKE_TELESCOPE_LIBRARY AND DEFINED CMAKE_TELESCOPE_HEADERS)
   find_library(TELESCOPE NAMES telescope HINTS ${CMAKE_TELESCOPE_LIBRARY})
@@ -209,7 +233,7 @@ else()
   set(CMAKE_TELESCOPE_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/include)
   set(CMAKE_BITMAGIC_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/external/BitMagic-7.12.3/src)
   get_property(CMAKE_TELESCOPE_LIBRARY TARGET telescope PROPERTY LOCATION)
-  target_link_libraries(mSWEEP libtelescope)
+  target_link_libraries(mSWEEP libtelescope libalignmentwriter)
 endif()
 include_directories(${CMAKE_TELESCOPE_HEADERS} ${CMAKE_BITMAGIC_HEADERS})
 

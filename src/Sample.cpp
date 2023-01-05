@@ -9,7 +9,7 @@
 
 void Sample::process_aln(const bool bootstrap_mode) {
   cell_id = "";
-  m_num_ecs = pseudos.compressed_size();
+  m_num_ecs = pseudos.n_ecs();
   log_ec_counts.resize(m_num_ecs, 0.0);
   uint32_t aln_counts_total = 0;
 #pragma omp parallel for schedule(static) reduction(+:aln_counts_total)
@@ -138,7 +138,7 @@ void Sample::read_likelihood(const Grouping &grouping, std::istream &infile) {
       while (std::getline(partition, part, '\t')) {
 	if (ec_count_col) {
 	  uint32_t ec_count = std::stol(part);
-	  this->pseudos.add_counts(ec_count);
+	  this->log_ec_counts.emplace_back(std::log(ec_count));
 	  ec_count_col = false;
 	} else {
 	  likelihoods[group_id].emplace_back(std::stod(part));

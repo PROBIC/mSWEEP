@@ -15,7 +15,7 @@ void ReadGroupIndicators(const std::string &indicators_path, Reference *referenc
   reference->read_from_file(indicators_file.stream(), '\t'); // TODO: take delimiter as argument.
 }
 
-void ReadPseudoalignments(const std::vector<std::string> &alignment_paths, const std::string &themisto_merge_mode, const bool compact_alignments, const Reference &reference, std::unique_ptr<Sample> &sample) {
+void ReadPseudoalignments(const std::vector<std::string> &alignment_paths, const std::string &themisto_merge_mode, const Reference &reference, std::unique_ptr<Sample> &sample) {
   sample.reset(new Sample(reference)); // For some reason the sample needs to be reset here ??
   size_t n_files = alignment_paths.size();
   std::vector<cxxio::In> infiles;

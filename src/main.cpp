@@ -151,8 +151,6 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   // Toggle compression
   args.add_long_argument<bool>("gzip-probs", "Compress the output from --write-probs, --write-likelihood, or --write-likelihood-bitseq with zlib (default: false).\n\nInput options:", false);
 
-  // Alignments have been compressed with alignment-writer
-  args.add_long_argument<bool>("read-compact", "Pseudoalignment files have been compressed with alignment-writer (https://github.com/tmaklin/alignment-writer; default: false).", false);
   // How to merge paired alignments
   args.add_long_argument<std::string>("themisto-mode", "How to merge pseudoalignments for paired-end reads (intersection, union, or unpaired; default: intersection).", "intersection");
 
@@ -300,7 +298,7 @@ int main (int argc, char *argv[]) {
   try {
     if (!likelihood_mode) {
 	log << "  reading pseudoalignments" << '\n';
-	ReadPseudoalignments(args.value<std::vector<std::string>>("themisto"), args.value<std::string>("themisto-mode"), args.value<bool>("read-compact"), reference, sample);
+	ReadPseudoalignments(args.value<std::vector<std::string>>("themisto"), args.value<std::string>("themisto-mode"), reference, sample);
 	sample->process_aln(bootstrap_mode);
 	log << "  read " << sample->num_ecs() << " unique alignments" << '\n';
 	log.flush();

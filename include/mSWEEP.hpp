@@ -14,7 +14,6 @@ void ReadGroupIndicators(const std::string &indicators_path, Reference *referenc
 
 void ReadPseudoalignments(const std::vector<std::string> &alignment_paths,
 			  const std::string &themisto_merge_mode,
-			  const bool compact_alignments,
 			  const Reference &reference,
 			  std::unique_ptr<Sample> &sample);
 

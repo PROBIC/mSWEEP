@@ -32,7 +32,12 @@ void BootstrapSample::init_bootstrap() {
   this->bootstrap_results = std::vector<std::vector<double>>();
 
   // Initialize ec_distribution for bootstrapping
-  ec_distribution = std::discrete_distribution<uint32_t>(pseudos.ec_counts_begin(), pseudos.ec_counts_end());
+  std::vector<uint32_t> weights(this->pseudos.compressed_size());
+#pragma omp parallel for schedule(static)
+  for (size_t i = 0; i < num_ecs(); ++i) {
+    weights[i] = this->pseudos.reads_in_ec(i);
+  }
+  ec_distribution = std::discrete_distribution<uint32_t>(weights.begin(), weights.end());
 }
 
 void BootstrapSample::write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string,

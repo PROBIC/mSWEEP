@@ -19,10 +19,4 @@ void ReadPseudoalignments(const std::vector<std::string> &alignment_paths,
 
 void ReadLikelihoodFromFile(const std::string &likelihood_path, const Reference &reference, std::ostream &log, const std::unique_ptr<Sample> &sample);
 
-void ConstructLikelihood(const double tol,
-			 const double frac_mu,
-			 const Grouping &grouping,
-			 const std::vector<uint32_t> &group_indicators,
-			 const std::unique_ptr<Sample> &sample);
-
 #endif

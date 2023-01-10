@@ -26,7 +26,6 @@ public:
 
   uint32_t counts_total;
 
-  seamat::DenseMatrix<double> ll_mat;
   seamat::DenseMatrix<double> ec_probs;
   std::vector<double> log_ec_counts;
   std::vector<double> relative_abundances;
@@ -45,9 +44,9 @@ public:
   // Write estimated read-reference posterior probabilities (gamma_Z)
   void write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, std::ostream &outfile) const;
   // Write likelihoods
-  void write_likelihood(const uint32_t n_groups, std::ostream &of) const;
+  void write_likelihood(const seamat::DenseMatrix<double> &ll_mat, const uint32_t n_groups, std::ostream &of) const;
   // Write likelihoods in BitSeq-compatible format
-  void write_likelihood_bitseq(const uint32_t n_groups, std::ostream &of) const;
+  void write_likelihood_bitseq(const seamat::DenseMatrix<double> &ll_mat, const uint32_t n_groups, std::ostream &of) const;
 
   // Read in the likelihoods from a file
   void read_likelihood(const Grouping &grouping, std::istream &infile);

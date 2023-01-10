@@ -73,14 +73,14 @@ void Sample::write_abundances(const std::vector<std::string> &cluster_indicators
   }
 }
 
-void Sample::write_likelihood(const uint32_t n_groups, std::ostream &of) const {
+void Sample::write_likelihood(const seamat::DenseMatrix<double> &ll_mat, const uint32_t n_groups, std::ostream &of) const {
   // Write likelihoods to a file
  if (of.good()) {
     for (uint32_t i = 0; i < this->m_num_ecs; ++i){
       uint32_t ec_hit_count = std::round(std::exp(this->log_ec_counts[i]));
       of << ec_hit_count << '\t';
       for (uint32_t j = 0; j < n_groups; ++j) {
-	of << this->ll_mat(j, i);
+	of << ll_mat(j, i);
 	of << (j == n_groups - 1 ? '\n' : '\t');
       }
     }
@@ -90,7 +90,7 @@ void Sample::write_likelihood(const uint32_t n_groups, std::ostream &of) const {
   }
 }
 
-void Sample::write_likelihood_bitseq(const uint32_t n_groups, std::ostream &of) const {
+void Sample::write_likelihood_bitseq(const seamat::DenseMatrix<double> &ll_mat, const uint32_t n_groups, std::ostream &of) const {
   // Write likelihoods to a file
   // *Note*: will write in BitSeq format!
   // Use Sample::write_likelihoods if tab-separated matrix format is needed.
@@ -108,7 +108,7 @@ void Sample::write_likelihood_bitseq(const uint32_t n_groups, std::ostream &of) 
 	of << read_id << ' ';
 	of << n_groups + 1 << ' ';
 	for (uint32_t j = 0; j < n_groups; ++j) {
-	  of << j + 1 << ' ' << this->ll_mat(j, i) << ' ';
+	  of << j + 1 << ' ' << ll_mat(j, i) << ' ';
 	}
 	of << 0 << ' ' << "-10000.00" << '\n';
 	++read_id;

@@ -4,6 +4,6 @@
 #include "Grouping.hpp"
 #include "Sample.hpp"
 
-void likelihood_array_mat(const Grouping &grouping, const std::vector<uint32_t> &group_indicators, const double bb_constants[2], Sample &sample);
+seamat::DenseMatrix<double> likelihood_array_mat(const telescope::GroupedAlignment &pseudos, const Grouping &grouping, const double tol, const double frac_mu);
 
 #endif

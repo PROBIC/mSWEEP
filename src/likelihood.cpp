@@ -36,18 +36,20 @@ void precalc_lls(const Grouping &grouping, const double bb_constants[2], seamat:
   }
 }
 
-void likelihood_array_mat(const Grouping &grouping, const std::vector<uint32_t> &group_indicators, const double bb_constants[2], Sample &sample) {
-  uint32_t num_ecs = sample.num_ecs();
+seamat::DenseMatrix<double> likelihood_array_mat(const telescope::GroupedAlignment &pseudos, const Grouping &grouping, const double tol, const double frac_mu) {
+  uint32_t num_ecs = pseudos.n_ecs();
   uint16_t n_groups = grouping.get_n_groups();
+
   seamat::DenseMatrix<double> precalc_lls_mat;
+  double bb_constants[2] = { tol, frac_mu };
   precalc_lls(grouping, bb_constants, precalc_lls_mat);
 
-  sample.ll_mat.resize(n_groups, num_ecs, -4.60517);
-#pragma omp parallel for schedule(static) shared(sample, precalc_lls_mat)
+  seamat::DenseMatrix<double> log_likelihoods(n_groups, num_ecs, -4.60517);
+#pragma omp parallel for schedule(static) shared(precalc_lls_mat)
   for (size_t j = 0; j < num_ecs; ++j) {
     for (size_t i = 0; i < n_groups; ++i) {
-      sample.ll_mat(i, j) = precalc_lls_mat(i, sample.pseudos.get_group_count(i, j));
+      log_likelihoods(i, j) = precalc_lls_mat(i, pseudos.get_group_count(i, j));
     }
   }
-  //sample.pseudos.clear_counts();
+  return log_likelihoods;
 }

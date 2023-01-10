@@ -16,7 +16,6 @@ void ReadGroupIndicators(const std::string &indicators_path, Reference *referenc
 }
 
 void ReadPseudoalignments(const std::vector<std::string> &alignment_paths, const std::string &themisto_merge_mode, const Reference &reference, std::unique_ptr<Sample> &sample) {
-  sample.reset(new Sample(reference)); // For some reason the sample needs to be reset here ??
   size_t n_files = alignment_paths.size();
   std::vector<cxxio::In> infiles;
   infiles.reserve(n_files);
@@ -40,9 +39,3 @@ void ReadLikelihoodFromFile(const std::string &likelihood_path, const Reference 
   cxxio::In likelihoods(likelihood_path);
   sample->read_likelihood(reference.get_grouping(0), likelihoods.stream());
 }
-
-void ConstructLikelihood(const double tol, const double frac_mu, const Grouping &grouping, const std::vector<uint32_t> &group_indicators, const std::unique_ptr<Sample> &sample) {
-  double bb_params[2] = { tol, frac_mu };
-  likelihood_array_mat(grouping, group_indicators, bb_params, (*sample));
-}
-

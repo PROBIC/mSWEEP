@@ -11,6 +11,7 @@
 #include "mSWEEP.hpp"
 #include "Sample.hpp"
 #include "Reference.hpp"
+#include "likelihood.hpp"
 
 #include "Matrix.hpp"
 
@@ -38,24 +39,6 @@ void WriteResults(const cxxargs::Arguments &args, const std::unique_ptr<Sample> 
   if (n_groupings > 1 && !printing_output) {
     outfile += "_";
     outfile += std::to_string(current_grouping);
-  }
-
-  // Write likelihoods
-  if (args.value<bool>("write-likelihood") || args.value<bool>("write-likelihood-bitseq")) {
-    std::string ll_outfile(outfile);
-    ll_outfile += (args.value<bool>("write-likelihood-bitseq") ? "_bitseq" : "");
-    ll_outfile += "_likelihoods.txt";
-    if (args.value<bool>("gzip-probs")) {
-      ll_outfile += ".gz";
-      of.open_compressed(ll_outfile);
-    } else {
-      of.open(ll_outfile);
-    }
-    if (args.value<bool>("write-likelihood-bitseq")) {
-      sample->write_likelihood_bitseq(grouping.get_n_groups(), of.stream());
-    } else {
-      sample->write_likelihood(grouping.get_n_groups(), of.stream());
-    }
   }
 
   // Relative abundances
@@ -295,21 +278,6 @@ int main (int argc, char *argv[]) {
   }
   bool likelihood_mode = CmdOptionPresent(argv, argv+argc, "--read-likelihood");
 
-  try {
-    if (!likelihood_mode) {
-	log << "  reading pseudoalignments" << '\n';
-	ReadPseudoalignments(args.value<std::vector<std::string>>("themisto"), args.value<std::string>("themisto-mode"), reference, sample);
-	sample->process_aln(bootstrap_mode);
-	log << "  read " << sample->num_ecs() << " unique alignments" << '\n';
-	log.flush();
-    } else {
-      ReadLikelihoodFromFile(args.value<std::string>("read-likelihood"), reference, log.stream(), sample);
-    }
-  } catch (std::exception &e) {
-    finalize("Reading the input files failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
-    return 1;
-  }
-
   // Estimate abundances with all groupings that were provided
   uint16_t n_groupings;
   if (rank == 0) { // rank 0
@@ -329,9 +297,26 @@ int main (int argc, char *argv[]) {
       MPI_Bcast(&n_groups, 1, MPI_UINT16_T, 0, MPI_COMM_WORLD);
 #endif
 
-      log << "Building log-likelihood array" << '\n';
-      if (rank == 0 && !likelihood_mode) // rank 0
-	ConstructLikelihood(args.value<double>('q'), args.value<double>('e'), reference.get_grouping(i), reference.get_group_indicators(i), sample);
+      seamat::DenseMatrix<double> log_likelihoods;
+      try {
+	if (!likelihood_mode) {
+	  log << "  reading pseudoalignments" << '\n';
+	  ReadPseudoalignments(args.value<std::vector<std::string>>("themisto"), args.value<std::string>("themisto-mode"), reference, sample);
+	  sample->process_aln(bootstrap_mode);
+	  log << "  read " << sample->num_ecs() << " unique alignments" << '\n';
+	  log.flush();
+
+	  log << "Building log-likelihood array" << '\n';
+	  if (rank == 0 && !likelihood_mode) // rank 0
+	    log_likelihoods = likelihood_array_mat(sample->pseudos, reference.get_grouping(i), args.value<double>('q'), args.value<double>('e'));
+	  log.flush();
+	} else {
+	  ReadLikelihoodFromFile(args.value<std::string>("read-likelihood"), reference, log.stream(), sample);
+	}
+      } catch (std::exception &e) {
+	finalize("Reading the input files failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
+	return 1;
+      }
 
       // Process the reads accordingly
       if (args.value<bool>("no-fit-model")) {
@@ -350,7 +335,7 @@ int main (int argc, char *argv[]) {
 	}
 
 	// Run estimation
-	sample->ec_probs = rcg_optl(args, sample->ll_mat, sample->log_ec_counts, prior_counts, log);
+	sample->ec_probs = rcg_optl(args, log_likelihoods, sample->log_ec_counts, prior_counts, log);
 	if (rank == 0) // rank 0
 	  sample->relative_abundances = rcgpar::mixture_components(sample->ec_probs, sample->log_ec_counts);
 
@@ -373,15 +358,35 @@ int main (int argc, char *argv[]) {
 	    }
 
 	    // Estimate with the bootstrapped counts
-	    const seamat::DenseMatrix<double> &bootstrapped_ec_probs = rcg_optl(args, bs->ll_mat, resampled_log_ec_counts, prior_counts, log);
+	    const seamat::DenseMatrix<double> &bootstrapped_ec_probs = rcg_optl(args, log_likelihoods, resampled_log_ec_counts, prior_counts, log);
 	    if (rank == 0)
 	      bs->bootstrap_results.emplace_back(rcgpar::mixture_components(bootstrapped_ec_probs, resampled_log_ec_counts));
 	  }
 	}
       }
       // Write results to file from the root process
-      if (rank == 0)
+      if (rank == 0) {
+	// Write likelihoods
+	cxxio::Out of;
+	if (args.value<bool>("write-likelihood") || args.value<bool>("write-likelihood-bitseq")) {
+	  std::string ll_outfile(args.value<std::string>('o'));
+	  ll_outfile += (args.value<bool>("write-likelihood-bitseq") ? "_bitseq" : "");
+	  ll_outfile += "_likelihoods.txt";
+	  if (args.value<bool>("gzip-probs")) {
+	    ll_outfile += ".gz";
+	    of.open_compressed(ll_outfile);
+	  } else {
+	    of.open(ll_outfile);
+	  }
+	  if (args.value<bool>("write-likelihood-bitseq")) {
+	    sample->write_likelihood_bitseq(log_likelihoods, reference.get_grouping(i).get_n_groups(), of.stream());
+	  } else {
+	    sample->write_likelihood(log_likelihoods, reference.get_grouping(i).get_n_groups(), of.stream());
+	  }
+	}
+	of.close();
 	WriteResults(args, sample, reference.get_grouping(i), n_groupings, i);
+      }
 
       // Bin the reads if requested
       if (rank == 0 && args.value<bool>("bin-reads")) {

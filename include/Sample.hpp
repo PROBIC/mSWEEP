@@ -20,9 +20,7 @@ private:
 
 public:
   Sample() = default;
-  Sample(const Reference &reference)
-    : pseudos(telescope::GroupedAlignment(reference.get_n_refs(), reference.get_grouping(0).get_n_groups(), reference.get_group_indicators(0)))
-  { };
+  Sample(const Reference &reference) {}
 
   uint32_t counts_total;
 
@@ -30,11 +28,10 @@ public:
   std::vector<double> log_ec_counts;
   std::vector<double> relative_abundances;
 
-  // Alignments class from telescope
   telescope::GroupedAlignment pseudos;
 
   // Calculate log_ec_counts and counts_total.
-  void process_aln(const bool bootstrap_mode);
+  void process_aln(const telescope::GroupedAlignment &pseudos, const bool bootstrap_mode);
 
   // Count the number of pseudoalignments in groups defined by the given indicators.
   std::vector<uint16_t> group_counts(const std::vector<uint32_t> indicators, const uint32_t ec_id, const uint32_t n_groups) const;

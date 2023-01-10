@@ -12,10 +12,9 @@
 
 void ReadGroupIndicators(const std::string &indicators_path, Reference *reference);
 
-void ReadPseudoalignments(const std::vector<std::string> &alignment_paths,
-			  const std::string &themisto_merge_mode,
-			  const Reference &reference,
-			  std::unique_ptr<Sample> &sample);
+telescope::GroupedAlignment ReadPseudoalignments(const std::vector<std::string> &alignment_paths,
+						 const std::string &themisto_merge_mode,
+						 const Reference &reference);
 
 void ReadLikelihoodFromFile(const std::string &likelihood_path, const Reference &reference, std::ostream &log, const std::unique_ptr<Sample> &sample);
 

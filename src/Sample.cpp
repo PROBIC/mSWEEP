@@ -7,7 +7,7 @@
 
 #include "version.h"
 
-void Sample::process_aln(const bool bootstrap_mode) {
+void Sample::process_aln(const telescope::GroupedAlignment &pseudos, const bool bootstrap_mode) {
   cell_id = "";
   m_num_ecs = pseudos.n_ecs();
   log_ec_counts.resize(m_num_ecs, 0.0);
@@ -124,7 +124,6 @@ void Sample::read_likelihood(const Grouping &grouping, std::istream &infile) {
   uint32_t n_groups = grouping.get_n_groups();
 
   std::vector<std::vector<double>> likelihoods(n_groups, std::vector<double>());
-  this->pseudos = telescope::GroupedAlignment();
 
   if (infile.good()) {
     std::string newline;

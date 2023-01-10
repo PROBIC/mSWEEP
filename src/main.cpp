@@ -301,14 +301,14 @@ int main (int argc, char *argv[]) {
       try {
 	if (!likelihood_mode) {
 	  log << "  reading pseudoalignments" << '\n';
-	  ReadPseudoalignments(args.value<std::vector<std::string>>("themisto"), args.value<std::string>("themisto-mode"), reference, sample);
-	  sample->process_aln(bootstrap_mode);
+	  const telescope::GroupedAlignment &alignment = ReadPseudoalignments(args.value<std::vector<std::string>>("themisto"), args.value<std::string>("themisto-mode"), reference);
+	  sample->process_aln(alignment, bootstrap_mode);
 	  log << "  read " << sample->num_ecs() << " unique alignments" << '\n';
 	  log.flush();
 
 	  log << "Building log-likelihood array" << '\n';
 	  if (rank == 0 && !likelihood_mode) // rank 0
-	    log_likelihoods = likelihood_array_mat(sample->pseudos, reference.get_grouping(i), args.value<double>('q'), args.value<double>('e'));
+	    log_likelihoods = likelihood_array_mat(alignment, reference.get_grouping(i), args.value<double>('q'), args.value<double>('e'));
 	  log.flush();
 	} else {
 	  ReadLikelihoodFromFile(args.value<std::string>("read-likelihood"), reference, log.stream(), sample);

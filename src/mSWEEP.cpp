@@ -15,7 +15,7 @@ void ReadGroupIndicators(const std::string &indicators_path, Reference *referenc
   reference->read_from_file(indicators_file.stream(), '\t'); // TODO: take delimiter as argument.
 }
 
-void ReadPseudoalignments(const std::vector<std::string> &alignment_paths, const std::string &themisto_merge_mode, const Reference &reference, std::unique_ptr<Sample> &sample) {
+telescope::GroupedAlignment ReadPseudoalignments(const std::vector<std::string> &alignment_paths, const std::string &themisto_merge_mode, const Reference &reference) {
   size_t n_files = alignment_paths.size();
   std::vector<cxxio::In> infiles;
   infiles.reserve(n_files);
@@ -28,7 +28,7 @@ void ReadPseudoalignments(const std::vector<std::string> &alignment_paths, const
   } else {
     strands.emplace_back(&std::cin);
   }
-  sample->pseudos = telescope::read::ThemistoGrouped(telescope::get_mode(themisto_merge_mode), reference.get_n_refs(), reference.get_group_indicators(0), strands);
+  return telescope::read::ThemistoGrouped(telescope::get_mode(themisto_merge_mode), reference.get_n_refs(), reference.get_group_indicators(0), strands);
 }
 
 void ReadLikelihoodFromFile(const std::string &likelihood_path, const Reference &reference, std::ostream &log, const std::unique_ptr<Sample> &sample) {

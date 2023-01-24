@@ -269,7 +269,7 @@ int main (int argc, char *argv[]) {
 	    log_ec_counts[i] = std::log(alignment.reads_in_ec(i));
 	  }
 
-	  log << "  read " << sample->num_ecs() << " unique alignments" << '\n';
+	  log << "  read " << alignment.n_ecs() << " unique alignments" << '\n';
 	  log.flush();
 
 	  log << "Building log-likelihood array" << '\n';
@@ -366,7 +366,7 @@ int main (int argc, char *argv[]) {
 	      //BootstrapSample* bs = static_cast<BootstrapSample*>(&(*sample));
 	      //bs->write_bootstrap(reference.get_grouping(i).get_names(), args.value<size_t>("iters"), (printing_output ? std::cout : of.stream()));
 	    } else {
-	      WriteAbundances(relative_abundances, reference.get_grouping(i).get_names(), sample->counts_total, (printing_output ? std::cout : of.stream()));
+	      WriteAbundances(relative_abundances, reference.get_grouping(i).get_names(), sample->get_counts_total(), (printing_output ? std::cout : of.stream()));
 	    }
 	  }
 
@@ -397,7 +397,7 @@ int main (int argc, char *argv[]) {
 	    // Bootstrap the counts
 	    log << "Bootstrap" << " iter " << k + 1 << "/" << args.value<size_t>("iters") << '\n';
 	    if (rank == 0) {
-	      size_t bootstrap_count = bs->counts_total;
+	      size_t bootstrap_count = bs->get_counts_total();
 	      if (CmdOptionPresent(argv, argv+argc, "--bootstrap-count"))
 		bootstrap_count = args.value<size_t>("bootstrap-count");
 	      log_ec_counts = std::move(bs->resample_counts(bootstrap_count));
@@ -415,7 +415,7 @@ int main (int argc, char *argv[]) {
 	    std::string abundances_outfile = outfile + "_abundances.txt";
 	    of.open(abundances_outfile);
 	  }
-	  WriteBootstrappedAbundances(relative_abundances, bs->bootstrap_results, reference.get_grouping(i).get_names(), args.value<size_t>("iters"), bs->counts_total, (args.value<std::string>('o').empty() ? std::cout : of.stream()));
+	  WriteBootstrappedAbundances(relative_abundances, bs->bootstrap_results, reference.get_grouping(i).get_names(), args.value<size_t>("iters"), bs->get_counts_total(), (args.value<std::string>('o').empty() ? std::cout : of.stream()));
 	  of.close();
 	}
       }

@@ -14,14 +14,14 @@ BootstrapSample::BootstrapSample(const int32_t seed) {
 }
 
 std::vector<double> BootstrapSample::resample_counts(const uint32_t how_many) {
-  std::vector<uint32_t> tmp_counts(num_ecs());
+  std::vector<uint32_t> tmp_counts(pseudos.n_ecs());
   for (uint32_t i = 0; i < how_many; ++i) {
     uint32_t ec_id = ec_distribution(this->gen);
     tmp_counts[ec_id] += 1;
   }
-  std::vector<double> resampled_log_ec_counts(num_ecs());
+  std::vector<double> resampled_log_ec_counts(pseudos.n_ecs());
 #pragma omp parallel for schedule(static)
-  for (uint32_t i = 0; i < num_ecs(); ++i) {
+  for (uint32_t i = 0; i < pseudos.n_ecs(); ++i) {
     resampled_log_ec_counts[i] = std::log(tmp_counts[i]);
   }
   return resampled_log_ec_counts;
@@ -34,7 +34,7 @@ void BootstrapSample::init_bootstrap() {
   // Initialize ec_distribution for bootstrapping
   std::vector<uint32_t> weights(pseudos.n_ecs());
 #pragma omp parallel for schedule(static)
-  for (size_t i = 0; i < num_ecs(); ++i) {
+  for (size_t i = 0; i < pseudos.n_ecs(); ++i) {
     weights[i] = pseudos.reads_in_ec(i);
   }
   ec_distribution = std::discrete_distribution<uint32_t>(weights.begin(), weights.end());

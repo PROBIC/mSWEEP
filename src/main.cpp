@@ -267,7 +267,7 @@ int main (int argc, char *argv[]) {
 	    log_likelihoods = std::move(likelihood_array_mat(alignment, reference.get_grouping(i), args.value<double>('q'), args.value<double>('e')));
 	  log.flush();
 	} else {
-	  ReadLikelihoodFromFile(args.value<std::string>("read-likelihood"), reference, log.stream(), &sample->log_ec_counts);
+	  log_likelihoods = std::move(ReadLikelihoodFromFile(args.value<std::string>("read-likelihood"), reference, log.stream(), &sample->log_ec_counts));
 	}
 
 	if (args.value<bool>("write-likelihood") || args.value<bool>("write-likelihood-bitseq") && rank == 0) {

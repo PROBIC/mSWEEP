@@ -32,18 +32,3 @@ void Sample::process_aln(const telescope::GroupedAlignment &pseudos, const bool 
 //   }
 //   return read_hitcounts;
 // }
-
-void Sample::write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::ostream &of) const {
-  // Write relative abundances to &of,
-  if (of.good()) {
-    of << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
-    of << "#total_hits:" << '\t' << this->counts_total << '\n';
-    of << "#c_id" << '\t' << "mean_theta" << '\n';
-    for (size_t i = 0; i < relative_abundances.size(); ++i) {
-      of << cluster_indicators_to_string[i] << '\t' << relative_abundances[i] << '\n';
-    }
-    of.flush();
-  } else {
-    throw std::runtime_error("Can't write to abundances file.");
-  }
-}

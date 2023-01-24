@@ -35,9 +35,6 @@ public:
   // Count the number of pseudoalignments in groups defined by the given indicators.
   std::vector<uint16_t> group_counts(const std::vector<uint32_t> indicators, const uint32_t ec_id, const uint32_t n_groups) const;
 
-  // Write estimated relative abundances
-  void write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::ostream &of) const;
-
   // Getters
   std::string cell_name() const { return cell_id; };
   uint32_t num_ecs() const { return m_num_ecs; };

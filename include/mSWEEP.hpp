@@ -22,5 +22,6 @@ seamat::DenseMatrix<double> ReadLikelihoodFromFile(const std::string &likelihood
 void WriteLikelihood(const seamat::DenseMatrix<double> &ll_mat, const std::vector<double> &log_ec_counts, const uint32_t n_groups, std::ostream &of);
 void WriteLikelihoodBitSeq(const seamat::DenseMatrix<double> &ll_mat, const std::vector<double> &log_ec_counts, const uint32_t n_groups, std::ostream &of);
 void WriteProbabilities(const seamat::DenseMatrix<double> &ec_probs, const std::vector<std::string> &cluster_indicators_to_string, std::ostream &of);
+void WriteAbundances(const std::vector<double> &relative_abundances, const std::vector<std::string> &cluster_indicators_to_string, const size_t counts_total, std::ostream &of);
 
 #endif

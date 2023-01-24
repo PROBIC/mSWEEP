@@ -360,10 +360,11 @@ int main (int argc, char *argv[]) {
 	      of.open(abundances_outfile);
 	    }
 	    if (args.value<size_t>("iters") > 1) {
+	      // TODO this needs to be written at the end after bootstrapping is done.
 	      BootstrapSample* bs = static_cast<BootstrapSample*>(&(*sample));
 	      bs->write_bootstrap(reference.get_grouping(i).get_names(), args.value<size_t>("iters"), (printing_output ? std::cout : of.stream()));
 	    } else {
-	      sample->write_abundances(reference.get_grouping(i).get_names(), (printing_output ? std::cout : of.stream()));
+	      WriteAbundances(sample->relative_abundances, reference.get_grouping(i).get_names(), sample->counts_total, (printing_output ? std::cout : of.stream()));
 	    }
 	  }
 

@@ -144,3 +144,18 @@ void WriteProbabilities(const seamat::DenseMatrix<double> &ec_probs, const std::
     throw std::runtime_error("Can't write to probs file.");
   }
 }
+
+void WriteAbundances(const std::vector<double> &relative_abundances, const std::vector<std::string> &cluster_indicators_to_string, const size_t counts_total, std::ostream &of) {
+  // Write relative abundances to &of,
+  if (of.good()) {
+    of << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
+    of << "#total_hits:" << '\t' << counts_total << '\n';
+    of << "#c_id" << '\t' << "mean_theta" << '\n';
+    for (size_t i = 0; i < relative_abundances.size(); ++i) {
+      of << cluster_indicators_to_string[i] << '\t' << relative_abundances[i] << '\n';
+    }
+    of.flush();
+  } else {
+    throw std::runtime_error("Can't write to abundances file.");
+  }
+}

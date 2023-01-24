@@ -119,34 +119,3 @@ void Sample::write_likelihood_bitseq(const seamat::DenseMatrix<double> &ll_mat, 
     throw std::runtime_error("Can't write to likelihoods file (bitseq format).");
   }
 }
-
-void Sample::read_likelihood(const Grouping &grouping, std::istream &infile) {
-  uint32_t n_groups = grouping.get_n_groups();
-
-  std::vector<std::vector<double>> likelihoods(n_groups, std::vector<double>());
-
-  if (infile.good()) {
-    std::string newline;
-    uint32_t line_nr = 0;
-    while (std::getline(infile, newline)) {
-      ++line_nr;
-      std::string part;
-      std::stringstream partition(newline);
-      bool ec_count_col = true;
-      uint32_t group_id = 0;
-      while (std::getline(partition, part, '\t')) {
-	if (ec_count_col) {
-	  uint32_t ec_count = std::stol(part);
-	  this->log_ec_counts.emplace_back(std::log(ec_count));
-	  ec_count_col = false;
-	} else {
-	  likelihoods[group_id].emplace_back(std::stod(part));
-	  ++group_id;
-	}
-      }
-    }
-  } else {
-    throw std::runtime_error("Could not read from the likelihoods file.");
-  }
-  //this->ll_mat = seamat::DenseMatrix<double>(likelihoods);
-}

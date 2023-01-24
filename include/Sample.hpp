@@ -45,9 +45,6 @@ public:
   // Write likelihoods in BitSeq-compatible format
   void write_likelihood_bitseq(const seamat::DenseMatrix<double> &ll_mat, const uint32_t n_groups, std::ostream &of) const;
 
-  // Read in the likelihoods from a file
-  void read_likelihood(const Grouping &grouping, std::istream &infile);
-
   // Getters
   std::string cell_name() const { return cell_id; };
   uint32_t num_ecs() const { return m_num_ecs; };

@@ -319,9 +319,9 @@ int main (int argc, char *argv[]) {
 	}
 
 	// Run estimation
-	sample->ec_probs = rcg_optl(args, log_likelihoods, log_ec_counts, prior_counts, log);
+	const seamat::DenseMatrix<double> &ec_probs = rcg_optl(args, log_likelihoods, log_ec_counts, prior_counts, log);
 	if (rank == 0) { // rank 0
-	  sample->relative_abundances = rcgpar::mixture_components(sample->ec_probs, log_ec_counts);
+	  sample->relative_abundances = rcgpar::mixture_components(ec_probs, log_ec_counts);
 
 	  // Bin the reads if requested
 	  if (args.value<bool>("bin-reads")) {
@@ -334,7 +334,7 @@ int main (int argc, char *argv[]) {
 	    if (CmdOptionPresent(argv, argv+argc, "--min-abundance")) {
 	      mGEMS::FilterTargetGroups(reference.get_grouping(i).get_names(), sample->relative_abundances, args.value<double>("min-abundance"), &target_names);
 	    }
-	    const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(sample->pseudos, sample->relative_abundances, sample->ec_probs, reference.get_grouping(i).get_names(), &target_names);
+	    const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(sample->pseudos, sample->relative_abundances, ec_probs, reference.get_grouping(i).get_names(), &target_names);
 	    std::string outfile_dir = args.value<std::string>('o');
 	    outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size()); // TODO check that path contains a /
 	    for (size_t j = 0; j < bins.size(); ++j) {
@@ -369,7 +369,7 @@ int main (int argc, char *argv[]) {
 
 	  // Write ec_probs
 	  if (args.value<bool>("print-probs") && !args.value<bool>("no-fit-model")) {
-	    sample->write_probabilities(reference.get_grouping(i).get_names(), std::cout);
+	    WriteProbabilities(ec_probs, reference.get_grouping(i).get_names(), std::cout);
 	  }
 	  if (args.value<bool>("write-probs") && !args.value<bool>("no-fit-model")) {
 	    std::string probs_outfile(outfile);
@@ -380,7 +380,7 @@ int main (int argc, char *argv[]) {
 	    } else {
 	      of.open(probs_outfile);
 	    }
-	    sample->write_probabilities(reference.get_grouping(i).get_names(), (outfile.empty() ? std::cout : of.stream()));
+	    WriteProbabilities(ec_probs, reference.get_grouping(i).get_names(), (outfile.empty() ? std::cout : of.stream()));
 	  }
 	  of.close();
 	}

@@ -33,29 +33,6 @@ void Sample::process_aln(const telescope::GroupedAlignment &pseudos, const bool 
 //   return read_hitcounts;
 // }
 
-void Sample::write_probabilities(const std::vector<std::string> &cluster_indicators_to_string,
-				 std::ostream &of) const {
-  // Write the probability matrix to a file.
-  if (of.good()) {
-    of << "ec_id" << ',';
-    for (uint32_t i = 0; i < this->ec_probs.get_rows(); ++i) {
-      of << cluster_indicators_to_string[i];
-      of << (i < this->ec_probs.get_rows() - 1 ? ',' : '\n');
-    }
-    for (uint32_t i = 0; i < this->ec_probs.get_cols(); ++i) {
-      of << i << ',';
-      for (uint32_t j = 0; j < this->ec_probs.get_rows(); ++j) {
-	of << std::exp(this->ec_probs(j, i));
-	of << (j < this->ec_probs.get_rows() - 1 ? ',' : '\n');
-      }
-    }
-    of << std::endl;
-    of.flush();
-  } else {
-    throw std::runtime_error("Can't write to probs file.");
-  }
-}
-
 void Sample::write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::ostream &of) const {
   // Write relative abundances to &of,
   if (of.good()) {

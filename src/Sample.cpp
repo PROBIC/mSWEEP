@@ -10,11 +10,9 @@
 void Sample::process_aln(const telescope::GroupedAlignment &pseudos, const bool bootstrap_mode) {
   cell_id = "";
   m_num_ecs = pseudos.n_ecs();
-  log_ec_counts.resize(m_num_ecs, 0.0);
   uint32_t aln_counts_total = 0;
 #pragma omp parallel for schedule(static) reduction(+:aln_counts_total)
   for (uint32_t i = 0; i < m_num_ecs; ++i) {
-    log_ec_counts[i] = std::log(pseudos.reads_in_ec(i));
     aln_counts_total += pseudos.reads_in_ec(i);
   }
   counts_total = aln_counts_total;

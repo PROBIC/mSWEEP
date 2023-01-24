@@ -254,11 +254,20 @@ int main (int argc, char *argv[]) {
 #endif
 
       seamat::DenseMatrix<double> log_likelihoods;
+      std::vector<double> log_ec_counts;
       try {
 	if (!likelihood_mode) {
+	  // TODO: handle MPI (wrap in rank == 0?)
 	  log << "  reading pseudoalignments" << '\n';
 	  const telescope::GroupedAlignment &alignment = ReadPseudoalignments(args.value<std::vector<std::string>>("themisto"), args.value<std::string>("themisto-mode"), reference);
 	  sample->process_aln(alignment, bootstrap_mode);
+
+	  log_ec_counts.resize(alignment.n_ecs(), 0);
+#pragma omp parallel for schedule(static)
+	  for (uint32_t i = 0; i < alignment.n_ecs(); ++i) {
+	    log_ec_counts[i] = std::log(alignment.reads_in_ec(i));
+	  }
+
 	  log << "  read " << sample->num_ecs() << " unique alignments" << '\n';
 	  log.flush();
 
@@ -267,7 +276,7 @@ int main (int argc, char *argv[]) {
 	    log_likelihoods = std::move(likelihood_array_mat(alignment, reference.get_grouping(i), args.value<double>('q'), args.value<double>('e')));
 	  log.flush();
 	} else {
-	  log_likelihoods = std::move(ReadLikelihoodFromFile(args.value<std::string>("read-likelihood"), reference, log.stream(), &sample->log_ec_counts));
+	  log_likelihoods = std::move(ReadLikelihoodFromFile(args.value<std::string>("read-likelihood"), reference, log.stream(), &log_ec_counts));
 	}
 
 	if (args.value<bool>("write-likelihood") || args.value<bool>("write-likelihood-bitseq") && rank == 0) {
@@ -282,9 +291,9 @@ int main (int argc, char *argv[]) {
 	    of.open(ll_outfile);
 	  }
 	  if (args.value<bool>("write-likelihood-bitseq")) {
-	    WriteLikelihoodBitSeq(log_likelihoods, sample->log_ec_counts, reference.get_grouping(i).get_n_groups(), of.stream());
+	    WriteLikelihoodBitSeq(log_likelihoods, log_ec_counts, reference.get_grouping(i).get_n_groups(), of.stream());
 	  } else {
-	    WriteLikelihood(log_likelihoods, sample->log_ec_counts, reference.get_grouping(i).get_n_groups(), of.stream());
+	    WriteLikelihood(log_likelihoods, log_ec_counts, reference.get_grouping(i).get_n_groups(), of.stream());
 	  }
 	  of.close();
 	}
@@ -310,9 +319,9 @@ int main (int argc, char *argv[]) {
 	}
 
 	// Run estimation
-	sample->ec_probs = rcg_optl(args, log_likelihoods, sample->log_ec_counts, prior_counts, log);
+	sample->ec_probs = rcg_optl(args, log_likelihoods, log_ec_counts, prior_counts, log);
 	if (rank == 0) { // rank 0
-	  sample->relative_abundances = rcgpar::mixture_components(sample->ec_probs, sample->log_ec_counts);
+	  sample->relative_abundances = rcgpar::mixture_components(sample->ec_probs, log_ec_counts);
 
 	  // Bin the reads if requested
 	  if (args.value<bool>("bin-reads")) {
@@ -385,19 +394,18 @@ int main (int argc, char *argv[]) {
 
 	  for (uint16_t k = 0; k < args.value<size_t>("iters"); ++k) {
 	    // Bootstrap the counts
-	    std::vector<double> resampled_log_ec_counts;
 	    log << "Bootstrap" << " iter " << k + 1 << "/" << args.value<size_t>("iters") << '\n';
 	    if (rank == 0) {
 	      size_t bootstrap_count = bs->counts_total;
 	      if (CmdOptionPresent(argv, argv+argc, "--bootstrap-count"))
 		bootstrap_count = args.value<size_t>("bootstrap-count");
-	      resampled_log_ec_counts = bs->resample_counts(bootstrap_count);
+	      log_ec_counts = std::move(bs->resample_counts(bootstrap_count));
 	    }
 
 	    // Estimate with the bootstrapped counts
-	    const seamat::DenseMatrix<double> &bootstrapped_ec_probs = rcg_optl(args, log_likelihoods, resampled_log_ec_counts, prior_counts, log);
+	    const seamat::DenseMatrix<double> &bootstrapped_ec_probs = rcg_optl(args, log_likelihoods, log_ec_counts, prior_counts, log);
 	    if (rank == 0)
-	      bs->bootstrap_results.emplace_back(rcgpar::mixture_components(bootstrapped_ec_probs, resampled_log_ec_counts));
+	      bs->bootstrap_results.emplace_back(rcgpar::mixture_components(bootstrapped_ec_probs, log_ec_counts));
 	  }
 	}
       }

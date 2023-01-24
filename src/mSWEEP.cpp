@@ -160,7 +160,7 @@ void WriteAbundances(const std::vector<double> &relative_abundances, const std::
   }
 }
 
-void WriteBootstrappedAbundances(const std::vector<double> &relative_abundances, const std::vector<std::vector<double>> &bootstrap_results, const std::vector<std::string> &cluster_indicators_to_string, const size_t counts_total, const uint16_t iters, std::ostream &of) {
+void WriteBootstrappedAbundances(const std::vector<std::vector<double>> &bootstrap_results, const std::vector<std::string> &cluster_indicators_to_string, const size_t counts_total, const uint16_t iters, std::ostream &of) {
   // Write relative abundances to a file,
   // outputs to std::cout if outfile is empty.
   if (of.good()) {
@@ -171,9 +171,9 @@ void WriteBootstrappedAbundances(const std::vector<double> &relative_abundances,
 
     for (size_t i = 0; i < cluster_indicators_to_string.size(); ++i) {
       of << cluster_indicators_to_string[i] << '\t';
-      of << relative_abundances[i] << '\t';
+      of << bootstrap_results[0][i] << '\t'; // First vec has the relative abundances without bootstrapping
       for (uint16_t j = 0; j < iters; ++j) {
-	of << bootstrap_results[j][i] << (j == iters - 1 ? '\n' : '\t');
+	of << bootstrap_results[j + 1][i] << (j == iters - 1 ? '\n' : '\t');
       }
     }
     of.flush();

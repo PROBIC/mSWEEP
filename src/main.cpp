@@ -257,8 +257,7 @@ int main (int argc, char *argv[]) {
 	  const telescope::GroupedAlignment &alignment = ReadPseudoalignments(args.value<std::vector<std::string>>("themisto"), args.value<std::string>("themisto-mode"), reference);
 
 	  if (bootstrap_mode) {
-	    // TODO fix bootstrap sample initialization
-	    //	    sample.reset(new BootstrapSample(alignment, args.value<size_t>("seed")));
+	    sample.reset(new BootstrapSample(alignment, args.value<size_t>("seed")));
 	  } else {
 	    sample.reset(new Sample(alignment));
 	  }
@@ -303,7 +302,6 @@ int main (int argc, char *argv[]) {
 	return 1;
       }
 
-      std::vector<double> relative_abundances;
       // Process the reads accordingly
       if (args.value<bool>("no-fit-model")) {
 	log << "Skipping relative abundance estimation (--no-fit-model toggled)" << '\n';
@@ -323,7 +321,7 @@ int main (int argc, char *argv[]) {
 	// Run estimation
 	const seamat::DenseMatrix<double> &ec_probs = rcg_optl(args, log_likelihoods, log_ec_counts, prior_counts, log);
 	if (rank == 0) { // rank 0
-	  relative_abundances = std::move(rcgpar::mixture_components(ec_probs, log_ec_counts));
+	  const std::vector<double> &relative_abundances = rcgpar::mixture_components(ec_probs, log_ec_counts);
 
 	  // Bin the reads if requested
 	  if (args.value<bool>("bin-reads")) {
@@ -362,9 +360,8 @@ int main (int argc, char *argv[]) {
 	      of.open(abundances_outfile);
 	    }
 	    if (args.value<size_t>("iters") > 1) {
-	      // TODO this needs to be written at the end after bootstrapping is done. (store relative abundances in BootstrapSample)
-	      //BootstrapSample* bs = static_cast<BootstrapSample*>(&(*sample));
-	      //bs->write_bootstrap(reference.get_grouping(i).get_names(), args.value<size_t>("iters"), (printing_output ? std::cout : of.stream()));
+	      // Store for writing after bootstrapping.
+	      static_cast<BootstrapSample*>(&(*sample))->move_abundances(relative_abundances);
 	    } else {
 	      WriteAbundances(relative_abundances, reference.get_grouping(i).get_names(), sample->get_counts_total(), (printing_output ? std::cout : of.stream()));
 	    }
@@ -406,7 +403,7 @@ int main (int argc, char *argv[]) {
 	    // Estimate with the bootstrapped counts
 	    const seamat::DenseMatrix<double> &bootstrapped_ec_probs = rcg_optl(args, log_likelihoods, log_ec_counts, prior_counts, log);
 	    if (rank == 0)
-	      bs->bootstrap_results.emplace_back(rcgpar::mixture_components(bootstrapped_ec_probs, log_ec_counts));
+	      bs->move_abundances(rcgpar::mixture_components(bootstrapped_ec_probs, log_ec_counts));
 	  }
 	  cxxio::Out of;
 	  std::string outfile = args.value<std::string>('o');
@@ -415,7 +412,7 @@ int main (int argc, char *argv[]) {
 	    std::string abundances_outfile = outfile + "_abundances.txt";
 	    of.open(abundances_outfile);
 	  }
-	  WriteBootstrappedAbundances(relative_abundances, bs->bootstrap_results, reference.get_grouping(i).get_names(), args.value<size_t>("iters"), bs->get_counts_total(), (args.value<std::string>('o').empty() ? std::cout : of.stream()));
+	  WriteBootstrappedAbundances(bs->get_results(), reference.get_grouping(i).get_names(), args.value<size_t>("iters"), bs->get_counts_total(), (args.value<std::string>('o').empty() ? std::cout : of.stream()));
 	  of.close();
 	}
       }

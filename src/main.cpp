@@ -29,50 +29,6 @@
                     initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
 #endif
 
-void WriteResults(const cxxargs::Arguments &args, const std::unique_ptr<Sample> &sample, const Grouping &grouping, const uint16_t n_groupings, const uint16_t current_grouping) {
-  cxxio::Out of;
-
-  bool printing_output = args.value<std::string>('o').empty();
-  // Set output file name correctly
-  // for backwards compatibility with v1.4.0 or older
-  std::string outfile = args.value<std::string>('o');
-  if (n_groupings > 1 && !printing_output) {
-    outfile += "_";
-    outfile += std::to_string(current_grouping);
-  }
-
-  // Relative abundances
-  if (!args.value<bool>("no-fit-model")) {
-    std::string abundances_outfile(outfile);
-    if (!printing_output) {
-      std::string abundances_outfile = outfile + "_abundances.txt";
-      of.open(abundances_outfile);
-    }
-    if (args.value<size_t>("iters") > 1) {
-      BootstrapSample* bs = static_cast<BootstrapSample*>(&(*sample));
-      bs->write_bootstrap(grouping.get_names(), args.value<size_t>("iters"), (printing_output ? std::cout : of.stream()));
-    } else {
-      sample->write_abundances(grouping.get_names(), (printing_output ? std::cout : of.stream()));
-    }
-  }
-
-  // Probability matrix
-  if (args.value<bool>("print-probs") && !args.value<bool>("no-fit-model")) {
-    sample->write_probabilities(grouping.get_names(), std::cout);
-  }
-  if (args.value<bool>("write-probs") && !args.value<bool>("no-fit-model")) {
-    std::string probs_outfile(outfile);
-    probs_outfile += "_probs.csv";
-    if (args.value<bool>("gzip-probs")) {
-      probs_outfile += ".gz";
-      of.open_compressed(probs_outfile);
-    } else {
-      of.open(probs_outfile);
-    }
-    sample->write_probabilities(grouping.get_names(), (outfile.empty() ? std::cout : of.stream()));
-  }
-}
-
 void PrintCitationInfo() {
   std::cerr << "Please cite us as:\n"
 	    << "\tMäklin T, Kallonen T, David S et al. High-resolution sweep\n"
@@ -313,6 +269,25 @@ int main (int argc, char *argv[]) {
 	} else {
 	  ReadLikelihoodFromFile(args.value<std::string>("read-likelihood"), reference, log.stream(), sample);
 	}
+
+	if (args.value<bool>("write-likelihood") || args.value<bool>("write-likelihood-bitseq") && rank == 0) {
+	  cxxio::Out of;
+	  std::string ll_outfile(args.value<std::string>('o'));
+	  ll_outfile += (args.value<bool>("write-likelihood-bitseq") ? "_bitseq" : "");
+	  ll_outfile += "_likelihoods.txt";
+	  if (args.value<bool>("gzip-probs")) {
+	    ll_outfile += ".gz";
+	    of.open_compressed(ll_outfile);
+	  } else {
+	    of.open(ll_outfile);
+	  }
+	  if (args.value<bool>("write-likelihood-bitseq")) {
+	    sample->write_likelihood_bitseq(log_likelihoods, reference.get_grouping(i).get_n_groups(), of.stream());
+	  } else {
+	    sample->write_likelihood(log_likelihoods, reference.get_grouping(i).get_n_groups(), of.stream());
+	  }
+	  of.close();
+	}
       } catch (std::exception &e) {
 	finalize("Reading the input files failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	return 1;
@@ -336,8 +311,50 @@ int main (int argc, char *argv[]) {
 
 	// Run estimation
 	sample->ec_probs = rcg_optl(args, log_likelihoods, sample->log_ec_counts, prior_counts, log);
-	if (rank == 0) // rank 0
+	if (rank == 0) { // rank 0
 	  sample->relative_abundances = rcgpar::mixture_components(sample->ec_probs, sample->log_ec_counts);
+
+	  bool printing_output = args.value<std::string>('o').empty();
+	  // Write the results
+	  std::string outfile = args.value<std::string>('o');
+	  if (n_groupings > 1 && !printing_output) {
+	    outfile += "_";
+	    outfile += std::to_string(i);
+	  }
+
+	  cxxio::Out of;
+	  // Write relative abundances
+	  if (!args.value<bool>("no-fit-model")) {
+	    std::string abundances_outfile(outfile);
+	    if (!printing_output) {
+	      std::string abundances_outfile = outfile + "_abundances.txt";
+	      of.open(abundances_outfile);
+	    }
+	    if (args.value<size_t>("iters") > 1) {
+	      BootstrapSample* bs = static_cast<BootstrapSample*>(&(*sample));
+	      bs->write_bootstrap(reference.get_grouping(i).get_names(), args.value<size_t>("iters"), (printing_output ? std::cout : of.stream()));
+	    } else {
+	      sample->write_abundances(reference.get_grouping(i).get_names(), (printing_output ? std::cout : of.stream()));
+	    }
+	  }
+
+	  // Write ec_probs
+	  if (args.value<bool>("print-probs") && !args.value<bool>("no-fit-model")) {
+	    sample->write_probabilities(reference.get_grouping(i).get_names(), std::cout);
+	  }
+	  if (args.value<bool>("write-probs") && !args.value<bool>("no-fit-model")) {
+	    std::string probs_outfile(outfile);
+	    probs_outfile += "_probs.csv";
+	    if (args.value<bool>("gzip-probs")) {
+	      probs_outfile += ".gz";
+	      of.open_compressed(probs_outfile);
+	    } else {
+	      of.open(probs_outfile);
+	    }
+	    sample->write_probabilities(reference.get_grouping(i).get_names(), (outfile.empty() ? std::cout : of.stream()));
+	  }
+	  of.close();
+	}
 
 	if (bootstrap_mode) {
 	  // Bootstrap the ec_counts and estimate from the bootstrapped data
@@ -363,29 +380,6 @@ int main (int argc, char *argv[]) {
 	      bs->bootstrap_results.emplace_back(rcgpar::mixture_components(bootstrapped_ec_probs, resampled_log_ec_counts));
 	  }
 	}
-      }
-      // Write results to file from the root process
-      if (rank == 0) {
-	// Write likelihoods
-	cxxio::Out of;
-	if (args.value<bool>("write-likelihood") || args.value<bool>("write-likelihood-bitseq")) {
-	  std::string ll_outfile(args.value<std::string>('o'));
-	  ll_outfile += (args.value<bool>("write-likelihood-bitseq") ? "_bitseq" : "");
-	  ll_outfile += "_likelihoods.txt";
-	  if (args.value<bool>("gzip-probs")) {
-	    ll_outfile += ".gz";
-	    of.open_compressed(ll_outfile);
-	  } else {
-	    of.open(ll_outfile);
-	  }
-	  if (args.value<bool>("write-likelihood-bitseq")) {
-	    sample->write_likelihood_bitseq(log_likelihoods, reference.get_grouping(i).get_n_groups(), of.stream());
-	  } else {
-	    sample->write_likelihood(log_likelihoods, reference.get_grouping(i).get_n_groups(), of.stream());
-	  }
-	}
-	of.close();
-	WriteResults(args, sample, reference.get_grouping(i), n_groupings, i);
       }
 
       // Bin the reads if requested

@@ -314,6 +314,26 @@ int main (int argc, char *argv[]) {
 	if (rank == 0) { // rank 0
 	  sample->relative_abundances = rcgpar::mixture_components(sample->ec_probs, sample->log_ec_counts);
 
+	  // Bin the reads if requested
+	  if (args.value<bool>("bin-reads")) {
+	    std::vector<std::string> target_names;
+	    if (CmdOptionPresent(argv, argv+argc, "--target-groups")) {
+	      target_names = std::move(args.value<std::vector<std::string>>("target-groups"));
+	    } else {
+	      target_names = reference.get_grouping(i).get_names();
+	    }
+	    if (CmdOptionPresent(argv, argv+argc, "--min-abundance")) {
+	      mGEMS::FilterTargetGroups(reference.get_grouping(i).get_names(), sample->relative_abundances, args.value<double>("min-abundance"), &target_names);
+	    }
+	    const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(sample->pseudos, sample->relative_abundances, sample->ec_probs, reference.get_grouping(i).get_names(), &target_names);
+	    std::string outfile_dir = args.value<std::string>('o');
+	    outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size()); // TODO check that path contains a /
+	    for (size_t j = 0; j < bins.size(); ++j) {
+	      cxxio::Out of(outfile_dir + '/' + target_names[j] + ".bin");
+	      mGEMS::WriteBin(bins[j], of.stream());
+	    }
+	  }
+
 	  bool printing_output = args.value<std::string>('o').empty();
 	  // Write the results
 	  std::string outfile = args.value<std::string>('o');
@@ -379,26 +399,6 @@ int main (int argc, char *argv[]) {
 	    if (rank == 0)
 	      bs->bootstrap_results.emplace_back(rcgpar::mixture_components(bootstrapped_ec_probs, resampled_log_ec_counts));
 	  }
-	}
-      }
-
-      // Bin the reads if requested
-      if (rank == 0 && args.value<bool>("bin-reads")) {
-	std::vector<std::string> target_names;
-	if (CmdOptionPresent(argv, argv+argc, "--target-groups")) {
-	  target_names = std::move(args.value<std::vector<std::string>>("target-groups"));
-	} else {
-	  target_names = reference.get_grouping(i).get_names();
-	}
-	if (CmdOptionPresent(argv, argv+argc, "--min-abundance")) {
-	  mGEMS::FilterTargetGroups(reference.get_grouping(i).get_names(), sample->relative_abundances, args.value<double>("min-abundance"), &target_names);
-	}
-	const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(sample->pseudos, sample->relative_abundances, sample->ec_probs, reference.get_grouping(i).get_names(), &target_names);
-	std::string outfile_dir = args.value<std::string>('o');
-	outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size()); // TODO check that path contains a /
-	for (size_t j = 0; j < bins.size(); ++j) {
-	  cxxio::Out of(outfile_dir + '/' + target_names[j] + ".bin");
-	  mGEMS::WriteBin(bins[j], of.stream());
 	}
       }
   }

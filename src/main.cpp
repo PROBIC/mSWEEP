@@ -302,6 +302,7 @@ int main (int argc, char *argv[]) {
 	return 1;
       }
 
+      std::vector<double> relative_abundances;
       // Process the reads accordingly
       if (args.value<bool>("no-fit-model")) {
 	log << "Skipping relative abundance estimation (--no-fit-model toggled)" << '\n';
@@ -321,7 +322,7 @@ int main (int argc, char *argv[]) {
 	// Run estimation
 	const seamat::DenseMatrix<double> &ec_probs = rcg_optl(args, log_likelihoods, log_ec_counts, prior_counts, log);
 	if (rank == 0) { // rank 0
-	  sample->relative_abundances = rcgpar::mixture_components(ec_probs, log_ec_counts);
+	  relative_abundances = std::move(rcgpar::mixture_components(ec_probs, log_ec_counts));
 
 	  // Bin the reads if requested
 	  if (args.value<bool>("bin-reads")) {
@@ -332,9 +333,9 @@ int main (int argc, char *argv[]) {
 	      target_names = reference.get_grouping(i).get_names();
 	    }
 	    if (CmdOptionPresent(argv, argv+argc, "--min-abundance")) {
-	      mGEMS::FilterTargetGroups(reference.get_grouping(i).get_names(), sample->relative_abundances, args.value<double>("min-abundance"), &target_names);
+	      mGEMS::FilterTargetGroups(reference.get_grouping(i).get_names(), relative_abundances, args.value<double>("min-abundance"), &target_names);
 	    }
-	    const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(sample->pseudos, sample->relative_abundances, ec_probs, reference.get_grouping(i).get_names(), &target_names);
+	    const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(sample->pseudos, relative_abundances, ec_probs, reference.get_grouping(i).get_names(), &target_names);
 	    std::string outfile_dir = args.value<std::string>('o');
 	    outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size()); // TODO check that path contains a /
 	    for (size_t j = 0; j < bins.size(); ++j) {
@@ -360,11 +361,11 @@ int main (int argc, char *argv[]) {
 	      of.open(abundances_outfile);
 	    }
 	    if (args.value<size_t>("iters") > 1) {
-	      // TODO this needs to be written at the end after bootstrapping is done.
-	      BootstrapSample* bs = static_cast<BootstrapSample*>(&(*sample));
-	      bs->write_bootstrap(reference.get_grouping(i).get_names(), args.value<size_t>("iters"), (printing_output ? std::cout : of.stream()));
+	      // TODO this needs to be written at the end after bootstrapping is done. (store relative abundances in BootstrapSample)
+	      //BootstrapSample* bs = static_cast<BootstrapSample*>(&(*sample));
+	      //bs->write_bootstrap(reference.get_grouping(i).get_names(), args.value<size_t>("iters"), (printing_output ? std::cout : of.stream()));
 	    } else {
-	      WriteAbundances(sample->relative_abundances, reference.get_grouping(i).get_names(), sample->counts_total, (printing_output ? std::cout : of.stream()));
+	      WriteAbundances(relative_abundances, reference.get_grouping(i).get_names(), sample->counts_total, (printing_output ? std::cout : of.stream()));
 	    }
 	  }
 
@@ -408,6 +409,15 @@ int main (int argc, char *argv[]) {
 	    if (rank == 0)
 	      bs->bootstrap_results.emplace_back(rcgpar::mixture_components(bootstrapped_ec_probs, log_ec_counts));
 	  }
+	  cxxio::Out of;
+	  std::string outfile = args.value<std::string>('o');
+	  std::string abundances_outfile(outfile);
+	  if (!args.value<std::string>('o').empty()) {
+	    std::string abundances_outfile = outfile + "_abundances.txt";
+	    of.open(abundances_outfile);
+	  }
+	  WriteBootstrappedAbundances(relative_abundances, bs->bootstrap_results, reference.get_grouping(i).get_names(), args.value<size_t>("iters"), bs->counts_total, (args.value<std::string>('o').empty() ? std::cout : of.stream()));
+	  of.close();
 	}
       }
   }

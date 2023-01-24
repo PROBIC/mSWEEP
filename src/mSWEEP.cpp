@@ -159,3 +159,25 @@ void WriteAbundances(const std::vector<double> &relative_abundances, const std::
     throw std::runtime_error("Can't write to abundances file.");
   }
 }
+
+void WriteBootstrappedAbundances(const std::vector<double> &relative_abundances, const std::vector<std::vector<double>> &bootstrap_results, const std::vector<std::string> &cluster_indicators_to_string, const size_t counts_total, const uint16_t iters, std::ostream &of) {
+  // Write relative abundances to a file,
+  // outputs to std::cout if outfile is empty.
+  if (of.good()) {
+    of << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
+    of << "#total_hits:" << '\t' << counts_total << '\n';
+    of << "#bootstrap_iters:" << '\t' << iters << '\n';
+    of << "#c_id" << '\t' << "mean_theta" << '\t' << "bootstrap_mean_thetas" << '\n';
+
+    for (size_t i = 0; i < cluster_indicators_to_string.size(); ++i) {
+      of << cluster_indicators_to_string[i] << '\t';
+      of << relative_abundances[i] << '\t';
+      for (uint16_t j = 0; j < iters; ++j) {
+	of << bootstrap_results[j][i] << (j == iters - 1 ? '\n' : '\t');
+      }
+    }
+    of.flush();
+  } else {
+    throw std::runtime_error("Could not write to abundances file.");
+  }
+}

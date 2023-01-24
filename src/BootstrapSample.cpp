@@ -39,26 +39,3 @@ void BootstrapSample::init_bootstrap() {
   }
   ec_distribution = std::discrete_distribution<uint32_t>(weights.begin(), weights.end());
 }
-
-void BootstrapSample::write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string,
-				      const uint16_t iters, std::ostream &of) const {
-  // Write relative abundances to a file,
-  // outputs to std::cout if outfile is empty.
-  if (of.good()) {
-    of << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
-    of << "#total_hits:" << '\t' << this->get_counts_total() << '\n';
-    of << "#bootstrap_iters:" << '\t' << iters << '\n';
-    of << "#c_id" << '\t' << "mean_theta" << '\t' << "bootstrap_mean_thetas" << '\n';
-
-    for (size_t i = 0; i < cluster_indicators_to_string.size(); ++i) {
-      of << cluster_indicators_to_string[i] << '\t';
-      of << relative_abundances[i] << '\t';
-      for (uint16_t j = 0; j < iters; ++j) {
-	of << bootstrap_results[j][i] << (j == iters - 1 ? '\n' : '\t');
-      }
-    }
-    of.flush();
-  } else {
-    throw std::runtime_error("Could not write to abundances file.");
-  }
-}

@@ -259,7 +259,7 @@ int main (int argc, char *argv[]) {
 	  if (bootstrap_mode) {
 	    sample.reset(new BootstrapSample(alignment, args.value<size_t>("seed")));
 	  } else {
-	    sample.reset(new Sample(alignment));
+	    sample.reset(new Sample(alignment, args.value<bool>("bin-reads")));
 	  }
 
 	  log_ec_counts.resize(alignment.n_ecs(), 0);
@@ -334,7 +334,7 @@ int main (int argc, char *argv[]) {
 	    if (CmdOptionPresent(argv, argv+argc, "--min-abundance")) {
 	      mGEMS::FilterTargetGroups(reference.get_grouping(i).get_names(), relative_abundances, args.value<double>("min-abundance"), &target_names);
 	    }
-	    const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(sample->pseudos, relative_abundances, ec_probs, reference.get_grouping(i).get_names(), &target_names);
+	    const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(sample->get_aligned_reads(), relative_abundances, ec_probs, reference.get_grouping(i).get_names(), &target_names);
 	    std::string outfile_dir = args.value<std::string>('o');
 	    outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size()); // TODO check that path contains a /
 	    for (size_t j = 0; j < bins.size(); ++j) {

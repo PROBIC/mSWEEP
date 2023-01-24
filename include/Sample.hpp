@@ -20,7 +20,16 @@ private:
 
 public:
   Sample() = default;
-  Sample(const Reference &reference) {}
+  Sample(const telescope::GroupedAlignment &alignment) {
+    cell_id = "";
+    m_num_ecs = alignment.n_ecs();
+    uint32_t aln_counts_total = 0;
+#pragma omp parallel for schedule(static) reduction(+:aln_counts_total)
+    for (uint32_t i = 0; i < m_num_ecs; ++i) {
+      aln_counts_total += alignment.reads_in_ec(i);
+    }
+    counts_total = aln_counts_total;
+  }
 
   uint32_t counts_total;
 
@@ -28,9 +37,6 @@ public:
   std::vector<double> relative_abundances;
 
   telescope::GroupedAlignment pseudos;
-
-  // Calculate log_ec_counts and counts_total.
-  void process_aln(const telescope::GroupedAlignment &pseudos, const bool bootstrap_mode);
 
   // Count the number of pseudoalignments in groups defined by the given indicators.
   std::vector<uint16_t> group_counts(const std::vector<uint32_t> indicators, const uint32_t ec_id, const uint32_t n_groups) const;

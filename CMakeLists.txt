@@ -80,7 +80,6 @@ add_executable(mSWEEP
 ${CMAKE_SOURCE_DIR}/src/BootstrapSample.cpp
 ${CMAKE_SOURCE_DIR}/src/Reference.cpp
 ${CMAKE_SOURCE_DIR}/src/Grouping.cpp
-${CMAKE_SOURCE_DIR}/src/Sample.cpp
 ${CMAKE_SOURCE_DIR}/src/likelihood.cpp
 ${CMAKE_SOURCE_DIR}/src/mSWEEP.cpp
 ${CMAKE_SOURCE_DIR}/src/main.cpp)

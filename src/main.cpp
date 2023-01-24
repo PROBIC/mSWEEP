@@ -224,14 +224,6 @@ int main (int argc, char *argv[]) {
     return 1;
   }
 
-  std::unique_ptr<Sample> sample;
-
-  bool bootstrap_mode = args.value<size_t>("iters") > (size_t)1;
-  if (bootstrap_mode) {
-    sample.reset(new BootstrapSample(args.value<size_t>("seed")));
-  } else {
-    sample.reset(new Sample(reference));
-  }
   bool likelihood_mode = CmdOptionPresent(argv, argv+argc, "--read-likelihood");
 
   // Estimate abundances with all groupings that were provided
@@ -253,6 +245,9 @@ int main (int argc, char *argv[]) {
       MPI_Bcast(&n_groups, 1, MPI_UINT16_T, 0, MPI_COMM_WORLD);
 #endif
 
+      std::unique_ptr<Sample> sample;
+      bool bootstrap_mode = args.value<size_t>("iters") > (size_t)1;
+
       seamat::DenseMatrix<double> log_likelihoods;
       std::vector<double> log_ec_counts;
       try {
@@ -260,7 +255,13 @@ int main (int argc, char *argv[]) {
 	  // TODO: handle MPI (wrap in rank == 0?)
 	  log << "  reading pseudoalignments" << '\n';
 	  const telescope::GroupedAlignment &alignment = ReadPseudoalignments(args.value<std::vector<std::string>>("themisto"), args.value<std::string>("themisto-mode"), reference);
-	  sample->process_aln(alignment, bootstrap_mode);
+
+	  if (bootstrap_mode) {
+	    // TODO fix bootstrap sample initialization
+	    //	    sample.reset(new BootstrapSample(alignment, args.value<size_t>("seed")));
+	  } else {
+	    sample.reset(new Sample(alignment));
+	  }
 
 	  log_ec_counts.resize(alignment.n_ecs(), 0);
 #pragma omp parallel for schedule(static)
@@ -391,8 +392,6 @@ int main (int argc, char *argv[]) {
 	  // Bootstrap the ec_counts and estimate from the bootstrapped data
 	  log << "Running estimation with " << args.value<size_t>("iters") << " bootstrap iterations" << '\n';
 	  BootstrapSample* bs = static_cast<BootstrapSample*>(&(*sample));
-	  if (rank == 0)
-	    bs->init_bootstrap();
 
 	  for (uint16_t k = 0; k < args.value<size_t>("iters"); ++k) {
 	    // Bootstrap the counts
@@ -422,6 +421,5 @@ int main (int argc, char *argv[]) {
       }
   }
   finalize("", log);
-  // sample.release();
   return 0;
 }

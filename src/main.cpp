@@ -1,33 +1,52 @@
+// mSWEEP: Estimate abundances of reference lineages in DNA sequencing reads.
+//
+// MIT License
+//
+// Copyright (c) 2023 Probabilistic Inference and Computational Biology group @ UH
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
 #include <iostream>
+#include <string>
+#include <algorithm>
 #include <vector>
-#include <memory>
+#include <cstddef>
 #include <fstream>
+#include <exception>
+#include <memory>
 
-#include "rcgpar.hpp"
 #include "cxxargs.hpp"
-#include "msweep_log.hpp"
+#include "Matrix.hpp"
+#include "telescope.hpp"
+#include "cxxio.hpp"
+#include "rcgpar.hpp"
 #include "bin_reads.h"
 
+#include "mpi_config.hpp"
+#include "openmp_config.hpp"
+#include "version.h"
+
+#include "msweep_log.hpp"
+#include "Reference.hpp"
 #include "mSWEEP.hpp"
 #include "Sample.hpp"
-#include "Reference.hpp"
 #include "likelihood.hpp"
-
-#include "Matrix.hpp"
-
-#include "version.h"
-#include "openmp_config.hpp"
-#include "mpi_config.hpp"
-
-#define MSWEEP_OPENMP_SUPPORT 1
-
-#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
-#include <omp.h>
-#include <algorithm>
-#pragma omp declare reduction(vec_double_plus : std::vector<double> :	\
-                              std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<double>())) \
-                    initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
-#endif
 
 void PrintCitationInfo() {
   std::cerr << "Please cite us as:\n"

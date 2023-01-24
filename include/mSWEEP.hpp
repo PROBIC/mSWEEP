@@ -1,28 +1,64 @@
+// mSWEEP: Estimate abundances of reference lineages in DNA sequencing reads.
+//
+// MIT License
+//
+// Copyright (c) 2023 Probabilistic Inference and Computational Biology group @ UH
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
 #ifndef MSWEEP_MSWEEP_HPP
 #define MSWEEP_MSWEEP_HPP
 
-#include <vector>
-#include <memory>
-#include <cstddef>
 #include <string>
+#include <vector>
+#include <fstream>
+#include <cstddef>
 
-#include "DenseMatrix.hpp"
+#include "telescope.hpp"
+#include "Matrix.hpp"
 
-#include "Sample.hpp"
 #include "Reference.hpp"
 #include "Grouping.hpp"
 
+// Read functions
+//// Read group indicators
 void ReadGroupIndicators(const std::string &indicators_path, Reference *reference);
 
+//// Read pseudoalignments
 telescope::GroupedAlignment ReadPseudoalignments(const std::vector<std::string> &alignment_paths,
 						 const std::string &themisto_merge_mode,
 						 const Reference &reference);
 
 seamat::DenseMatrix<double> ReadLikelihoodFromFile(const std::string &likelihood_path, const Reference &reference, std::ostream &log, std::vector<double> *log_ec_counts);
+
+// Write functions
+//// Write likelihoods
 void WriteLikelihood(const seamat::DenseMatrix<double> &ll_mat, const std::vector<double> &log_ec_counts, const uint32_t n_groups, std::ostream &of);
 void WriteLikelihoodBitSeq(const seamat::DenseMatrix<double> &ll_mat, const std::vector<double> &log_ec_counts, const uint32_t n_groups, std::ostream &of);
+
+//// Write read-reference probabilities
 void WriteProbabilities(const seamat::DenseMatrix<double> &ec_probs, const std::vector<std::string> &cluster_indicators_to_string, std::ostream &of);
+
+//// Write relative abundances
 void WriteAbundances(const std::vector<double> &relative_abundances, const std::vector<std::string> &cluster_indicators_to_string, const size_t counts_total, std::ostream &of);
+
+//// Write relative abundances and bootstrapped abundances
 void WriteBootstrappedAbundances(const std::vector<std::vector<double>> &bootstrap_results, const std::vector<std::string> &cluster_indicators_to_string, const size_t counts_total, const uint16_t iters, std::ostream &of);
 
 #endif

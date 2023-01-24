@@ -282,9 +282,9 @@ int main (int argc, char *argv[]) {
 	    of.open(ll_outfile);
 	  }
 	  if (args.value<bool>("write-likelihood-bitseq")) {
-	    sample->write_likelihood_bitseq(log_likelihoods, reference.get_grouping(i).get_n_groups(), of.stream());
+	    WriteLikelihoodBitSeq(log_likelihoods, sample->log_ec_counts, reference.get_grouping(i).get_n_groups(), of.stream());
 	  } else {
-	    sample->write_likelihood(log_likelihoods, reference.get_grouping(i).get_n_groups(), of.stream());
+	    WriteLikelihood(log_likelihoods, sample->log_ec_counts, reference.get_grouping(i).get_n_groups(), of.stream());
 	  }
 	  of.close();
 	}

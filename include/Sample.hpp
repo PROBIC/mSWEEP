@@ -40,10 +40,6 @@ public:
   void write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::ostream &of) const;
   // Write estimated read-reference posterior probabilities (gamma_Z)
   void write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, std::ostream &outfile) const;
-  // Write likelihoods
-  void write_likelihood(const seamat::DenseMatrix<double> &ll_mat, const uint32_t n_groups, std::ostream &of) const;
-  // Write likelihoods in BitSeq-compatible format
-  void write_likelihood_bitseq(const seamat::DenseMatrix<double> &ll_mat, const uint32_t n_groups, std::ostream &of) const;
 
   // Getters
   std::string cell_name() const { return cell_id; };

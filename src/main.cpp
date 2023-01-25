@@ -86,13 +86,6 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
 
   // Output prefix
   args.add_short_argument<std::string>('o', "Prefix for output files written from mSWEEP (default: print to cout).\n\nBinning options:", "");
-  // TODO: check that the directory exists (outside of this function) using the following code:
-  //   args.outfile = std::string(GetCmdOption(argv, argv+argc, "-o"));
-  // if (args.outfile.find("/") != std::string::npos) {
-  //   std::string outfile_dir = args.outfile;
-  //   outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size());
-  //   cxxio::directory_exists(outfile_dir);
-  // }
 
   // Run the mGEMS binning algorithm
   args.add_long_argument<bool>("bin-reads", "Run the mGEMS binning algorithm and write bins to the directory `-o` points to (default: false).", false);
@@ -248,6 +241,15 @@ int main (int argc, char *argv[]) {
     // cxxargs throws an error if required arguments are not supplied, catch below.
     log << "Parsing arguments" << '\n';
     parse_args(argc, argv, args);
+
+    // If a output file was supplied check that the directory it's in exists
+    if (args.value<std::string>('o').find("/") != std::string::npos) {
+      // Assume that if printing to the current directory it exists.
+      std::string outfile_dir = args.value<std::string>('o');
+      outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size());
+      cxxio::directory_exists(outfile_dir);
+    }
+
   } catch (const std::exception &e) {
     // TODO: catch the different cxxargs exception types and print informative error messages.
     finalize("Error in parsing arguments:\n  " + std::string(e.what()) + "\nexiting\n", log);
@@ -399,6 +401,17 @@ int main (int argc, char *argv[]) {
 	// Run estimation
 	const seamat::DenseMatrix<double> &ec_probs = rcg_optl(args, log_likelihoods, log_ec_counts, prior_counts, log);
 
+	// Check if printing to cout or writing to file.
+	bool printing_output = args.value<std::string>('o').empty();
+
+	// Correct the outfile prefix if there are several groupings.
+	std::string outfile = args.value<std::string>('o');
+	if (n_groupings > 1 && !printing_output) {
+	  // Append grouping id to output names.
+	  outfile += "_";
+	  outfile += std::to_string(i);
+	}
+
 	// Run binning if requested and write results to files.
 	if (rank == 0) { // root performs the rest.
 	  // Turn the probs into relative abundances
@@ -416,7 +429,7 @@ int main (int argc, char *argv[]) {
 	      mGEMS::FilterTargetGroups(reference.get_grouping(i).get_names(), relative_abundances, args.value<double>("min-abundance"), &target_names);
 	    }
 	    const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(sample->get_aligned_reads(), relative_abundances, ec_probs, reference.get_grouping(i).get_names(), &target_names);
-	    std::string outfile_dir = args.value<std::string>('o');
+	    std::string outfile_dir = outfile;
 	    if (outfile_dir.find('/') != std::string::npos) {
 	      // If the outfile location is in another folder then get the path
 	      outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size());
@@ -428,17 +441,6 @@ int main (int argc, char *argv[]) {
 	      cxxio::Out of(outfile_dir + '/' + target_names[j] + ".bin");
 	      mGEMS::WriteBin(bins[j], of.stream());
 	    }
-	  }
-
-	  // Check if printing to cout or writing to file.
-	  bool printing_output = args.value<std::string>('o').empty();
-
-	  // Write the results
-	  std::string outfile = args.value<std::string>('o');
-	  if (n_groupings > 1 && !printing_output) {
-	    // If several groupings were used then append grouping id to output names
-	    outfile += "_";
-	    outfile += std::to_string(i);
 	  }
 
 	  // Write relative abundances
@@ -473,7 +475,7 @@ int main (int argc, char *argv[]) {
 	    } else {
 	      of.open(probs_outfile);
 	    }
-	    WriteProbabilities(ec_probs, reference.get_grouping(i).get_names(), (outfile.empty() ? std::cout : of.stream()));
+	    WriteProbabilities(ec_probs, reference.get_grouping(i).get_names(), (printing_output ? std::cout : of.stream()));
 	  }
 	  of.close();
 	}
@@ -502,13 +504,12 @@ int main (int argc, char *argv[]) {
 	  // Write the results
 	  if (rank == 0) {
 	    cxxio::Out of;
-	    std::string outfile = args.value<std::string>('o');
 	    std::string abundances_outfile(outfile);
-	    if (!args.value<std::string>('o').empty()) {
+	    if (!printing_output) {
 	      std::string abundances_outfile = outfile + "_abundances.txt";
 	      of.open(abundances_outfile);
 	    }
-	    WriteBootstrappedAbundances(bs->get_results(), reference.get_grouping(i).get_names(), bs->get_counts_total(), args.value<size_t>("iters"), (args.value<std::string>('o').empty() ? std::cout : of.stream()));
+	    WriteBootstrappedAbundances(bs->get_results(), reference.get_grouping(i).get_names(), bs->get_counts_total(), args.value<size_t>("iters"), (printing_output ? std::cout : of.stream()));
 	    of.close();
 	  }
 	}

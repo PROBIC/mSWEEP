@@ -40,6 +40,7 @@ void BootstrapSample::init_bootstrap(const telescope::GroupedAlignment &alignmen
 }
 
 BootstrapSample::BootstrapSample(const telescope::GroupedAlignment &alignment, const int32_t seed) {
+  this->count_alignments(alignment);
   if (seed == -1) {
     std::random_device rd;
     this->gen = std::mt19937_64(rd());
@@ -47,11 +48,13 @@ BootstrapSample::BootstrapSample(const telescope::GroupedAlignment &alignment, c
     this->gen = std::mt19937_64(seed);
   }
   this->num_ecs = alignment.n_ecs();
+
   this->init_bootstrap(alignment);
 }
 
 std::vector<double> BootstrapSample::resample_counts(const uint32_t how_many) {
   std::vector<uint32_t> tmp_counts(this->num_ecs);
+
   for (uint32_t i = 0; i < how_many; ++i) {
     uint32_t ec_id = ec_distribution(this->gen);
     tmp_counts[ec_id] += 1;

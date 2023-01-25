@@ -38,17 +38,23 @@ private:
   // Need to store the read assignments to equivalence classes if also binning
   std::vector<std::vector<uint32_t>> aligned_reads;
 
-public:
-  Sample() = default;
-  Sample(const telescope::GroupedAlignment &alignment, bool bin_reads) {
+protected:
+  void count_alignments(const telescope::Alignment &alignment) {
+    // Count the number of aligned reads and store in counts_total
     uint32_t aln_counts_total = 0;
 #pragma omp parallel for schedule(static) reduction(+:aln_counts_total)
     for (uint32_t i = 0; i < alignment.n_ecs(); ++i) {
       aln_counts_total += alignment.reads_in_ec(i);
     }
-    counts_total = aln_counts_total;
+    this->counts_total = aln_counts_total;
+  }
 
+public:
+  Sample() = default;
+  Sample(const telescope::GroupedAlignment &alignment, bool bin_reads) {
+    this->count_alignments(alignment);
     if (bin_reads) {
+      // TODO implement as derived class
       this->aligned_reads = alignment.get_aligned_reads();
     }
   }

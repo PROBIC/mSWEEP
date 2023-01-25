@@ -274,7 +274,7 @@ int main (int argc, char *argv[]) {
       log << "  reading group indicators" << '\n';
       ReadGroupIndicators(args.value<std::string>('i'), &reference);
       if (reference.get_n_groupings() > 1) {
-	throw std::runtime_error("Using more than one grouping is currently unsupported.");
+	log << "  read " << reference.get_n_groupings() << " groupings" << '\n';
       }
       log << "  read " << reference.get_n_refs() << " group indicators" << '\n';
     }

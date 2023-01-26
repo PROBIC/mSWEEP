@@ -413,7 +413,7 @@ int main (int argc, char *argv[]) {
 	}
 
 	// Run estimation
-	const seamat::DenseMatrix<double> &ec_probs = rcg_optl(args, log_likelihoods, log_ec_counts, prior_counts, log);
+	seamat::DenseMatrix<double> ec_probs = std::move(rcg_optl(args, log_likelihoods, log_ec_counts, prior_counts, log));
 
 	// Run binning if requested and write results to files.
 	if (rank == 0) { // root performs the rest.
@@ -433,6 +433,7 @@ int main (int argc, char *argv[]) {
 	    }
 	    BinningSample* bs = static_cast<BinningSample*>(&(*sample));
 	    const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), ec_probs, reference.get_grouping(i).get_names(), &target_names);
+
 	    std::string outfile_dir = outfile;
 	    if (outfile_dir.find('/') != std::string::npos) {
 	      // If the outfile location is in another folder then get the path
@@ -487,9 +488,10 @@ int main (int argc, char *argv[]) {
 	    }
 
 	    // Estimate with the bootstrapped counts
-	    const seamat::DenseMatrix<double> &bootstrapped_ec_probs = rcg_optl(args, log_likelihoods, log_ec_counts, prior_counts, log);
+	    // Reuse ec_probs since it has already been processed
+	    ec_probs = std::move(rcg_optl(args, log_likelihoods, log_ec_counts, prior_counts, log));
 	    if (rank == 0)
-	      bs->store_abundances(rcgpar::mixture_components(bootstrapped_ec_probs, log_ec_counts));
+	      bs->store_abundances(rcgpar::mixture_components(ec_probs, log_ec_counts));
 	  }
 	}
       }

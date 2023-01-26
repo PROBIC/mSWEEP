@@ -376,17 +376,6 @@ int main (int argc, char *argv[]) {
 	return 1;
       }
 
-      // Check if printing to cout or writing to file.
-      bool printing_output = args.value<std::string>('o').empty();
-
-      // Correct the outfile prefix if there are several groupings.
-      std::string outfile = args.value<std::string>('o');
-      if (n_groupings > 1 && !printing_output && !args.value<bool>("no-fit-model")) {
-	// Append grouping id to output names.
-	outfile += "_";
-	outfile += std::to_string(i);
-      }
-
       // Start the abundance estimation part
       if (args.value<bool>("no-fit-model")) {
 	log << "Skipping relative abundance estimation (--no-fit-model toggled)" << '\n';
@@ -469,6 +458,9 @@ int main (int argc, char *argv[]) {
       // Write relative abundances
       if (rank == 0) {
 	sample->write_abundances(reference.get_grouping(i).get_names(), out.abundances());
+      }
+      if (n_groupings > 1 && i < n_groupings - 1) {
+	out.next_grouping();
       }
   }
   finalize("", log);

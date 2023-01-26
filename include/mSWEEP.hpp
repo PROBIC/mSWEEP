@@ -43,6 +43,7 @@ private:
   bool compress;
   std::string prefix;
   size_t n_groupings;
+  size_t current_grouping;
 
   // Out stream is wrapped in cxxio for checking writability etc.
   cxxio::Out of;
@@ -62,6 +63,12 @@ public:
     this->compress = _compress_output;
     this->prefix = _prefix;
     this->n_groupings = _n_groupings;
+
+    if (this->n_groupings > 1) {
+      this->current_grouping = 0;
+      this->prefix += "_";
+      this->prefix += std::to_string(this->current_grouping);
+    }
   }
 
   std::ostream* likelihoods(const std::string &format) {
@@ -107,6 +114,15 @@ public:
       }
     }
     return &this->of.stream();
+  }
+
+  void next_grouping() {
+    ++this->current_grouping;
+    if (!printing) {
+      this->prefix.erase(this->prefix.rfind("_"), this->prefix.size());
+      this->prefix += "_";
+      this->prefix += std::to_string(this->current_grouping);
+    }
   }
 
 };

@@ -104,7 +104,7 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   args.add_long_argument<bool>("write-likelihood-bitseq", "Write the likelihoods in a format can be parsed by BitSeq's (https://github.com/bitseq/bitseq) functions (default: false).", false);
 
   // Toggle compression
-  args.add_long_argument<std::string>("compress", "Compress all output files using the given algorithm (one of z, bz2, lzma; default: don't compress).\n\nInput options:", "plaintext");
+  args.add_long_argument<std::string>("compress", "Compress all output files using the given algorithm (one of z, bz2, lzma; default: don't compress).", "plaintext");
   args.add_long_argument<int>("compression-level", "Compression level (0-9; default: 6).\n\nInput options:", 6);
 
   // How to merge paired alignments

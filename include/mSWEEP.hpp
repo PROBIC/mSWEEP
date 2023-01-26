@@ -32,9 +32,84 @@
 
 #include "telescope.hpp"
 #include "Matrix.hpp"
+#include "cxxio.hpp"
 
 #include "Reference.hpp"
 #include "Grouping.hpp"
+
+class OutfileHandler {
+private:
+  bool printing;
+  bool compress;
+  std::string prefix;
+  size_t n_groupings;
+
+  // Out stream is wrapped in cxxio for checking writability etc.
+  cxxio::Out of;
+
+  void open(std::string &filename) {
+    if (this->compress) {
+      filename += ".gz";
+      of.open_compressed(filename);
+    } else {
+      of.open(filename);
+    }
+  }
+
+public:
+  OutfileHandler(std::string _prefix, size_t _n_groupings, bool _compress_output) {
+    this->printing = _prefix.empty();
+    this->compress = _compress_output;
+    this->prefix = _prefix;
+    this->n_groupings = _n_groupings;
+  }
+
+  std::ostream* likelihoods(const std::string &format) {
+    std::string ll_outfile = this->prefix;
+    ll_outfile += (format == "bitseq" ? "_bitseq" : "");
+    ll_outfile += "_likelihoods.tsv";
+
+    this->open(ll_outfile);
+    return &this->of.stream();
+  }
+
+  std::ostream* bin(const std::string &name) {
+    std::string bin_outfile;
+    if (this->prefix.find('/') != std::string::npos) {
+      // If the outfile location is in another folder then get the path
+      bin_outfile = this->prefix;
+      bin_outfile.erase(bin_outfile.rfind("/"), bin_outfile.size());
+    } else {
+      // If not in a folder write into the current directory.
+      bin_outfile = ".";
+    }
+
+    bin_outfile += '/' + name + ".bin";
+    this->open(bin_outfile);
+    return &this->of.stream();
+  }
+
+  std::ostream* probs() {
+    std::string probs_outfile = this->prefix;
+    probs_outfile += "_probs.csv";
+
+    this->open(probs_outfile);
+    return &this->of.stream();
+  }
+
+  std::ostream* abundances() {
+    if (!printing) {
+      std::string abundances_outfile = this->prefix + "_abundances.txt";
+      this->of.open(abundances_outfile); // Ignore request to compress
+    } else {
+      if (&this->of.stream() != &std::cout) {
+	this->of.close();
+      }
+    }
+    return &this->of.stream();
+  }
+
+};
 
 // Read functions
 //// Read group indicators
@@ -54,11 +129,5 @@ void WriteLikelihoodBitSeq(const seamat::DenseMatrix<double> &ll_mat, const std:
 
 //// Write read-reference probabilities
 void WriteProbabilities(const seamat::DenseMatrix<double> &ec_probs, const std::vector<std::string> &cluster_indicators_to_string, std::ostream &of);
-
-//// Write relative abundances
-void WriteAbundances(const std::vector<double> &relative_abundances, const std::vector<std::string> &cluster_indicators_to_string, const size_t counts_total, std::ostream &of);
-
-//// Write relative abundances and bootstrapped abundances
-void WriteBootstrappedAbundances(const std::vector<std::vector<double>> &bootstrap_results, const std::vector<std::string> &cluster_indicators_to_string, const size_t counts_total, const uint16_t iters, std::ostream &of);
 
 #endif

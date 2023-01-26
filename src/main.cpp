@@ -281,7 +281,7 @@ int main (int argc, char *argv[]) {
       log << "  read " << reference.get_n_refs() << " group indicators" << '\n';
     }
   } catch (std::exception &e) {
-    finalize("Reading the input files failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
+    finalize("Reading group indicators failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
     return 1;
   }
 
@@ -294,6 +294,8 @@ int main (int argc, char *argv[]) {
   // Only root process has read in the input.
   MPI_Bcast(&n_groupings, 1, MPI_UINT16_T, 0, MPI_COMM_WORLD);
 #endif
+
+  OutfileHandler out(args.value<std::string>('o'), n_groupings, args.value<bool>("gzip-probs"));
 
   // Estimate abundances with all groupings
   for (uint16_t i = 0; i < n_groupings; ++i) {
@@ -363,22 +365,11 @@ int main (int argc, char *argv[]) {
       try {
 	// Write the likelihood to disk here if it was requested.
 	if (rank == 0 && args.value<bool>("write-likelihood") || args.value<bool>("write-likelihood-bitseq") && rank == 0) {
-	  cxxio::Out of;
-	  std::string ll_outfile(args.value<std::string>('o'));
-	  ll_outfile += (args.value<bool>("write-likelihood-bitseq") ? "_bitseq" : "");
-	  ll_outfile += "_likelihoods.txt";
-	  if (args.value<bool>("gzip-probs")) {
-	    ll_outfile += ".gz";
-	    of.open_compressed(ll_outfile);
-	  } else {
-	    of.open(ll_outfile);
-	  }
 	  if (args.value<bool>("write-likelihood-bitseq")) {
-	    WriteLikelihoodBitSeq(log_likelihoods, log_ec_counts, reference.get_grouping(i).get_n_groups(), of.stream());
+	    WriteLikelihoodBitSeq(log_likelihoods, log_ec_counts, reference.get_grouping(i).get_n_groups(), *out.likelihoods("bitseq"));
 	  } else {
-	    WriteLikelihood(log_likelihoods, log_ec_counts, reference.get_grouping(i).get_n_groups(), of.stream());
+	    WriteLikelihood(log_likelihoods, log_ec_counts, reference.get_grouping(i).get_n_groups(), *out.likelihoods("mSWEEP"));
 	  }
-	  of.close();
 	}
       } catch (std::exception &e) {
 	finalize("Writing the likelihood to file failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
@@ -434,17 +425,8 @@ int main (int argc, char *argv[]) {
 	    BinningSample* bs = static_cast<BinningSample*>(&(*sample));
 	    const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), ec_probs, reference.get_grouping(i).get_names(), &target_names);
 
-	    std::string outfile_dir = outfile;
-	    if (outfile_dir.find('/') != std::string::npos) {
-	      // If the outfile location is in another folder then get the path
-	      outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size());
-	    } else {
-	      // If not in a folder write into the current directory.
-	      outfile_dir = std::move(std::string("."));
-	    }
 	    for (size_t j = 0; j < bins.size(); ++j) {
-	      cxxio::Out of(outfile_dir + '/' + target_names[j] + ".bin");
-	      mGEMS::WriteBin(bins[j], of.stream());
+	      mGEMS::WriteBin(bins[j], *out.bin(target_names[j]));
 	    }
 	  }
 
@@ -455,21 +437,9 @@ int main (int argc, char *argv[]) {
 	    // pipe them somewhere.
 	    WriteProbabilities(ec_probs, reference.get_grouping(i).get_names(), std::cout);
 	  }
-
-	  cxxio::Out of;
 	  if (args.value<bool>("write-probs")) {
-	    // Note: same as above but opposite.
-	    std::string probs_outfile(outfile);
-	    probs_outfile += "_probs.csv";
-	    if (args.value<bool>("gzip-probs")) {
-	      probs_outfile += ".gz";
-	      of.open_compressed(probs_outfile);
-	    } else {
-	      of.open(probs_outfile);
-	    }
-	    WriteProbabilities(ec_probs, reference.get_grouping(i).get_names(), (printing_output ? std::cout : of.stream()));
+	    WriteProbabilities(ec_probs, reference.get_grouping(i).get_names(), *out.probs());
 	  }
-	  of.close();
 	}
 
 	// Bootstrap the ec_counts and estimate from the bootstrapped data if required
@@ -498,14 +468,7 @@ int main (int argc, char *argv[]) {
 
       // Write relative abundances
       if (rank == 0) {
-	cxxio::Out of;
-	std::string abundances_outfile(outfile);
-	if (!printing_output) {
-	  std::string abundances_outfile = outfile + "_abundances.txt";
-	  of.open(abundances_outfile);
-	}
-	sample->write_abundances(reference.get_grouping(i).get_names(), (printing_output ? &std::cout : &of.stream()));
-	of.close();
+	sample->write_abundances(reference.get_grouping(i).get_names(), out.abundances());
       }
   }
   finalize("", log);

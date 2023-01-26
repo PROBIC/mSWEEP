@@ -329,7 +329,7 @@ int main (int argc, char *argv[]) {
 	  // Initialize Sample depending on how the alignment needs to be processed.
 	  // Note: this is also only used by the root process in MPI configuration.
 	  if (bootstrap_mode) {
-	    sample.reset(new BootstrapSample(alignment, args.value<size_t>("seed")));
+	    sample.reset(new BootstrapSample(alignment, args.value<size_t>("iters"), args.value<size_t>("seed")));
 	  } else if (bin_reads) {
 	    sample.reset(new BinningSample(alignment));
 	  } else {
@@ -513,7 +513,7 @@ int main (int argc, char *argv[]) {
 	      std::string abundances_outfile = outfile + "_abundances.txt";
 	      of.open(abundances_outfile);
 	    }
-	    WriteBootstrappedAbundances(bs->get_results(), reference.get_grouping(i).get_names(), bs->get_counts_total(), args.value<size_t>("iters"), (printing_output ? std::cout : of.stream()));
+	    bs->write_abundances(reference.get_grouping(i).get_names(), (printing_output ? &std::cout : &of.stream()));
 	    of.close();
 	  }
 	}

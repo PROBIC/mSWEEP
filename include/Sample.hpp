@@ -78,6 +78,9 @@ private:
   std::mt19937_64 gen;
   std::discrete_distribution<uint32_t> ec_distribution;
 
+  // Max number of bootstrap iterations
+  size_t iters;
+
   // Need to store this for resampling counts.
   size_t num_ecs;
 
@@ -89,13 +92,16 @@ private:
 
 public:
   // Set seed in constructor
-  BootstrapSample(const telescope::GroupedAlignment &alignment, const int32_t seed);
+  BootstrapSample(const telescope::GroupedAlignment &alignment, const size_t _iters, const int32_t seed);
 
   // Resample the equivalence class counts
   std::vector<double> resample_counts(const uint32_t how_many);
 
   // Store relative abundances in bootstrap_results
   void move_abundances(const std::vector<double> &relative_abundances) { this->bootstrap_results.emplace_back(std::move(relative_abundances)); }
+
+  // Write the bootstrap results
+  void write_abundances(const std::vector<std::string> &group_names, std::ostream *os) const;
 
   // Get the results
   const std::vector<std::vector<double>>& get_results() const { return this->bootstrap_results; }

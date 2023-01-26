@@ -25,6 +25,7 @@
 #include "Sample.hpp"
 
 #include "openmp_config.hpp"
+#include "version.h"
 
 void BootstrapSample::init_bootstrap(const telescope::GroupedAlignment &alignment) {
   // Clear the bootstrap abundances in case we're estimating the same sample again.
@@ -39,7 +40,7 @@ void BootstrapSample::init_bootstrap(const telescope::GroupedAlignment &alignmen
   ec_distribution = std::discrete_distribution<uint32_t>(weights.begin(), weights.end());
 }
 
-BootstrapSample::BootstrapSample(const telescope::GroupedAlignment &alignment, const int32_t seed) {
+BootstrapSample::BootstrapSample(const telescope::GroupedAlignment &alignment, const size_t _iters, const int32_t seed) {
   this->count_alignments(alignment);
   if (seed == -1) {
     std::random_device rd;
@@ -48,6 +49,7 @@ BootstrapSample::BootstrapSample(const telescope::GroupedAlignment &alignment, c
     this->gen = std::mt19937_64(seed);
   }
   this->num_ecs = alignment.n_ecs();
+  this->iters = _iters;
 
   this->init_bootstrap(alignment);
 }
@@ -65,4 +67,26 @@ std::vector<double> BootstrapSample::resample_counts(const uint32_t how_many) {
     resampled_log_ec_counts[i] = std::log(tmp_counts[i]);
   }
   return resampled_log_ec_counts;
+}
+
+void BootstrapSample::write_abundances(const std::vector<std::string> &group_names, std::ostream *of) const {
+  // Write relative abundances to a file,
+  // outputs to std::cout if outfile is empty.
+  if (of->good()) {
+    (*of) << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
+    (*of) << "#total_hits:" << '\t' << this->get_counts_total() << '\n';
+    (*of) << "#bootstrap_iters:" << '\t' << this->iters << '\n';
+    (*of) << "#c_id" << '\t' << "mean_theta" << '\t' << "bootstrap_mean_thetas" << '\n';
+
+    for (size_t i = 0; i < group_names.size(); ++i) {
+      (*of) << group_names[i] << '\t';
+      (*of) << this->bootstrap_results[0][i] << '\t'; // First vec has the relative abundances without bootstrapping
+      for (uint16_t j = 0; j < this->iters; ++j) {
+	(*of) << this->bootstrap_results[j + 1][i] << (j == this->iters - 1 ? '\n' : '\t');
+      }
+    }
+    of->flush();
+  } else {
+    throw std::runtime_error("Could not write to abundances file.");
+  }
 }

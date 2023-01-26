@@ -310,6 +310,7 @@ int main (int argc, char *argv[]) {
       // the command line arguments.
       std::unique_ptr<Sample> sample;
       bool bootstrap_mode = args.value<size_t>("iters") > (size_t)1;
+      bool bin_reads = args.value<bool>("bin-reads");
 
       // These are the main inputs to the abundance estimation code.
       seamat::DenseMatrix<double> log_likelihoods;
@@ -329,8 +330,10 @@ int main (int argc, char *argv[]) {
 	  // Note: this is also only used by the root process in MPI configuration.
 	  if (bootstrap_mode) {
 	    sample.reset(new BootstrapSample(alignment, args.value<size_t>("seed")));
+	  } else if (bin_reads) {
+	    sample.reset(new BinningSample(alignment));
 	  } else {
-	    sample.reset(new Sample(alignment, args.value<bool>("bin-reads")));
+	    sample.reset(new Sample(alignment));
 	  }
 
 	  // Fill log ec counts.
@@ -418,7 +421,7 @@ int main (int argc, char *argv[]) {
 	  const std::vector<double> &relative_abundances = rcgpar::mixture_components(ec_probs, log_ec_counts);
 
 	  // Bin the reads if requested
-	  if (args.value<bool>("bin-reads")) {
+	  if (bin_reads) {
 	    std::vector<std::string> target_names;
 	    if (CmdOptionPresent(argv, argv+argc, "--target-groups")) {
 	      target_names = std::move(args.value<std::vector<std::string>>("target-groups"));
@@ -428,7 +431,8 @@ int main (int argc, char *argv[]) {
 	    if (CmdOptionPresent(argv, argv+argc, "--min-abundance")) {
 	      mGEMS::FilterTargetGroups(reference.get_grouping(i).get_names(), relative_abundances, args.value<double>("min-abundance"), &target_names);
 	    }
-	    const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(sample->get_aligned_reads(), relative_abundances, ec_probs, reference.get_grouping(i).get_names(), &target_names);
+	    BinningSample* bs = static_cast<BinningSample*>(&(*sample));
+	    const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(bs->get_aligned_reads(), relative_abundances, ec_probs, reference.get_grouping(i).get_names(), &target_names);
 	    std::string outfile_dir = outfile;
 	    if (outfile_dir.find('/') != std::string::npos) {
 	      // If the outfile location is in another folder then get the path

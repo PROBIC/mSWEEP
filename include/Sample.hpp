@@ -35,9 +35,6 @@ class Sample {
 private:
   uint32_t counts_total;
 
-  // Need to store the read assignments to equivalence classes if also binning
-  std::vector<std::vector<uint32_t>> aligned_reads;
-
 protected:
   void count_alignments(const telescope::Alignment &alignment) {
     // Count the number of aligned reads and store in counts_total
@@ -51,16 +48,27 @@ protected:
 
 public:
   Sample() = default;
-  Sample(const telescope::GroupedAlignment &alignment, bool bin_reads) {
+  Sample(const telescope::GroupedAlignment &alignment) {
     this->count_alignments(alignment);
-    if (bin_reads) {
-      // TODO implement as derived class
-      this->aligned_reads = alignment.get_aligned_reads();
-    }
   }
 
   // Getters
   uint32_t get_counts_total() const { return this->counts_total; };
+
+};
+
+class BinningSample : public Sample {
+private:
+  // Need to store the read assignments to equivalence classes if also binning
+  std::vector<std::vector<uint32_t>> aligned_reads;
+
+public:
+  BinningSample(const telescope::GroupedAlignment &alignment) {
+    this->count_alignments(alignment);
+    this->aligned_reads = alignment.get_aligned_reads();
+  }
+
+  // Getters
   const std::vector<std::vector<uint32_t>>& get_aligned_reads() const { return this->aligned_reads; }
 
 };

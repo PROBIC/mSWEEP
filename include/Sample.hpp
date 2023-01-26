@@ -47,14 +47,17 @@ protected:
   }
 
 public:
-  Sample() = default;
-  Sample(const telescope::GroupedAlignment &alignment) {
-    this->count_alignments(alignment);
-  }
-
   // Getters
   uint32_t get_counts_total() const { return this->counts_total; };
 
+};
+
+class PlainSample : public Sample {
+public:
+  PlainSample() = default;
+  PlainSample(const telescope::GroupedAlignment &alignment) {
+    this->count_alignments(alignment);
+  }
 };
 
 class BinningSample : public Sample {

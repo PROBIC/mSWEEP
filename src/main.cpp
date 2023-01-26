@@ -333,7 +333,7 @@ int main (int argc, char *argv[]) {
 	  } else if (bin_reads) {
 	    sample.reset(new BinningSample(alignment));
 	  } else {
-	    sample.reset(new Sample(alignment));
+	    sample.reset(new PlainSample(alignment));
 	  }
 
 	  // Fill log ec counts.

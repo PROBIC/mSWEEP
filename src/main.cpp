@@ -330,8 +330,13 @@ int main (int argc, char *argv[]) {
 	  // Initialize Sample depending on how the alignment needs to be processed.
 	  // Note: this is also only used by the root process in MPI configuration.
 	  if (bootstrap_mode) {
-	    if (CmdOptionPresent(argv, argv+argc, "--bootstrap-count")) {
+	    bool count_provided = CmdOptionPresent(argv, argv+argc, "--bootstrap-count");
+	    if (count_provided && bin_reads) {
+	      sample.reset(new BinningBootstrap(alignment, args.value<size_t>("iters"), args.value<size_t>("bootstrap-count"), args.value<size_t>("seed")));
+	    } else if (count_provided && !bin_reads) {
 	      sample.reset(new BootstrapSample(alignment, args.value<size_t>("iters"), args.value<size_t>("bootstrap-count"), args.value<size_t>("seed")));
+	    } else if (bin_reads) {
+	      sample.reset(new BinningBootstrap(alignment, args.value<size_t>("iters"), args.value<size_t>("seed")));
 	    } else {
 	      sample.reset(new BootstrapSample(alignment, args.value<size_t>("iters"), args.value<size_t>("seed")));
 	    }
@@ -414,8 +419,14 @@ int main (int argc, char *argv[]) {
 	    if (CmdOptionPresent(argv, argv+argc, "--min-abundance")) {
 	      mGEMS::FilterTargetGroups(reference.get_grouping(i).get_names(), sample->get_abundances(), args.value<double>("min-abundance"), &target_names);
 	    }
-	    BinningSample* bs = static_cast<BinningSample*>(&(*sample));
-	    const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), ec_probs, reference.get_grouping(i).get_names(), &target_names);
+	    std::vector<std::vector<uint32_t>> bins;
+	    if (bootstrap_mode) {
+	      BinningBootstrap* bs = static_cast<BinningBootstrap*>(&(*sample));
+	      bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), ec_probs, reference.get_grouping(i).get_names(), &target_names));
+	    } else {
+	      BinningSample* bs = static_cast<BinningSample*>(&(*sample));
+	      bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), ec_probs, reference.get_grouping(i).get_names(), &target_names));
+	    }
 
 	    for (size_t j = 0; j < bins.size(); ++j) {
 	      mGEMS::WriteBin(bins[j], *out.bin(target_names[j]));

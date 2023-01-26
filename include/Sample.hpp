@@ -47,7 +47,6 @@ protected:
   }
 
 public:
-
   // Virtual functions
   // Store the relative abundances for later.
   virtual void store_abundances(const std::vector<double> &abundances) =0;
@@ -62,12 +61,33 @@ public:
 
 };
 
+class Binning {
+private:
+  // Need to store the read assignments to equivalence classes if also binning
+  std::vector<std::vector<uint32_t>> aligned_reads;
+
+protected:
+  // This class should never be initialized.
+  Binning() = default;
+
+  // Function for derived classes to set aligned_reads.
+  void store_aligned_reads(const std::vector<std::vector<uint32_t>> &_aligned_reads) {
+    this->aligned_reads = _aligned_reads;
+  }
+
+public:
+  // Getters
+  const std::vector<std::vector<uint32_t>>& get_aligned_reads() const { return this->aligned_reads; }
+
+};
+
 class PlainSample : public Sample {
 private:
   std::vector<double> relative_abundances;
 
 public:
   PlainSample() = default;
+
   PlainSample(const telescope::GroupedAlignment &alignment) {
     this->count_alignments(alignment);
   }
@@ -83,19 +103,14 @@ public:
 
 };
 
-class BinningSample : public PlainSample {
-private:
-  // Need to store the read assignments to equivalence classes if also binning
-  std::vector<std::vector<uint32_t>> aligned_reads;
-
+class BinningSample : public PlainSample, public Binning {
 public:
+  BinningSample() = default;
+
   BinningSample(const telescope::GroupedAlignment &alignment) {
     this->count_alignments(alignment);
-    this->aligned_reads = alignment.get_aligned_reads();
+    this->store_aligned_reads(alignment.get_aligned_reads());
   }
-
-  // Getters
-  const std::vector<std::vector<uint32_t>>& get_aligned_reads() const { return this->aligned_reads; }
 
 };
 
@@ -119,12 +134,19 @@ private:
   // Set all variables required to bootstrap the ec_counts later
   void init_bootstrap(const telescope::GroupedAlignment &alignment);
 
-  void construct(const telescope::GroupedAlignment &alignment, const size_t _iters, const int32_t seed);
+protected:
+  void construct(const telescope::GroupedAlignment &alignment, const size_t _iters, const int32_t seed, const size_t bootstrap_count=0);
 
 public:
+  BootstrapSample() = default;
+
   // Set seed in constructor
-  BootstrapSample(const telescope::GroupedAlignment &alignment, const size_t _iters, const int32_t seed);
-  BootstrapSample(const telescope::GroupedAlignment &alignment, const size_t _iters, const size_t bootstrap_count, const int32_t seed);
+  BootstrapSample(const telescope::GroupedAlignment &alignment, const size_t _iters, const int32_t seed) {
+    this->construct(alignment, _iters, seed);
+  }
+  BootstrapSample(const telescope::GroupedAlignment &alignment, const size_t _iters, const size_t _bootstrap_count, const int32_t seed) {
+    this->construct(alignment, _iters, seed, _bootstrap_count);
+  }
 
   // Resample the equivalence class counts
   std::vector<double> resample_counts();
@@ -137,6 +159,19 @@ public:
 
   // Getters
   const std::vector<double>& get_abundances() const override { return this->bootstrap_results[0]; }
+
+};
+
+class BinningBootstrap : public BootstrapSample, public Binning {
+public:
+  BinningBootstrap(const telescope::GroupedAlignment &alignment, const size_t _iters, const int32_t seed) {
+    this->construct(alignment, _iters, seed);
+    this->store_aligned_reads(alignment.get_aligned_reads());
+  }
+  BinningBootstrap(const telescope::GroupedAlignment &alignment, const size_t _iters, const size_t _bootstrap_count, const int32_t seed) {
+    this->construct(alignment, _iters, seed, _bootstrap_count);
+    this->store_aligned_reads(alignment.get_aligned_reads());
+  }
 
 };
 

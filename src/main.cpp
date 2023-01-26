@@ -104,7 +104,8 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   args.add_long_argument<bool>("write-likelihood-bitseq", "Write the likelihoods in a format can be parsed by BitSeq's (https://github.com/bitseq/bitseq) functions (default: false).", false);
 
   // Toggle compression
-  args.add_long_argument<bool>("gzip-probs", "Compress the output from --write-probs, --write-likelihood, or --write-likelihood-bitseq with zlib (default: false).\n\nInput options:", false);
+  args.add_long_argument<std::string>("compress", "Compress all output files using the given algorithm (one of z, bz2, lzma; default: don't compress).\n\nInput options:", "plaintext");
+  args.add_long_argument<int>("compression-level", "Compression level (0-9; default: 6).\n\nInput options:", 6);
 
   // How to merge paired alignments
   args.add_long_argument<std::string>("themisto-mode", "How to merge pseudoalignments for paired-end reads (intersection, union, or unpaired; default: intersection).", "intersection");
@@ -295,7 +296,7 @@ int main (int argc, char *argv[]) {
 #endif
 
   // Wrapper class for ensuring the outfile names are set consistently and correctly
-  OutfileHandler out(args.value<std::string>('o'), n_groupings, args.value<bool>("gzip-probs"));
+  OutfileHandler out(args.value<std::string>('o'), n_groupings, args.value<std::string>("compress"), args.value<int>("compression-level"));
 
   // Estimate abundances with all groupings
   for (uint16_t i = 0; i < n_groupings; ++i) {

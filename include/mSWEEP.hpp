@@ -29,10 +29,12 @@
 #include <vector>
 #include <fstream>
 #include <cstddef>
+#include <exception>
 
 #include "telescope.hpp"
 #include "Matrix.hpp"
 #include "cxxio.hpp"
+#include "bxzstr.hpp"
 
 #include "Reference.hpp"
 #include "Grouping.hpp"
@@ -40,7 +42,12 @@
 class OutfileHandler {
 private:
   bool printing;
+
   bool compress;
+  bxz::Compression type;
+  int compression_level;
+  std::string extension;
+
   std::string prefix;
   size_t n_groupings;
   size_t current_grouping;
@@ -50,19 +57,38 @@ private:
 
   void open(std::string &filename) {
     if (this->compress) {
-      filename += ".gz";
-      of.open_compressed(filename);
+      filename += this->extension;
+      of.open_compressed(filename, this->type, this->compression_level);
     } else {
       of.open(filename);
     }
   }
 
 public:
-  OutfileHandler(std::string _prefix, size_t _n_groupings, bool _compress_output) {
+  OutfileHandler(std::string _prefix, size_t _n_groupings, std::string _compress, int _level) {
     this->printing = _prefix.empty();
-    this->compress = _compress_output;
     this->prefix = _prefix;
     this->n_groupings = _n_groupings;
+
+    this->compress = (_compress != "plaintext");
+    if (this->compress) {
+      this->compression_level = _level;
+      if (_compress == "z") {
+	this->type = bxz::z;
+	this->extension = ".gz";
+      } else if (_compress == "bz2") {
+	this->type = bxz::bz2;
+	this->extension = ".bz2";
+      } else if (_compress == "lzma") {
+	this->type = bxz::lzma;
+	this->extension = ".xz";
+      } else if (_compress == "zstd") {
+	this->type = bxz::zstd;
+	this->extension = ".zst";
+      } else {
+	throw std::invalid_argument("unsupported compression type " + _compress);
+      }
+    }
 
     if (this->n_groupings > 1) {
       this->current_grouping = 0;

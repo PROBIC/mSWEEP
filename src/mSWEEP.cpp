@@ -143,18 +143,18 @@ void WriteLikelihoodBitSeq(const seamat::DenseMatrix<double> &ll_mat, const std:
 void WriteProbabilities(const seamat::DenseMatrix<double> &ec_probs, const std::vector<std::string> &cluster_indicators_to_string, std::ostream &of) {
   // Write the probability matrix to a file.
   if (of.good()) {
-    of << "ec_id" << ',';
+    of << "ec_id" << '\t';
     size_t n_rows = ec_probs.get_rows();
     size_t n_cols = ec_probs.get_cols();
     for (uint32_t i = 0; i < n_rows; ++i) {
       of << cluster_indicators_to_string[i];
-      of << (i < n_rows - 1 ? ',' : '\n');
+      of << (i < n_rows - 1 ? '\t' : '\n');
     }
     for (uint32_t i = 0; i < n_cols; ++i) {
-      of << i << ',';
+      of << i << '\t';
       for (uint32_t j = 0; j < n_rows; ++j) {
 	of << std::exp(ec_probs(j, i));
-	of << (j < n_rows - 1 ? ',' : '\n');
+	of << (j < n_rows - 1 ? '\t' : '\n');
       }
     }
     of << std::endl;

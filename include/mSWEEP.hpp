@@ -124,7 +124,7 @@ public:
 
   std::ostream* probs() {
     std::string probs_outfile = this->prefix;
-    probs_outfile += "_probs.csv";
+    probs_outfile += "_probs.tsv";
 
     this->open(probs_outfile);
     return &this->of.stream();

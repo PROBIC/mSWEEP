@@ -96,7 +96,7 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   args.set_not_required("min-abundance");
 
   // Options for outputting the probability matrix
-  args.add_long_argument<bool>("write-probs", "If specified, write the estimated read-to-group probabilities to a file with \"_probs.csv\" suffix (default:false).", false);
+  args.add_long_argument<bool>("write-probs", "If specified, write the estimated read-to-group probabilities to a file with \"_probs.tsv\" suffix (default:false).", false);
   args.add_long_argument<bool>("print-probs", "Print the read equivalence class probabilities to cout even if `-o` is given (default: false).", false);
 
   // Write likelihood or not

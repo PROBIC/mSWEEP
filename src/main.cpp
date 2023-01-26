@@ -318,58 +318,69 @@ int main (int argc, char *argv[]) {
       // These are the main inputs to the abundance estimation code.
       seamat::DenseMatrix<double> log_likelihoods;
       std::vector<double> log_ec_counts;
-      try {
-	// Check if reading likelihood from file.
-	// In MPI configurations, only root needs to read in the data. Distributing the values
-	// is handled by the rcgpar::rcg_optl_mpi implementation.
-	if (rank == 0 && !CmdOptionPresent(argv, argv+argc, "--read-likelihood")) {
-	  // Start from the pseudoalignments.
-	  // To save memory, the alignment can go out of scope.
-	  // The necessary values are stored in the Sample class.
-	  log << "  reading pseudoalignments" << '\n';
-	  const telescope::GroupedAlignment &alignment = ReadPseudoalignments(args.value<std::vector<std::string>>("themisto"), args.value<std::string>("themisto-mode"), reference);
+      // Check if reading likelihood from file.
+      // In MPI configurations, only root needs to read in the data. Distributing the values
+      // is handled by the rcgpar::rcg_optl_mpi implementation.
+      if (rank == 0 && !CmdOptionPresent(argv, argv+argc, "--read-likelihood")) {
+	// Start from the pseudoalignments.
+	// To save memory, the alignment can go out of scope.
+	// The necessary values are stored in the Sample class.
+	log << "  reading pseudoalignments" << '\n';
+	telescope::GroupedAlignment alignment;
+	try {
+	  alignment = std::move(ReadPseudoalignments(args.value<std::vector<std::string>>("themisto"), args.value<std::string>("themisto-mode"), reference));
+	} catch (std::exception &e) {
+	  finalize("Reading the pseudoalignments failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
+	  return 1;
+	}
 
-	  // Initialize Sample depending on how the alignment needs to be processed.
-	  // Note: this is also only used by the root process in MPI configuration.
-	  if (bootstrap_mode) {
-	    bool count_provided = CmdOptionPresent(argv, argv+argc, "--bootstrap-count");
-	    if (count_provided && bin_reads) {
-	      sample.reset(new BinningBootstrap(alignment, args.value<size_t>("iters"), args.value<size_t>("bootstrap-count"), args.value<size_t>("seed")));
-	    } else if (count_provided && !bin_reads) {
-	      sample.reset(new BootstrapSample(alignment, args.value<size_t>("iters"), args.value<size_t>("bootstrap-count"), args.value<size_t>("seed")));
-	    } else if (bin_reads) {
-	      sample.reset(new BinningBootstrap(alignment, args.value<size_t>("iters"), args.value<size_t>("seed")));
-	    } else {
-	      sample.reset(new BootstrapSample(alignment, args.value<size_t>("iters"), args.value<size_t>("seed")));
-	    }
+	// Initialize Sample depending on how the alignment needs to be processed.
+	// Note: this is also only used by the root process in MPI configuration.
+	if (bootstrap_mode) {
+	  bool count_provided = CmdOptionPresent(argv, argv+argc, "--bootstrap-count");
+	  if (count_provided && bin_reads) {
+	    sample.reset(new BinningBootstrap(alignment, args.value<size_t>("iters"), args.value<size_t>("bootstrap-count"), args.value<size_t>("seed")));
+	  } else if (count_provided && !bin_reads) {
+	    sample.reset(new BootstrapSample(alignment, args.value<size_t>("iters"), args.value<size_t>("bootstrap-count"), args.value<size_t>("seed")));
 	  } else if (bin_reads) {
-	    sample.reset(new BinningSample(alignment));
+	    sample.reset(new BinningBootstrap(alignment, args.value<size_t>("iters"), args.value<size_t>("seed")));
 	  } else {
-	    sample.reset(new PlainSample(alignment));
+	    sample.reset(new BootstrapSample(alignment, args.value<size_t>("iters"), args.value<size_t>("seed")));
 	  }
+	} else if (bin_reads) {
+	  sample.reset(new BinningSample(alignment));
+	} else {
+	  sample.reset(new PlainSample(alignment));
+	}
 
-	  // Fill log ec counts.
-	  log_ec_counts.resize(alignment.n_ecs(), 0);
+	// Fill log ec counts.
+	log_ec_counts.resize(alignment.n_ecs(), 0);
 #pragma omp parallel for schedule(static)
-	  for (uint32_t i = 0; i < alignment.n_ecs(); ++i) {
-	    log_ec_counts[i] = std::log(alignment.reads_in_ec(i));
-	  }
+	for (uint32_t i = 0; i < alignment.n_ecs(); ++i) {
+	  log_ec_counts[i] = std::log(alignment.reads_in_ec(i));
+	}
 
-	  log << "  read " << alignment.n_ecs() << " unique alignments" << '\n';
-	  log.flush();
+	log << "  read " << alignment.n_ecs() << " unique alignments" << '\n';
+	log.flush();
 
+	try {
 	  // Use the alignment data to populate the log_likelihoods matrix.
 	  log << "Building log-likelihood array" << '\n';
 	  log_likelihoods = std::move(likelihood_array_mat(alignment, reference.get_grouping(i), args.value<double>('q'), args.value<double>('e')));
+	} catch (std::exception &e) {
+	  finalize("Building the log-likelihood array failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
+	  return 1;
+	}
 
-	  log.flush();
-	} else {
+	log.flush();
+      } else {
+	try {
 	  // Reading both likelihoods and log_ec_counts from file.
 	  log_likelihoods = std::move(ReadLikelihoodFromFile(args.value<std::string>("read-likelihood"), reference, log.stream(), &log_ec_counts));
+	} catch (std::exception &e) {
+	  finalize("Reading the likelihoods failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
+	  return 1;
 	}
-      } catch (std::exception &e) {
-	finalize("Reading the input files failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
-	return 1;
       }
 
       try {
@@ -431,19 +442,29 @@ int main (int argc, char *argv[]) {
 	    }
 
 	    for (size_t j = 0; j < bins.size(); ++j) {
-	      mGEMS::WriteBin(bins[j], *out.bin(target_names[j]));
+	      try {
+		mGEMS::WriteBin(bins[j], *out.bin(target_names[j]));
+	      } catch (std::exception &e) {
+		finalize("Writing the bin for target group " + target_names[j] + " failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
+		return 1;
+	      }
 	    }
 	  }
 
-	  // Write ec_probs
-	  if (args.value<bool>("print-probs")) {
-	    // Note: this ignores the printing_output variable because
-	    // we might want to print the probs even when writing to
-	    // pipe them somewhere.
-	    WriteProbabilities(ec_probs, reference.get_grouping(i).get_names(), std::cout);
-	  }
-	  if (args.value<bool>("write-probs")) {
-	    WriteProbabilities(ec_probs, reference.get_grouping(i).get_names(), *out.probs());
+	  try {
+	    // Write ec_probs
+	    if (args.value<bool>("print-probs")) {
+	      // Note: this ignores the printing_output variable because
+	      // we might want to print the probs even when writing to
+	      // pipe them somewhere.
+	      WriteProbabilities(ec_probs, reference.get_grouping(i).get_names(), std::cout);
+	    }
+	    if (args.value<bool>("write-probs")) {
+	      WriteProbabilities(ec_probs, reference.get_grouping(i).get_names(), *out.probs());
+	    }
+	  } catch (std::exception &e) {
+	    finalize("Writing the probabilities failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
+	    return 1;
 	  }
 	}
 
@@ -469,7 +490,12 @@ int main (int argc, char *argv[]) {
 
       // Write relative abundances
       if (rank == 0) {
-	sample->write_abundances(reference.get_grouping(i).get_names(), out.abundances());
+	try {
+	  sample->write_abundances(reference.get_grouping(i).get_names(), out.abundances());
+	} catch (std::exception &e) {
+	  finalize("Writing the relative abundances failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
+	  return 1;
+	}
       }
       if (n_groupings > 1 && i < n_groupings - 1) {
 	out.next_grouping();

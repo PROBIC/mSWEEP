@@ -125,8 +125,7 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   // Number of iterations to run bootstrapping for
   args.add_long_argument<size_t>("iters", "Number of times to rerun estimation with bootstrapped alignments (default: 0).", (size_t)1);
   // Seed for bootstrapping
-  args.add_long_argument<size_t>("seed", "Seed for the random generator used in bootstrapping (default: random).");
-  args.set_not_required("seed");
+  args.add_long_argument<size_t>("seed", "Seed for the random generator used in bootstrapping (default: random).", 26012023);
   // How many reads to resample when bootstrapping
   args.add_long_argument<size_t>("bootstrap-count", "How many pseudoalignments to resample when bootstrapping (default: number of reads).\n\nLikelihood options:");
   args.set_not_required("bootstrap-count");
@@ -331,7 +330,11 @@ int main (int argc, char *argv[]) {
 	  // Initialize Sample depending on how the alignment needs to be processed.
 	  // Note: this is also only used by the root process in MPI configuration.
 	  if (bootstrap_mode) {
-	    sample.reset(new BootstrapSample(alignment, args.value<size_t>("iters"), args.value<size_t>("seed")));
+	    if (CmdOptionPresent(argv, argv+argc, "--bootstrap-count")) {
+	      sample.reset(new BootstrapSample(alignment, args.value<size_t>("iters"), args.value<size_t>("bootstrap-count"), args.value<size_t>("seed")));
+	    } else {
+	      sample.reset(new BootstrapSample(alignment, args.value<size_t>("iters"), args.value<size_t>("seed")));
+	    }
 	  } else if (bin_reads) {
 	    sample.reset(new BinningSample(alignment));
 	  } else {
@@ -439,12 +442,8 @@ int main (int argc, char *argv[]) {
 	  for (uint16_t k = 0; k < args.value<size_t>("iters"); ++k) {
 	    // Bootstrap the counts
 	    log << "Bootstrap" << " iter " << k + 1 << "/" << args.value<size_t>("iters") << '\n';
-	    if (rank == 0) {
-	      size_t bootstrap_count = bs->get_counts_total();
-	      if (CmdOptionPresent(argv, argv+argc, "--bootstrap-count"))
-		bootstrap_count = args.value<size_t>("bootstrap-count");
-	      log_ec_counts = std::move(bs->resample_counts(bootstrap_count));
-	    }
+	    if (rank == 0)
+	      log_ec_counts = std::move(bs->resample_counts());
 
 	    // Estimate with the bootstrapped counts
 	    // Reuse ec_probs since it has already been processed

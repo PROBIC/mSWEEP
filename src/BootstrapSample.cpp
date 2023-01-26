@@ -55,9 +55,9 @@ void BootstrapSample::init_bootstrap(const telescope::GroupedAlignment &alignmen
   ec_distribution = std::discrete_distribution<uint32_t>(weights.begin(), weights.end());
 }
 
-BootstrapSample::BootstrapSample(const telescope::GroupedAlignment &alignment, const size_t _iters, const int32_t seed) {
+void BootstrapSample::construct(const telescope::GroupedAlignment &alignment, const size_t _iters, const int32_t seed) {
   this->count_alignments(alignment);
-  if (seed == -1) {
+  if (seed == 26012023) {
     std::random_device rd;
     this->gen = std::mt19937_64(rd());
   } else {
@@ -65,14 +65,23 @@ BootstrapSample::BootstrapSample(const telescope::GroupedAlignment &alignment, c
   }
   this->num_ecs = alignment.n_ecs();
   this->iters = _iters;
-
+  this->bootstrap_count = this->get_counts_total();
   this->init_bootstrap(alignment);
 }
 
-std::vector<double> BootstrapSample::resample_counts(const uint32_t how_many) {
+BootstrapSample::BootstrapSample(const telescope::GroupedAlignment &alignment, const size_t _iters, const int32_t seed) {
+  this->construct(alignment, _iters, seed);
+}
+
+BootstrapSample::BootstrapSample(const telescope::GroupedAlignment &alignment, const size_t _iters, const size_t _bootstrap_count, const int32_t seed) {
+  this->construct(alignment, _iters, seed);
+  this->bootstrap_count = _bootstrap_count;
+}
+
+std::vector<double> BootstrapSample::resample_counts() {
   std::vector<uint32_t> tmp_counts(this->num_ecs);
 
-  for (uint32_t i = 0; i < how_many; ++i) {
+  for (uint32_t i = 0; i < this->bootstrap_count; ++i) {
     uint32_t ec_id = ec_distribution(this->gen);
     tmp_counts[ec_id] += 1;
   }

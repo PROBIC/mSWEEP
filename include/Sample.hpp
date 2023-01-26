@@ -107,6 +107,9 @@ private:
   // Max number of bootstrap iterations
   size_t iters;
 
+  // Number of ecs to bootstrap
+  size_t bootstrap_count;
+
   // Need to store this for resampling counts.
   size_t num_ecs;
 
@@ -116,12 +119,15 @@ private:
   // Set all variables required to bootstrap the ec_counts later
   void init_bootstrap(const telescope::GroupedAlignment &alignment);
 
+  void construct(const telescope::GroupedAlignment &alignment, const size_t _iters, const int32_t seed);
+
 public:
   // Set seed in constructor
   BootstrapSample(const telescope::GroupedAlignment &alignment, const size_t _iters, const int32_t seed);
+  BootstrapSample(const telescope::GroupedAlignment &alignment, const size_t _iters, const size_t bootstrap_count, const int32_t seed);
 
   // Resample the equivalence class counts
-  std::vector<double> resample_counts(const uint32_t how_many);
+  std::vector<double> resample_counts();
 
   // Store relative abundances in bootstrap_results
   void store_abundances(const std::vector<double> &abundances) override { this->bootstrap_results.emplace_back(std::move(abundances)); }

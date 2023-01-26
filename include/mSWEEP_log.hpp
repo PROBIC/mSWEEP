@@ -11,7 +11,7 @@
 #include <string>
 
 #include "cxxio.hpp"
-#include "mpi_config.hpp"
+#include "mSWEEP_mpi_config.hpp"
 
 class Log : public cxxio::Out {
  public:

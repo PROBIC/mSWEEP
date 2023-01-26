@@ -38,11 +38,11 @@
 #include "rcgpar.hpp"
 #include "bin_reads.h"
 
-#include "mpi_config.hpp"
-#include "openmp_config.hpp"
-#include "version.h"
+#include "mSWEEP_mpi_config.hpp"
+#include "mSWEEP_openmp_config.hpp"
+#include "mSWEEP_version.h"
 
-#include "msweep_log.hpp"
+#include "mSWEEP_log.hpp"
 #include "Reference.hpp"
 #include "mSWEEP.hpp"
 #include "Sample.hpp"
@@ -294,6 +294,7 @@ int main (int argc, char *argv[]) {
   MPI_Bcast(&n_groupings, 1, MPI_UINT16_T, 0, MPI_COMM_WORLD);
 #endif
 
+  // Wrapper class for ensuring the outfile names are set consistently and correctly
   OutfileHandler out(args.value<std::string>('o'), n_groupings, args.value<bool>("gzip-probs"));
 
   // Estimate abundances with all groupings
@@ -372,7 +373,7 @@ int main (int argc, char *argv[]) {
 
       try {
 	// Write the likelihood to disk here if it was requested.
-	if (rank == 0 && args.value<bool>("write-likelihood") || args.value<bool>("write-likelihood-bitseq") && rank == 0) {
+	if (rank == 0 && (args.value<bool>("write-likelihood") || args.value<bool>("write-likelihood-bitseq"))) {
 	  if (args.value<bool>("write-likelihood-bitseq")) {
 	    WriteLikelihoodBitSeq(log_likelihoods, log_ec_counts, reference.get_grouping(i).get_n_groups(), *out.likelihoods("bitseq"));
 	  } else {

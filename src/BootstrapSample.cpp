@@ -24,8 +24,8 @@
 //
 #include "Sample.hpp"
 
-#include "openmp_config.hpp"
-#include "version.h"
+#include "mSWEEP_openmp_config.hpp"
+#include "mSWEEP_version.h"
 
 void PlainSample::write_abundances(const std::vector<std::string> &group_names, std::ostream *of) const {
   // Write relative abundances to &of,

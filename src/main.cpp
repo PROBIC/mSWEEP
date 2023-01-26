@@ -418,7 +418,7 @@ int main (int argc, char *argv[]) {
 	// Run binning if requested and write results to files.
 	if (rank == 0) { // root performs the rest.
 	  // Turn the probs into relative abundances
-	  const std::vector<double> &relative_abundances = rcgpar::mixture_components(ec_probs, log_ec_counts);
+	  sample->store_abundances(rcgpar::mixture_components(ec_probs, log_ec_counts));
 
 	  // Bin the reads if requested
 	  if (bin_reads) {
@@ -429,10 +429,10 @@ int main (int argc, char *argv[]) {
 	      target_names = reference.get_grouping(i).get_names();
 	    }
 	    if (CmdOptionPresent(argv, argv+argc, "--min-abundance")) {
-	      mGEMS::FilterTargetGroups(reference.get_grouping(i).get_names(), relative_abundances, args.value<double>("min-abundance"), &target_names);
+	      mGEMS::FilterTargetGroups(reference.get_grouping(i).get_names(), sample->get_abundances(), args.value<double>("min-abundance"), &target_names);
 	    }
 	    BinningSample* bs = static_cast<BinningSample*>(&(*sample));
-	    const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(bs->get_aligned_reads(), relative_abundances, ec_probs, reference.get_grouping(i).get_names(), &target_names);
+	    const std::vector<std::vector<uint32_t>> &bins = mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), ec_probs, reference.get_grouping(i).get_names(), &target_names);
 	    std::string outfile_dir = outfile;
 	    if (outfile_dir.find('/') != std::string::npos) {
 	      // If the outfile location is in another folder then get the path
@@ -454,11 +454,8 @@ int main (int argc, char *argv[]) {
 	    std::string abundances_outfile = outfile + "_abundances.txt";
 	    of.open(abundances_outfile);
 	  }
-	  if (bootstrap_mode) {
-	    // Store for writing after bootstrapping.
-	    static_cast<BootstrapSample*>(&(*sample))->move_abundances(relative_abundances);
-	  } else {
-	    WriteAbundances(relative_abundances, reference.get_grouping(i).get_names(), sample->get_counts_total(), (printing_output ? std::cout : of.stream()));
+	  if (!bootstrap_mode) {
+	    sample->write_abundances(reference.get_grouping(i).get_names(), (printing_output ? &std::cout : &of.stream()));
 	    of.close();
 	  }
 
@@ -502,7 +499,7 @@ int main (int argc, char *argv[]) {
 	    // Estimate with the bootstrapped counts
 	    const seamat::DenseMatrix<double> &bootstrapped_ec_probs = rcg_optl(args, log_likelihoods, log_ec_counts, prior_counts, log);
 	    if (rank == 0)
-	      bs->move_abundances(rcgpar::mixture_components(bootstrapped_ec_probs, log_ec_counts));
+	      bs->store_abundances(rcgpar::mixture_components(bootstrapped_ec_probs, log_ec_counts));
 	  }
 
 	  // Write the results

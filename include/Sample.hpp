@@ -47,20 +47,43 @@ protected:
   }
 
 public:
+
+  // Virtual functions
+  // Store the relative abundances for later.
+  virtual void store_abundances(const std::vector<double> &abundances) =0;
+  // Getters
+  virtual const std::vector<double>& get_abundances() const =0;
+  // Write the relative abundances
+  virtual void write_abundances(const std::vector<std::string> &group_names, std::ostream *of) const =0;
+
+  // Non-virtuals
   // Getters
   uint32_t get_counts_total() const { return this->counts_total; };
 
 };
 
 class PlainSample : public Sample {
+private:
+  std::vector<double> relative_abundances;
+
 public:
   PlainSample() = default;
   PlainSample(const telescope::GroupedAlignment &alignment) {
     this->count_alignments(alignment);
   }
+
+  // Store relative abundances for writing
+  void store_abundances(const std::vector<double> &abundances) override { this->relative_abundances = std::move(abundances); }
+
+  // Write the relative abundances
+  void write_abundances(const std::vector<std::string> &group_names, std::ostream *of) const override;
+
+  // Getters
+  const std::vector<double>& get_abundances() const override { return this->relative_abundances; }
+
 };
 
-class BinningSample : public Sample {
+class BinningSample : public PlainSample {
 private:
   // Need to store the read assignments to equivalence classes if also binning
   std::vector<std::vector<uint32_t>> aligned_reads;
@@ -101,13 +124,13 @@ public:
   std::vector<double> resample_counts(const uint32_t how_many);
 
   // Store relative abundances in bootstrap_results
-  void move_abundances(const std::vector<double> &relative_abundances) { this->bootstrap_results.emplace_back(std::move(relative_abundances)); }
+  void store_abundances(const std::vector<double> &abundances) override { this->bootstrap_results.emplace_back(std::move(abundances)); }
 
   // Write the bootstrap results
-  void write_abundances(const std::vector<std::string> &group_names, std::ostream *os) const;
+  void write_abundances(const std::vector<std::string> &group_names, std::ostream *os) const override;
 
-  // Get the results
-  const std::vector<std::vector<double>>& get_results() const { return this->bootstrap_results; }
+  // Getters
+  const std::vector<double>& get_abundances() const override { return this->bootstrap_results[0]; }
 
 };
 

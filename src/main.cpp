@@ -385,6 +385,17 @@ int main (int argc, char *argv[]) {
 	return 1;
       }
 
+      // Check if printing to cout or writing to file.
+      bool printing_output = args.value<std::string>('o').empty();
+
+      // Correct the outfile prefix if there are several groupings.
+      std::string outfile = args.value<std::string>('o');
+      if (n_groupings > 1 && !printing_output && !args.value<bool>("no-fit-model")) {
+	// Append grouping id to output names.
+	outfile += "_";
+	outfile += std::to_string(i);
+      }
+
       // Start the abundance estimation part
       if (args.value<bool>("no-fit-model")) {
 	log << "Skipping relative abundance estimation (--no-fit-model toggled)" << '\n';
@@ -403,17 +414,6 @@ int main (int argc, char *argv[]) {
 
 	// Run estimation
 	const seamat::DenseMatrix<double> &ec_probs = rcg_optl(args, log_likelihoods, log_ec_counts, prior_counts, log);
-
-	// Check if printing to cout or writing to file.
-	bool printing_output = args.value<std::string>('o').empty();
-
-	// Correct the outfile prefix if there are several groupings.
-	std::string outfile = args.value<std::string>('o');
-	if (n_groupings > 1 && !printing_output) {
-	  // Append grouping id to output names.
-	  outfile += "_";
-	  outfile += std::to_string(i);
-	}
 
 	// Run binning if requested and write results to files.
 	if (rank == 0) { // root performs the rest.
@@ -447,18 +447,6 @@ int main (int argc, char *argv[]) {
 	    }
 	  }
 
-	  // Write relative abundances
-	  cxxio::Out of;
-	  std::string abundances_outfile(outfile);
-	  if (!printing_output) {
-	    std::string abundances_outfile = outfile + "_abundances.txt";
-	    of.open(abundances_outfile);
-	  }
-	  if (!bootstrap_mode) {
-	    sample->write_abundances(reference.get_grouping(i).get_names(), (printing_output ? &std::cout : &of.stream()));
-	    of.close();
-	  }
-
 	  // Write ec_probs
 	  if (args.value<bool>("print-probs")) {
 	    // Note: this ignores the printing_output variable because
@@ -466,6 +454,8 @@ int main (int argc, char *argv[]) {
 	    // pipe them somewhere.
 	    WriteProbabilities(ec_probs, reference.get_grouping(i).get_names(), std::cout);
 	  }
+
+	  cxxio::Out of;
 	  if (args.value<bool>("write-probs")) {
 	    // Note: same as above but opposite.
 	    std::string probs_outfile(outfile);
@@ -501,19 +491,19 @@ int main (int argc, char *argv[]) {
 	    if (rank == 0)
 	      bs->store_abundances(rcgpar::mixture_components(bootstrapped_ec_probs, log_ec_counts));
 	  }
-
-	  // Write the results
-	  if (rank == 0) {
-	    cxxio::Out of;
-	    std::string abundances_outfile(outfile);
-	    if (!printing_output) {
-	      std::string abundances_outfile = outfile + "_abundances.txt";
-	      of.open(abundances_outfile);
-	    }
-	    bs->write_abundances(reference.get_grouping(i).get_names(), (printing_output ? &std::cout : &of.stream()));
-	    of.close();
-	  }
 	}
+      }
+
+      // Write relative abundances
+      if (rank == 0) {
+	cxxio::Out of;
+	std::string abundances_outfile(outfile);
+	if (!printing_output) {
+	  std::string abundances_outfile = outfile + "_abundances.txt";
+	  of.open(abundances_outfile);
+	}
+	sample->write_abundances(reference.get_grouping(i).get_names(), (printing_output ? &std::cout : &of.stream()));
+	of.close();
       }
   }
   finalize("", log);

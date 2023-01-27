@@ -328,9 +328,9 @@ int main (int argc, char *argv[]) {
 	// To save memory, the alignment can go out of scope.
 	// The necessary values are stored in the Sample class.
 	log << "  reading pseudoalignments" << '\n';
-	telescope::GroupedAlignment alignment;
+	std::unique_ptr<telescope::Alignment> alignment;
 	try {
-	  alignment = std::move(ReadPseudoalignments(args.value<std::vector<std::string>>("themisto"), args.value<std::string>("themisto-mode"), reference));
+	  alignment = std::make_unique<telescope::GroupedAlignment>(ReadPseudoalignments(args.value<std::vector<std::string>>("themisto"), args.value<std::string>("themisto-mode"), reference));
 	} catch (std::exception &e) {
 	  finalize("Reading the pseudoalignments failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;
@@ -341,34 +341,34 @@ int main (int argc, char *argv[]) {
 	if (bootstrap_mode) {
 	  bool count_provided = CmdOptionPresent(argv, argv+argc, "--bootstrap-count");
 	  if (count_provided && bin_reads) {
-	    sample.reset(new BinningBootstrap(alignment, args.value<size_t>("iters"), args.value<size_t>("bootstrap-count"), args.value<size_t>("seed")));
+	    sample.reset(new BinningBootstrap(*alignment, args.value<size_t>("iters"), args.value<size_t>("bootstrap-count"), args.value<size_t>("seed")));
 	  } else if (count_provided && !bin_reads) {
-	    sample.reset(new BootstrapSample(alignment, args.value<size_t>("iters"), args.value<size_t>("bootstrap-count"), args.value<size_t>("seed")));
+	    sample.reset(new BootstrapSample(*alignment, args.value<size_t>("iters"), args.value<size_t>("bootstrap-count"), args.value<size_t>("seed")));
 	  } else if (bin_reads) {
-	    sample.reset(new BinningBootstrap(alignment, args.value<size_t>("iters"), args.value<size_t>("seed")));
+	    sample.reset(new BinningBootstrap(*alignment, args.value<size_t>("iters"), args.value<size_t>("seed")));
 	  } else {
-	    sample.reset(new BootstrapSample(alignment, args.value<size_t>("iters"), args.value<size_t>("seed")));
+	    sample.reset(new BootstrapSample(*alignment, args.value<size_t>("iters"), args.value<size_t>("seed")));
 	  }
 	} else if (bin_reads) {
-	  sample.reset(new BinningSample(alignment));
+	  sample.reset(new BinningSample(*alignment));
 	} else {
-	  sample.reset(new PlainSample(alignment));
+	  sample.reset(new PlainSample(*alignment));
 	}
 
 	// Fill log ec counts.
-	log_ec_counts.resize(alignment.n_ecs(), 0);
+	log_ec_counts.resize(alignment->n_ecs(), 0);
 #pragma omp parallel for schedule(static)
-	for (uint32_t i = 0; i < alignment.n_ecs(); ++i) {
-	  log_ec_counts[i] = std::log(alignment.reads_in_ec(i));
+	for (uint32_t i = 0; i < alignment->n_ecs(); ++i) {
+	  log_ec_counts[i] = std::log(alignment->reads_in_ec(i));
 	}
 
-	log << "  read " << alignment.n_ecs() << " unique alignments" << '\n';
+	log << "  read " << alignment->n_ecs() << " unique alignments" << '\n';
 	log.flush();
 
 	try {
 	  // Use the alignment data to populate the log_likelihoods matrix.
 	  log << "Building log-likelihood array" << '\n';
-	  log_likelihoods = std::move(likelihood_array_mat<double, uint16_t>(alignment, reference.get_grouping(i), args.value<double>('q'), args.value<double>('e')));
+	  log_likelihoods = std::move(likelihood_array_mat<double, uint16_t>(*static_cast<telescope::GroupedAlignment*>(&(*alignment)), reference.get_grouping(i), args.value<double>('q'), args.value<double>('e')));
 	} catch (std::exception &e) {
 	  finalize("Building the log-likelihood array failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;

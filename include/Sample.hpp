@@ -88,7 +88,7 @@ private:
 public:
   PlainSample() = default;
 
-  PlainSample(const telescope::GroupedAlignment &alignment) {
+  PlainSample(const telescope::Alignment &alignment) {
     this->count_alignments(alignment);
   }
 
@@ -107,7 +107,7 @@ class BinningSample : public PlainSample, public Binning {
 public:
   BinningSample() = default;
 
-  BinningSample(const telescope::GroupedAlignment &alignment) {
+  BinningSample(const telescope::Alignment &alignment) {
     this->count_alignments(alignment);
     this->store_aligned_reads(alignment.get_aligned_reads());
   }
@@ -132,19 +132,19 @@ private:
   std::vector<std::vector<double>> bootstrap_results;
 
   // Set all variables required to bootstrap the ec_counts later
-  void init_bootstrap(const telescope::GroupedAlignment &alignment);
+  void init_bootstrap(const telescope::Alignment &alignment);
 
 protected:
-  void construct(const telescope::GroupedAlignment &alignment, const size_t _iters, const int32_t seed, const size_t bootstrap_count=0);
+  void construct(const telescope::Alignment &alignment, const size_t _iters, const int32_t seed, const size_t bootstrap_count=0);
 
 public:
   BootstrapSample() = default;
 
   // Set seed in constructor
-  BootstrapSample(const telescope::GroupedAlignment &alignment, const size_t _iters, const int32_t seed) {
+  BootstrapSample(const telescope::Alignment &alignment, const size_t _iters, const int32_t seed) {
     this->construct(alignment, _iters, seed);
   }
-  BootstrapSample(const telescope::GroupedAlignment &alignment, const size_t _iters, const size_t _bootstrap_count, const int32_t seed) {
+  BootstrapSample(const telescope::Alignment &alignment, const size_t _iters, const size_t _bootstrap_count, const int32_t seed) {
     this->construct(alignment, _iters, seed, _bootstrap_count);
   }
 
@@ -164,11 +164,11 @@ public:
 
 class BinningBootstrap : public BootstrapSample, public Binning {
 public:
-  BinningBootstrap(const telescope::GroupedAlignment &alignment, const size_t _iters, const int32_t seed) {
+  BinningBootstrap(const telescope::Alignment &alignment, const size_t _iters, const int32_t seed) {
     this->construct(alignment, _iters, seed);
     this->store_aligned_reads(alignment.get_aligned_reads());
   }
-  BinningBootstrap(const telescope::GroupedAlignment &alignment, const size_t _iters, const size_t _bootstrap_count, const int32_t seed) {
+  BinningBootstrap(const telescope::Alignment &alignment, const size_t _iters, const size_t _bootstrap_count, const int32_t seed) {
     this->construct(alignment, _iters, seed, _bootstrap_count);
     this->store_aligned_reads(alignment.get_aligned_reads());
   }

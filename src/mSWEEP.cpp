@@ -28,6 +28,8 @@
 #include <exception>
 #include <numeric>
 
+#include "cxxio.hpp"
+
 
 void ReadGroupIndicators(const std::string &indicators_path, Reference *reference) {
   cxxio::In indicators_file(indicators_path);

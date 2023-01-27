@@ -47,6 +47,7 @@
 #include "mSWEEP.hpp"
 #include "Sample.hpp"
 #include "likelihood.hpp"
+#include "OutfileDesignator.hpp"
 
 void PrintCitationInfo() {
   // Print the citation information to cerr.
@@ -296,7 +297,7 @@ int main (int argc, char *argv[]) {
 #endif
 
   // Wrapper class for ensuring the outfile names are set consistently and correctly
-  OutfileHandler out(args.value<std::string>('o'), n_groupings, args.value<std::string>("compress"), args.value<int>("compression-level"));
+  OutfileDesignator out(args.value<std::string>('o'), n_groupings, args.value<std::string>("compress"), args.value<int>("compression-level"));
 
   // Estimate abundances with all groupings
   for (uint16_t i = 0; i < n_groupings; ++i) {

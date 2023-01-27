@@ -368,7 +368,7 @@ int main (int argc, char *argv[]) {
 	try {
 	  // Use the alignment data to populate the log_likelihoods matrix.
 	  log << "Building log-likelihood array" << '\n';
-	  log_likelihoods = std::move(likelihood_array_mat(alignment, reference.get_grouping(i), args.value<double>('q'), args.value<double>('e')));
+	  log_likelihoods = std::move(likelihood_array_mat<double, uint16_t>(alignment, reference.get_grouping(i), args.value<double>('q'), args.value<double>('e')));
 	} catch (std::exception &e) {
 	  finalize("Building the log-likelihood array failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;

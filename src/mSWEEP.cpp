@@ -30,12 +30,6 @@
 
 #include "cxxio.hpp"
 
-
-void ReadGroupIndicators(const std::string &indicators_path, Reference *reference) {
-  cxxio::In indicators_file(indicators_path);
-  reference->read_from_file(indicators_file.stream(), '\t'); // TODO: take delimiter as argument.
-}
-
 telescope::GroupedAlignment ReadPseudoalignments(const std::vector<std::string> &alignment_paths, const std::string &themisto_merge_mode, const Reference &reference) {
   size_t n_files = alignment_paths.size();
   std::vector<cxxio::In> infiles;

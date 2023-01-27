@@ -275,7 +275,8 @@ int main (int argc, char *argv[]) {
   try {
     if (rank == 0) { // Only root reads in data
       log << "  reading group indicators" << '\n';
-      ReadGroupIndicators(args.value<std::string>('i'), &reference);
+      cxxio::In indicators(args.value<std::string>('i'));
+      reference.read_from_file(indicators.stream(), '\t');
       if (reference.get_n_groupings() > 1) {
 	log << "  read " << reference.get_n_groupings() << " groupings" << '\n';
       }

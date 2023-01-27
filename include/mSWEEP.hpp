@@ -37,9 +37,6 @@
 #include "Grouping.hpp"
 
 // Read functions
-//// Read group indicators
-void ReadGroupIndicators(const std::string &indicators_path, Reference *reference);
-
 //// Read pseudoalignments
 telescope::GroupedAlignment ReadPseudoalignments(const std::vector<std::string> &alignment_paths,
 						 const std::string &themisto_merge_mode,

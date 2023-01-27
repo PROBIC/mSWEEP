@@ -22,8 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-#ifndef MSWEEP_MSWEEP_HPP
-#define MSWEEP_MSWEEP_HPP
+#ifndef MSWEEP_MSWEEP_IO_HPP
+#define MSWEEP_MSWEEP_IO_HPP
 
 #include <string>
 #include <vector>
@@ -34,7 +34,6 @@
 #include "Matrix.hpp"
 
 #include "Reference.hpp"
-#include "Grouping.hpp"
 
 // Read functions
 //// Read pseudoalignments

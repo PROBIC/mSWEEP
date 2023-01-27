@@ -81,7 +81,7 @@ ${CMAKE_SOURCE_DIR}/src/BootstrapSample.cpp
 ${CMAKE_SOURCE_DIR}/src/Reference.cpp
 ${CMAKE_SOURCE_DIR}/src/Grouping.cpp
 ${CMAKE_SOURCE_DIR}/src/likelihood.cpp
-${CMAKE_SOURCE_DIR}/src/mSWEEP.cpp
+${CMAKE_SOURCE_DIR}/src/mSWEEP_io.cpp
 ${CMAKE_SOURCE_DIR}/src/main.cpp)
 
 ## Check supported compression types

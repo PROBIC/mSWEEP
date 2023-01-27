@@ -43,8 +43,8 @@
 #include "mSWEEP_version.h"
 
 #include "mSWEEP_log.hpp"
+#include "mSWEEP_io.hpp"
 #include "Reference.hpp"
-#include "mSWEEP.hpp"
 #include "Sample.hpp"
 #include "likelihood.hpp"
 #include "OutfileDesignator.hpp"

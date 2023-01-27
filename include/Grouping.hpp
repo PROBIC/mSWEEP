@@ -53,6 +53,14 @@ public:
   // Find the numeric id of a group by its name
   uint32_t get_id(const std::string &name) const { return this->name_to_id.at(name); };
 
+  // Find size of the largest group
+  size_t max_group_size() const {
+    size_t max_size = 0;
+    for (size_t i = 0; i < this->n_groups; ++i)
+      max_size = (this->sizes[i] > max_size ? this->sizes[i] : max_size);
+    return max_size;
+  }
+
   // Getters
   const std::vector<std::string>& get_names() const { return this->names; };
   const std::vector<uint16_t>& get_sizes() const { return this->sizes; };

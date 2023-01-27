@@ -57,16 +57,16 @@ T ldbb_scaled(V k, V n, T alpha, T beta) {
 template <typename T, typename V>
 void precalc_lls(const Grouping &grouping, const T bb_constants[2], seamat::DenseMatrix<T> &ll_mat) {
   const std::vector<std::array<T, 2>> &bb_params = grouping.bb_parameters(bb_constants);
-  uint32_t n_groups = grouping.get_n_groups();
+  size_t n_groups = grouping.get_n_groups();
 
   V max_size = 0; // Storing the grouping can take a lot less space if it can be done with uint16_t or uint8_t.
-  for (uint32_t i = 0; i < n_groups; ++i) {
+  for (size_t i = 0; i < n_groups; ++i) {
     max_size = (grouping.get_sizes()[i] > max_size ? grouping.get_sizes()[i] : max_size);
   }
 
   ll_mat.resize(n_groups, max_size + 1, -4.60517);
 #pragma omp parallel for schedule(static) shared(ll_mat)
-  for (uint32_t i = 0; i < n_groups; ++i) {
+  for (size_t i = 0; i < n_groups; ++i) {
     for (V j = 1; j <= max_size; ++j) {
       ll_mat(i, j) = ldbb_scaled(j, grouping.get_sizes()[i], bb_params[i][0], bb_params[i][1]) - 0.01005034; // log(0.99) = -0.01005034
     }
@@ -75,8 +75,8 @@ void precalc_lls(const Grouping &grouping, const T bb_constants[2], seamat::Dens
 
 template <typename T, typename V>
 seamat::DenseMatrix<T> likelihood_array_mat(const telescope::GroupedAlignment &pseudos, const Grouping &grouping, const T tol, const T frac_mu) {
-  uint32_t num_ecs = pseudos.n_ecs();
-  uint16_t n_groups = grouping.get_n_groups();
+  size_t num_ecs = pseudos.n_ecs();
+  size_t n_groups = grouping.get_n_groups();
 
   seamat::DenseMatrix<T> precalc_lls_mat;
   T bb_constants[2] = { tol, frac_mu };

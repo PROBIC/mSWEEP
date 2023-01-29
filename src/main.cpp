@@ -305,7 +305,7 @@ int main (int argc, char *argv[]) {
       // Send the number of groups in this grouping from root to all processes
       uint16_t n_groups;
       if (rank == 0) // rank 0
-	n_groups = reference.get_grouping(i).get_n_groups();
+	n_groups = reference.n_groups(i);
 #if defined(MSWEEP_MPI_SUPPORT) && (MSWEEP_MPI_SUPPORT) == 1
       MPI_Bcast(&n_groups, 1, MPI_UINT16_T, 0, MPI_COMM_WORLD);
 #endif
@@ -389,9 +389,9 @@ int main (int argc, char *argv[]) {
 	// Write the likelihood to disk here if it was requested.
 	if (rank == 0 && (args.value<bool>("write-likelihood") || args.value<bool>("write-likelihood-bitseq"))) {
 	  if (args.value<bool>("write-likelihood-bitseq")) {
-	    WriteLikelihoodBitSeq(log_likelihoods, log_ec_counts, reference.get_grouping(i).get_n_groups(), *out.likelihoods("bitseq"));
+	    WriteLikelihoodBitSeq(log_likelihoods, log_ec_counts, reference.n_groups(i), *out.likelihoods("bitseq"));
 	  } else {
-	    WriteLikelihood(log_likelihoods, log_ec_counts, reference.get_grouping(i).get_n_groups(), *out.likelihoods("mSWEEP"));
+	    WriteLikelihood(log_likelihoods, log_ec_counts, reference.n_groups(i), *out.likelihoods("mSWEEP"));
 	  }
 	}
       } catch (std::exception &e) {

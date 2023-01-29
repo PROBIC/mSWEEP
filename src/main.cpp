@@ -429,18 +429,18 @@ int main (int argc, char *argv[]) {
 	    if (CmdOptionPresent(argv, argv+argc, "--target-groups")) {
 	      target_names = std::move(args.value<std::vector<std::string>>("target-groups"));
 	    } else {
-	      target_names = reference.get_grouping(i).get_names();
+	      target_names = reference.group_names(i);
 	    }
 	    if (CmdOptionPresent(argv, argv+argc, "--min-abundance")) {
-	      mGEMS::FilterTargetGroups(reference.get_grouping(i).get_names(), sample->get_abundances(), args.value<double>("min-abundance"), &target_names);
+	      mGEMS::FilterTargetGroups(reference.group_names(i), sample->get_abundances(), args.value<double>("min-abundance"), &target_names);
 	    }
 	    std::vector<std::vector<uint32_t>> bins;
 	    if (bootstrap_mode) {
 	      BinningBootstrap* bs = static_cast<BinningBootstrap*>(&(*sample));
-	      bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), ec_probs, reference.get_grouping(i).get_names(), &target_names));
+	      bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), ec_probs, reference.group_names(i), &target_names));
 	    } else {
 	      BinningSample* bs = static_cast<BinningSample*>(&(*sample));
-	      bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), ec_probs, reference.get_grouping(i).get_names(), &target_names));
+	      bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), ec_probs, reference.group_names(i), &target_names));
 	    }
 
 	    for (size_t j = 0; j < bins.size(); ++j) {
@@ -459,10 +459,10 @@ int main (int argc, char *argv[]) {
 	      // Note: this ignores the printing_output variable because
 	      // we might want to print the probs even when writing to
 	      // pipe them somewhere.
-	      WriteProbabilities(ec_probs, reference.get_grouping(i).get_names(), std::cout);
+	      WriteProbabilities(ec_probs, reference.group_names(i), std::cout);
 	    }
 	    if (args.value<bool>("write-probs")) {
-	      WriteProbabilities(ec_probs, reference.get_grouping(i).get_names(), *out.probs());
+	      WriteProbabilities(ec_probs, reference.group_names(i), *out.probs());
 	    }
 	  } catch (std::exception &e) {
 	    finalize("Writing the probabilities failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
@@ -493,7 +493,7 @@ int main (int argc, char *argv[]) {
       // Write relative abundances
       if (rank == 0) {
 	try {
-	  sample->write_abundances(reference.get_grouping(i).get_names(), out.abundances());
+	  sample->write_abundances(reference.group_names(i), out.abundances());
 	} catch (std::exception &e) {
 	  finalize("Writing the relative abundances failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;

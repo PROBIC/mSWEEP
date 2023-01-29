@@ -46,7 +46,7 @@ void Reference::read_from_file(std::istream &indicator_file, const char delimite
       uint16_t grouping_id = 0;
       while (std::getline(indicators, indicator, delimiter)) {
 	if (grouping_id >= this->n_groupings) {
-	  this->groupings.emplace_back(Grouping());
+	  this->groupings.emplace_back(Grouping<uint16_t>());
 	  this->groups_indicators.emplace_back(std::vector<uint32_t>());
 	  ++this->n_groupings;
 	}
@@ -71,7 +71,7 @@ void Reference::match_with_fasta(const char delim, std::istream &groups_file, st
   }
 
   this->n_groupings = groups_in_fasta[0].size();
-  this->groupings = std::vector<Grouping>(this->n_groupings);
+  this->groupings = std::vector<Grouping<uint16_t>>(this->n_groupings);
   this->groups_indicators = std::vector<std::vector<uint32_t>>(this->n_groupings);
 
   for (uint32_t i = 0; i < groups_in_fasta.size(); ++i) {

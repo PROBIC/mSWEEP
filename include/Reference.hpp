@@ -38,7 +38,7 @@ private:
   uint16_t n_groupings = 0;
 
   std::vector<std::vector<uint32_t>> groups_indicators;
-  std::vector<Grouping> groupings;
+  std::vector<Grouping<uint16_t>> groupings;
 
   void add_sequence(const std::string &seq_name, const uint16_t grouping_id);
 
@@ -51,7 +51,7 @@ public:
   const std::vector<std::string>& group_names(const size_t grouping_id) const { return this->groupings[grouping_id].get_names(); };
 
   // Getters
-  const Grouping& get_grouping(const uint16_t grouping_id) const { return this->groupings[grouping_id]; };
+  const Grouping<uint16_t>& get_grouping(const uint16_t grouping_id) const { return this->groupings[grouping_id]; };
   const std::vector<uint32_t>& get_group_indicators(const uint16_t grouping_id) const { return this->groups_indicators[grouping_id]; };
   uint32_t get_n_refs() const { return this->n_refs; };
   uint16_t get_n_groupings() const { return this->n_groupings; };

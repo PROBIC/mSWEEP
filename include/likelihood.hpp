@@ -55,7 +55,7 @@ T ldbb_scaled(V k, V n, T alpha, T beta) {
 }
 
 template <typename T, typename V>
-void precalc_lls(const Grouping &grouping, const T bb_constants[2], seamat::DenseMatrix<T> &ll_mat) {
+void precalc_lls(const Grouping<V> &grouping, const T bb_constants[2], seamat::DenseMatrix<T> &ll_mat) {
   const std::vector<std::array<T, 2>> &bb_params = grouping.bb_parameters(bb_constants);
   size_t n_groups = grouping.get_n_groups();
 
@@ -74,7 +74,7 @@ void precalc_lls(const Grouping &grouping, const T bb_constants[2], seamat::Dens
 }
 
 template <typename T, typename V>
-seamat::DenseMatrix<T> likelihood_array_mat(const telescope::GroupedAlignment &pseudos, const Grouping &grouping, const T tol, const T frac_mu) {
+seamat::DenseMatrix<T> likelihood_array_mat(const telescope::GroupedAlignment &pseudos, const Grouping<V> &grouping, const T tol, const T frac_mu) {
   size_t num_ecs = pseudos.n_ecs();
   size_t n_groups = grouping.get_n_groups();
 

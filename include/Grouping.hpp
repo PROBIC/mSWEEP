@@ -31,11 +31,12 @@
 #include <unordered_map>
 #include <array>
 
+template <typename T>
 class Grouping {
 private:
   uint32_t n_groups = 0;
 
-  std::vector<uint16_t> sizes;
+  std::vector<T> sizes;
   std::vector<std::string> names;
   std::unordered_map<std::string, uint32_t> name_to_id;
 
@@ -83,7 +84,7 @@ public:
 
   // Getters
   const std::vector<std::string>& get_names() const { return this->names; };
-  const std::vector<uint16_t>& get_sizes() const { return this->sizes; };
+  const std::vector<T>& get_sizes() const { return this->sizes; };
   uint32_t get_n_groups() const { return this->n_groups; };
 };
 

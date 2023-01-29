@@ -40,15 +40,35 @@ private:
   std::unordered_map<std::string, uint32_t> name_to_id;
 
   // Adds group_name to this Grouping
-  void add_group(const std::string &group_name);
+  void add_group(const std::string &group_name) {
+    this->name_to_id[group_name] = this->name_to_id.size(); // Newest always has id equal to size.
+    this->names.emplace_back(group_name);
+    this->sizes.emplace_back(0);
+    this->n_groups += 1;
+  }
 
 public:
   // Increase the count of sequences assigned to group_name, and add
   // group_name to this grouping if it does not exist yet.
-  void add_sequence(const std::string &group_name);
+  void add_sequence(const std::string &group_name) {
+    if (this->name_to_id.find(group_name) == this->name_to_id.end()) {
+      this->add_group(group_name);
+    }
+    this->sizes[this->name_to_id[group_name]] += 1;
+  }
 
   // Calculates the group-specific likelihood parameters that depend on the group sizes
-  std::vector<std::array<double, 2>> bb_parameters(const double bb_constants[2]) const;
+  std::vector<std::array<double, 2>> bb_parameters(const double bb_constants[2]) const {
+    std::vector<std::array<double, 2>> bb_params(this->n_groups);
+    for (size_t i = 0; i < this->n_groups; ++i) {
+      double e = this->sizes[i]*bb_constants[0];
+      double phi = 1.0/(this->sizes[i] - e + bb_constants[1]);
+      double beta = phi*(this->sizes[i] - e);
+      double alpha = (e*beta)/(this->sizes[i] - e);
+      bb_params[i] = std::array<double, 2>{ { alpha, beta } };
+    }
+    return bb_params;
+  }
 
   // Find the numeric id of a group by its name
   uint32_t get_id(const std::string &name) const { return this->name_to_id.at(name); };

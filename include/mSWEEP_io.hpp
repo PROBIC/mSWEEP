@@ -36,10 +36,6 @@
 #include "Reference.hpp"
 #include "likelihood.hpp"
 
-// Read functions
-//// Read pseudoalignments
-void ReadPseudoalignments(const std::vector<std::string> &alignment_paths, const std::string &themisto_merge_mode, const Reference &reference, std::unique_ptr<telescope::Alignment> &aln, LL_WOR21<double, uint16_t>* log_likelihoods);
-
 //// Write read-reference probabilities
 void WriteProbabilities(const seamat::DenseMatrix<double> &ec_probs, const std::vector<std::string> &cluster_indicators_to_string, std::ostream &of);
 

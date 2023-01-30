@@ -329,9 +329,35 @@ int main (int argc, char *argv[]) {
 	log << "  reading pseudoalignments" << '\n';
 	std::unique_ptr<telescope::Alignment> alignment;
 	try {
-	  ReadPseudoalignments(args.value<std::vector<std::string>>("themisto"), args.value<std::string>("themisto-mode"), reference, alignment, &log_likelihoods);
+	  const std::vector<std::string> &alignment_paths = args.value<std::vector<std::string>>("themisto");
+	  size_t n_files = alignment_paths.size();
+
+	  // Open the infiles
+	  std::vector<cxxio::In> infiles;
+	  infiles.reserve(n_files);
+	  std::vector<std::istream*> strands(n_files);
+	  if (n_files > 0) {
+	    for (size_t i = 0; i < n_files; ++i) {
+	      infiles.emplace_back(cxxio::In(alignment_paths[i]));
+	      strands[i] = &infiles[i].stream();
+	    }
+	  } else {
+	    strands.emplace_back(&std::cin);
+	  }
+
+	  // Read the pseudoalignment
+	  telescope::read::ThemistoGrouped(telescope::get_mode(args.value<std::string>("themisto-mode")), reference.get_n_refs(), reference.get_group_indicators(i), strands, alignment);
+	  std::cerr << static_cast<const telescope::GroupedAlignment<uint16_t>*>(&(*alignment))->get_group_count(0, 0) << std::endl;
 	} catch (std::exception &e) {
 	  finalize("Reading the pseudoalignments failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
+	  return 1;
+	}
+
+	// Use the alignment data to populate the log_likelihoods matrix.
+	try {
+	  log_likelihoods.from_grouped_alignment(*alignment, reference.get_grouping(i));
+	}  catch (std::exception &e) {
+	  finalize("Building the log-likelihood array failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;
 	}
 

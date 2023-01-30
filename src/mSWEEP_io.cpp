@@ -30,29 +30,6 @@
 
 #include "cxxio.hpp"
 
-void ReadPseudoalignments(const std::vector<std::string> &alignment_paths, const std::string &themisto_merge_mode, const Reference &reference, std::unique_ptr<telescope::Alignment> &aln, LL_WOR21<double, uint16_t>* log_likelihoods) {
-  size_t n_files = alignment_paths.size();
-  std::vector<cxxio::In> infiles;
-  infiles.reserve(n_files);
-  std::vector<std::istream*> strands(n_files);
-  if (n_files > 0) {
-    for (size_t i = 0; i < n_files; ++i) {
-      infiles.emplace_back(cxxio::In(alignment_paths[i]));
-      strands[i] = &infiles[i].stream();
-    }
-  } else {
-    strands.emplace_back(&std::cin);
-  }
-  telescope::read::ThemistoGrouped(telescope::get_mode(themisto_merge_mode), reference.get_n_refs(), reference.get_group_indicators(0), strands, aln);
-
-  try {
-    // Use the alignment data to populate the log_likelihoods matrix.
-    log_likelihoods->from_grouped_alignment(*aln, reference.get_grouping(0));
-  } catch (std::exception &e) {
-    throw e;
-  }
-}
-
 void WriteProbabilities(const seamat::DenseMatrix<double> &ec_probs, const std::vector<std::string> &cluster_indicators_to_string, std::ostream &of) {
   // Write the probability matrix to a file.
   if (of.good()) {

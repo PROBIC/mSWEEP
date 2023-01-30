@@ -79,7 +79,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/mSWEEP_mpi_config.hpp.in ${CMA
 add_executable(mSWEEP
 ${CMAKE_SOURCE_DIR}/src/BootstrapSample.cpp
 ${CMAKE_SOURCE_DIR}/src/Reference.cpp
-${CMAKE_SOURCE_DIR}/src/mSWEEP_io.cpp
 ${CMAKE_SOURCE_DIR}/src/main.cpp)
 
 ## Check supported compression types

@@ -43,7 +43,6 @@
 #include "mSWEEP_version.h"
 
 #include "mSWEEP_log.hpp"
-#include "mSWEEP_io.hpp"
 #include "Reference.hpp"
 #include "Sample.hpp"
 #include "likelihood.hpp"
@@ -347,7 +346,6 @@ int main (int argc, char *argv[]) {
 
 	  // Read the pseudoalignment
 	  telescope::read::ThemistoGrouped(telescope::get_mode(args.value<std::string>("themisto-mode")), reference.get_n_refs(), reference.get_group_indicators(i), strands, alignment);
-	  std::cerr << static_cast<const telescope::GroupedAlignment<uint16_t>*>(&(*alignment))->get_group_count(0, 0) << std::endl;
 	} catch (std::exception &e) {
 	  finalize("Reading the pseudoalignments failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;
@@ -424,12 +422,12 @@ int main (int argc, char *argv[]) {
 	}
 
 	// Run estimation
-	seamat::DenseMatrix<double> ec_probs = std::move(rcg_optl(args, log_likelihoods.log_mat(), log_likelihoods.log_counts(), prior_counts, log));
+	sample->store_probs(rcg_optl(args, log_likelihoods.log_mat(), log_likelihoods.log_counts(), prior_counts, log));
 
 	// Run binning if requested and write results to files.
 	if (rank == 0) { // root performs the rest.
 	  // Turn the probs into relative abundances
-	  sample->store_abundances(rcgpar::mixture_components(ec_probs, log_likelihoods.log_counts()));
+	  sample->store_abundances(rcgpar::mixture_components(sample->get_probs(), log_likelihoods.log_counts()));
 
 	  // Bin the reads if requested
 	  if (bin_reads) {
@@ -445,10 +443,10 @@ int main (int argc, char *argv[]) {
 	    std::vector<std::vector<uint32_t>> bins;
 	    if (bootstrap_mode) {
 	      BinningBootstrap* bs = static_cast<BinningBootstrap*>(&(*sample));
-	      bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), ec_probs, reference.group_names(i), &target_names));
+	      bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), sample->get_probs(), reference.group_names(i), &target_names));
 	    } else {
 	      BinningSample* bs = static_cast<BinningSample*>(&(*sample));
-	      bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), ec_probs, reference.group_names(i), &target_names));
+	      bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), sample->get_probs(), reference.group_names(i), &target_names));
 	    }
 
 	    for (size_t j = 0; j < bins.size(); ++j) {
@@ -467,10 +465,10 @@ int main (int argc, char *argv[]) {
 	      // Note: this ignores the printing_output variable because
 	      // we might want to print the probs even when writing to
 	      // pipe them somewhere.
-	      WriteProbabilities(ec_probs, reference.group_names(i), std::cout);
+	      sample->write_probs(reference.group_names(i), &std::cout);
 	    }
 	    if (args.value<bool>("write-probs")) {
-	      WriteProbabilities(ec_probs, reference.group_names(i), *out.probs());
+	      sample->write_probs(reference.group_names(i), out.probs());
 	    }
 	  } catch (std::exception &e) {
 	    finalize("Writing the probabilities failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
@@ -492,9 +490,9 @@ int main (int argc, char *argv[]) {
 
 	    // Estimate with the bootstrapped counts
 	    // Reuse ec_probs since it has already been processed
-	    ec_probs = std::move(rcg_optl(args, log_likelihoods.log_mat(), resampled_counts, prior_counts, log));
+	    bs->store_probs(rcg_optl(args, log_likelihoods.log_mat(), resampled_counts, prior_counts, log));
 	    if (rank == 0)
-	      bs->store_abundances(rcgpar::mixture_components(ec_probs, resampled_counts));
+	      bs->store_abundances(rcgpar::mixture_components(sample->get_probs(), resampled_counts));
 	  }
 	}
       }

@@ -28,12 +28,18 @@
 #include <cstddef>
 #include <vector>
 #include <random>
+#include <iostream>
+#include <fstream>
+#include <cmath>
+#include <exception>
 
 #include "telescope.hpp"
+#include "Matrix.hpp"
 
 class Sample {
 private:
   uint32_t counts_total;
+  seamat::DenseMatrix<double> ec_probabilities;
 
 protected:
   void count_alignments(const telescope::Alignment &alignment) {
@@ -50,14 +56,43 @@ public:
   // Virtual functions
   // Store the relative abundances for later.
   virtual void store_abundances(const std::vector<double> &abundances) =0;
+
   // Getters
   virtual const std::vector<double>& get_abundances() const =0;
   // Write the relative abundances
   virtual void write_abundances(const std::vector<std::string> &group_names, std::ostream *of) const =0;
 
   // Non-virtuals
+  // Store equivalence class probabilities
+  void store_probs(const seamat::DenseMatrix<double> &probs) { this->ec_probabilities = std::move(probs); }
+
+  void write_probs(const std::vector<std::string> &cluster_indicators_to_string, std::ostream *of) {
+    // Write the probability matrix to a file.
+    if (of->good()) {
+      *of << "ec_id" << '\t';
+      size_t n_rows = this->ec_probabilities.get_rows();
+      size_t n_cols = this->ec_probabilities.get_cols();
+      for (uint32_t i = 0; i < n_rows; ++i) {
+	*of << cluster_indicators_to_string[i];
+	*of << (i < n_rows - 1 ? '\t' : '\n');
+      }
+      for (uint32_t i = 0; i < n_cols; ++i) {
+	*of << i << '\t';
+	for (uint32_t j = 0; j < n_rows; ++j) {
+	  *of << std::exp(this->ec_probabilities(j, i));
+	  *of << (j < n_rows - 1 ? '\t' : '\n');
+	}
+      }
+      *of << std::endl;
+      of->flush();
+    } else {
+      throw std::runtime_error("Can't write to probs file.");
+    }
+  }
+
   // Getters
   uint32_t get_counts_total() const { return this->counts_total; };
+  const seamat::DenseMatrix<double>& get_probs() const { return this->ec_probabilities; }
 
 };
 

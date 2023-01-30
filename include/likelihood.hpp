@@ -159,6 +159,72 @@ public:
     this->log_likelihoods = std::move(likelihoods);
   }
 
+  void write_likelihood_mSWEEP(std::ostream *of) {
+    // Write likelihoods to a file
+    size_t n_ecs = this->log_ec_counts.size();
+    size_t n_groups = this->log_likelihoods.get_rows();
+
+    if (of->good()) {
+      for (uint32_t i = 0; i < n_ecs; ++i){
+	uint32_t ec_hit_count = std::round(std::exp(log_ec_counts[i]));
+	*of << ec_hit_count << '\t';
+	for (uint32_t j = 0; j < n_groups; ++j) {
+	  *of << this->log_likelihoods(j, i);
+	  *of << (j == n_groups - 1 ? '\n' : '\t');
+	}
+      }
+      of->flush();
+    } else {
+      throw std::runtime_error("Can't write to likelihoods file.");
+    }
+  }
+
+  void write_likelihood_BitSeq(std::ostream *of) {
+    // Write likelihoods to a file
+    // *Note*: will write in BitSeq format!
+    // Use Sample::write_likelihoods if tab-separated matrix format is needed.
+
+    auto sum_of_exps = [](size_t accumulator, const double &val) {
+      return accumulator + std::exp(val);
+    };
+
+    size_t n_ecs = this->log_ec_counts.size();
+    size_t n_groups = this->log_likelihoods.get_rows();
+    if (of->good()) {
+      size_t counts_total = std::accumulate(this->log_ec_counts.begin(), this->log_ec_counts.end(), 0, sum_of_exps);
+      *of << "# Ntotal " << counts_total << '\n';
+      *of << "# Nmap " << counts_total << '\n';
+      *of << "# M " << n_groups << '\n';
+      *of << "# LOGFORMAT (probabilities saved on log scale.)" << '\n';
+      *of << "# r_name num_alignments (tr_id prob )^*{num_alignments}" << '\n';
+
+      uint32_t read_id = 1;
+      for (uint32_t i = 0; i < n_ecs; ++i) {
+	uint32_t ec_hit_count = std::round(std::exp(log_ec_counts[i]));
+	for (uint32_t k = 0; k < ec_hit_count; ++k) {
+	  *of << read_id << ' ';
+	  *of << n_groups + 1 << ' ';
+	  for (uint32_t j = 0; j < n_groups; ++j) {
+	    *of << j + 1 << ' ' << this->log_likelihoods(j, i) << ' ';
+	  }
+	  *of << 0 << ' ' << "-10000.00" << '\n';
+	  ++read_id;
+	}
+      }
+      of->flush();
+    } else {
+      throw std::runtime_error("Can't write to likelihoods file (bitseq format).");
+    }
+  }
+
+  void write(const std::string &format, std::ostream *of) {
+    if (format == "bitseq") {
+      this->write_likelihood_BitSeq(of);
+    } else {
+      this->write_likelihood_mSWEEP(of);
+    }
+  }
+
   T& operator()(const size_t row, const size_t col) override { return this->log_likelihoods(row, col); }
   const T& operator()(const size_t row, const size_t col) const override { return this->log_likelihoods(row, col); }
 

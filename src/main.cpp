@@ -374,13 +374,8 @@ int main (int argc, char *argv[]) {
 
       try {
 	// Write the likelihood to disk here if it was requested.
-	if (rank == 0 && (args.value<bool>("write-likelihood") || args.value<bool>("write-likelihood-bitseq"))) {
-	  if (args.value<bool>("write-likelihood-bitseq")) {
-	    //WriteLikelihoodBitSeq(log_likelihoods, log_ec_counts, reference.n_groups(i), *out.likelihoods("bitseq"));
-	  } else {
-	    //WriteLikelihood(log_likelihoods, log_ec_counts, reference.n_groups(i), *out.likelihoods("mSWEEP"));
-	  }
-	}
+	if (rank == 0 && (args.value<bool>("write-likelihood") || args.value<bool>("write-likelihood-bitseq")))
+	  log_likelihoods.write((args.value<bool>("write-likelihood-bitseq") ? "bitseq" : "mSWEEP"), out.likelihoods((args.value<bool>("write-likelihood-bitseq") ? "bitseq" : "mSWEEP")));
       } catch (std::exception &e) {
 	finalize("Writing the likelihood to file failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	return 1;

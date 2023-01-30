@@ -45,7 +45,7 @@
 #include "mSWEEP_log.hpp"
 #include "Reference.hpp"
 #include "Sample.hpp"
-#include "likelihood.hpp"
+#include "Likelihood.hpp"
 #include "OutfileDesignator.hpp"
 
 void PrintCitationInfo() {

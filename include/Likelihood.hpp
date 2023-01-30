@@ -58,14 +58,14 @@ T ldbb_scaled(V k, V n, T alpha, T beta) {
 }
 
 template <typename T>
-class LogLikelihood {
+class Likelihood {
 public:
   virtual T& operator()(const size_t row, const size_t col) =0;
   virtual const T& operator()(const size_t row, const size_t col) const =0;
 };
 
 template <typename T, typename V>
-class LL_WOR21 : public LogLikelihood<T> {
+class LL_WOR21 : public Likelihood<T> {
 private:
   seamat::DenseMatrix<T> log_likelihoods;
   std::vector<T> log_ec_counts;

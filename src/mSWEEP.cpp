@@ -316,7 +316,7 @@ int main (int argc, char *argv[]) {
       bool bin_reads = args.value<bool>("bin-reads");
 
       // These are the main inputs to the abundance estimation code.
-      LL_WOR21<double, uint16_t> log_likelihoods(reference.group_sizes(i), reference.n_groups(i), args.value<double>('q'), args.value<double>('e'));
+      LL_WOR21<double, uint8_t> log_likelihoods(reference.group_sizes<uint8_t, uint8_t>(i), reference.n_groups(i), args.value<double>('q'), args.value<double>('e'));
       // Check if reading likelihood from file.
       // In MPI configurations, only root needs to read in the data. Distributing the values
       // is handled by the rcgpar::rcg_optl_mpi implementation.
@@ -352,7 +352,7 @@ int main (int argc, char *argv[]) {
 
 	// Use the alignment data to populate the log_likelihoods matrix.
 	try {
-	  log_likelihoods.from_grouped_alignment(*alignment, reference.group_sizes(i), reference.n_groups(i));
+	  log_likelihoods.from_grouped_alignment(*alignment, reference.group_sizes<uint8_t, uint8_t>(i), reference.n_groups(i));
 	}  catch (std::exception &e) {
 	  finalize("Building the log-likelihood array failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;

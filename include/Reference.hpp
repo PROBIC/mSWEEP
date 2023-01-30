@@ -29,6 +29,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <memory>
 
 #include "Grouping.hpp"
 
@@ -38,7 +39,7 @@ private:
   uint16_t n_groupings = 0;
 
   std::vector<std::vector<uint32_t>> groups_indicators;
-  std::vector<Grouping<uint16_t>> groupings;
+  std::vector<std::unique_ptr<Grouping>> groupings;
 
   void add_sequence(const std::string &seq_name, const uint16_t grouping_id);
 
@@ -47,12 +48,15 @@ public:
   void match_with_fasta(const char delimiter, std::istream &groups_file, std::istream &fasta_file);
 
   // Getters to access the groupings
-  uint32_t n_groups(const size_t grouping_id) const { return this->groupings[grouping_id].get_n_groups(); }
-  const std::vector<std::string>& group_names(const size_t grouping_id) const { return this->groupings[grouping_id].get_names(); };
-  const std::vector<uint16_t>& group_sizes(const size_t grouping_id) const { return this->groupings[grouping_id].get_sizes(); }
+  uint32_t n_groups(const size_t grouping_id) const { return (*this->groupings[grouping_id]).get_n_groups(); }
+  const std::vector<std::string>& group_names(const size_t grouping_id) const { return (*this->groupings[grouping_id]).get_names(); };
+  template <typename T, typename V>
+  const std::vector<T>& group_sizes(const size_t grouping_id) const {
+    return static_cast<const AdaptiveGrouping<T, V>*>(&(*this->groupings[grouping_id]))->get_sizes();
+  }
 
   // Getters
-  const Grouping<uint16_t>& get_grouping(const uint16_t grouping_id) const { return this->groupings[grouping_id]; };
+  const Grouping& get_grouping(const uint16_t grouping_id) const { return (*this->groupings[grouping_id]); };
   const std::vector<uint32_t>& get_group_indicators(const uint16_t grouping_id) const { return this->groups_indicators[grouping_id]; };
   uint32_t get_n_refs() const { return this->n_refs; };
   uint16_t get_n_groupings() const { return this->n_groupings; };

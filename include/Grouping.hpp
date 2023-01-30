@@ -30,15 +30,33 @@
 #include <string>
 #include <unordered_map>
 #include <array>
+#include <limits>
 
-template <typename T>
 class Grouping {
+public:
+  // Increase the count of sequences assigned to group_name, and add
+  // group_name to this grouping if it does not exist yet.
+  virtual void add_sequence(const std::string &group_name) =0;
+
+  // Find the numeric id of a group by its name
+  virtual size_t get_id(const std::string &name) const =0;
+
+  // Find size of the largest group
+  virtual size_t max_group_size() const =0;
+
+  // Getters
+  virtual const std::vector<std::string>& get_names() const =0;
+  virtual size_t get_n_groups() const =0;
+};
+
+template <typename T, typename V>
+class AdaptiveGrouping : public Grouping {
 private:
-  uint32_t n_groups = 0;
+  V n_groups = 0;
 
   std::vector<T> sizes;
   std::vector<std::string> names;
-  std::unordered_map<std::string, uint32_t> name_to_id;
+  std::unordered_map<std::string, V> name_to_id;
 
   // Adds group_name to this Grouping
   void add_group(const std::string &group_name) {
@@ -49,9 +67,15 @@ private:
   }
 
 public:
+  AdaptiveGrouping(const std::vector<std::string> &indicators) {
+    for (size_t i = 0; i < indicators.size(); ++i) {
+      this->add_sequence(indicators[i]);
+    }
+  }
+
   // Increase the count of sequences assigned to group_name, and add
   // group_name to this grouping if it does not exist yet.
-  void add_sequence(const std::string &group_name) {
+  void add_sequence(const std::string &group_name) override {
     if (this->name_to_id.find(group_name) == this->name_to_id.end()) {
       this->add_group(group_name);
     }
@@ -59,10 +83,10 @@ public:
   }
 
   // Find the numeric id of a group by its name
-  uint32_t get_id(const std::string &name) const { return this->name_to_id.at(name); };
+  size_t get_id(const std::string &name) const override { return (size_t)this->name_to_id.at(name); };
 
   // Find size of the largest group
-  size_t max_group_size() const {
+  size_t max_group_size() const override {
     size_t max_size = 0;
     for (size_t i = 0; i < this->n_groups; ++i)
       max_size = (this->sizes[i] > max_size ? this->sizes[i] : max_size);
@@ -70,9 +94,70 @@ public:
   }
 
   // Getters
-  const std::vector<std::string>& get_names() const { return this->names; };
+  const std::vector<std::string>& get_names() const override { return this->names; };
   const std::vector<T>& get_sizes() const { return this->sizes; };
-  uint32_t get_n_groups() const { return this->n_groups; };
+  size_t get_n_groups() const override { return (size_t)this->n_groups; };
 };
+
+inline std::unique_ptr<Grouping> ConstructAdaptive(const std::vector<std::string> &indicators) {
+  std::unordered_map<std::string, size_t> name_to_size;
+  for (size_t i = 0; i < indicators.size(); ++i) {
+    if (name_to_size.find(indicators[i]) == name_to_size.end()) {
+      name_to_size[indicators[i]] = 0;
+    }
+    ++name_to_size[indicators[i]];
+  }
+
+  size_t max_size = 0;
+  for (auto kv : name_to_size) {
+    max_size = (kv.second > max_size ? kv.second : max_size);
+  }
+
+  size_t n_groups = name_to_size.size();
+
+  std::unique_ptr<Grouping> ret;
+  if (max_size <= std::numeric_limits<uint8_t>::max()) {
+    if (n_groups <= std::numeric_limits<uint8_t>::max()) {
+      ret.reset(new AdaptiveGrouping<uint8_t, uint8_t>(indicators));
+    } else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
+      ret.reset(new AdaptiveGrouping<uint8_t, uint16_t>(indicators));
+    } else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
+      ret.reset(new AdaptiveGrouping<uint8_t, uint32_t>(indicators));
+    } else {
+      ret.reset(new AdaptiveGrouping<uint8_t, uint64_t>(indicators));
+    }
+  } else if (max_size <= std::numeric_limits<uint16_t>::max()) {
+    if (n_groups <= std::numeric_limits<uint8_t>::max()) {
+      ret.reset(new AdaptiveGrouping<uint8_t, uint8_t>(indicators));
+    } else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
+      ret.reset(new AdaptiveGrouping<uint8_t, uint16_t>(indicators));
+    } else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
+      ret.reset(new AdaptiveGrouping<uint8_t, uint32_t>(indicators));
+    } else {
+      ret.reset(new AdaptiveGrouping<uint8_t, uint64_t>(indicators));
+    }
+  } else if (max_size <= std::numeric_limits<uint32_t>::max()) {
+    if (n_groups <= std::numeric_limits<uint8_t>::max()) {
+      ret.reset(new AdaptiveGrouping<uint8_t, uint8_t>(indicators));
+    } else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
+      ret.reset(new AdaptiveGrouping<uint8_t, uint16_t>(indicators));
+    } else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
+      ret.reset(new AdaptiveGrouping<uint8_t, uint32_t>(indicators));
+    } else {
+      ret.reset(new AdaptiveGrouping<uint8_t, uint64_t>(indicators));
+    }
+  } else {
+    if (n_groups <= std::numeric_limits<uint8_t>::max()) {
+      ret.reset(new AdaptiveGrouping<uint8_t, uint8_t>(indicators));
+    } else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
+      ret.reset(new AdaptiveGrouping<uint8_t, uint16_t>(indicators));
+    } else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
+      ret.reset(new AdaptiveGrouping<uint8_t, uint32_t>(indicators));
+    } else {
+      ret.reset(new AdaptiveGrouping<uint8_t, uint64_t>(indicators));
+    }
+  }
+  return ret;
+}
 
 #endif

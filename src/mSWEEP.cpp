@@ -473,25 +473,23 @@ int main (int argc, char *argv[]) {
 	// Bootstrap the ec_counts and estimate from the bootstrapped data if required
 	if (bootstrap_mode) {
 	  log << "Running estimation with " << args.value<size_t>("iters") << " bootstrap iterations" << '\n';
-	  BootstrapSample* bs = static_cast<BootstrapSample*>(&(*sample));
-
 	  for (uint16_t k = 0; k < args.value<size_t>("iters"); ++k) {
 	    // Bootstrap the counts
 	    log << "Bootstrap" << " iter " << k + 1 << "/" << args.value<size_t>("iters") << '\n';
 	    std::vector<double> resampled_counts;
 	    if (rank == 0)
-	      resampled_counts = std::move(bs->resample_counts());
+	      resampled_counts = std::move(static_cast<BootstrapSample*>(&(*sample))->resample_counts());
 
 	    // Estimate with the bootstrapped counts
 	    // Reuse ec_probs since it has already been processed
 	    try {
-	      bs->store_probs(rcg_optl(args, log_likelihoods.log_mat(), resampled_counts, prior_counts, log));
+	      sample->store_probs(rcg_optl(args, log_likelihoods.log_mat(), resampled_counts, prior_counts, log));
 	    } catch (std::exception &e) {
 	      finalize("Bootstrap iteration " + std::to_string(k) + "/" + std::to_string(args.value<size_t>("iters")) + " failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	      return 1;
 	    }
 	    if (rank == 0)
-	      bs->store_abundances(rcgpar::mixture_components(sample->get_probs(), resampled_counts));
+	      sample->store_abundances(rcgpar::mixture_components(sample->get_probs(), resampled_counts));
 	  }
 	}
       }

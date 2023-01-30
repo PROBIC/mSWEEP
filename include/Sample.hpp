@@ -210,4 +210,26 @@ public:
 
 };
 
+inline void ConstructSample(const telescope::Alignment &alignment, const size_t bootstrap_iters, const size_t bootstrap_count, const size_t bootstrap_seed, const bool bin_reads, std::unique_ptr<Sample> &sample) {
+  // Wrapper for determining which Sample type to construct.
+  // Initialize Sample depending on how the alignment needs to be processed.
+  if (bootstrap_iters > 0) {
+    // Bootstrap mode
+    bool count_provided = bootstrap_count > 0;
+    if (count_provided && bin_reads) {
+      sample.reset(new BinningBootstrap(alignment, bootstrap_iters, bootstrap_count, bootstrap_seed));
+    } else if (count_provided && !bin_reads) {
+      sample.reset(new BootstrapSample(alignment, bootstrap_iters, bootstrap_iters, bootstrap_seed));
+    } else if (bin_reads) {
+      sample.reset(new BinningBootstrap(alignment, bootstrap_iters, bootstrap_seed));
+    } else {
+      sample.reset(new BootstrapSample(alignment, bootstrap_iters, bootstrap_seed));
+    }
+  } else if (bin_reads) {
+    sample.reset(new BinningSample(alignment));
+  } else {
+    sample.reset(new PlainSample(alignment));
+  }
+}
+
 #endif

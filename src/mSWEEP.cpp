@@ -124,12 +124,11 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   args.add_long_argument<double>("tol", "Optimization terminates when the bound changes by less than the given tolerance (default: 0.000001).\n\nBootstrapping options:", (double)0.000001);
 
   // Number of iterations to run bootstrapping for
-  args.add_long_argument<size_t>("iters", "Number of times to rerun estimation with bootstrapped alignments (default: 0).", (size_t)1);
+  args.add_long_argument<size_t>("iters", "Number of times to rerun estimation with bootstrapped alignments (default: 0).", (size_t)0);
   // Seed for bootstrapping
   args.add_long_argument<size_t>("seed", "Seed for the random generator used in bootstrapping (default: random).", 26012023);
   // How many reads to resample when bootstrapping
-  args.add_long_argument<size_t>("bootstrap-count", "How many pseudoalignments to resample when bootstrapping (default: number of reads).\n\nLikelihood options:");
-  args.set_not_required("bootstrap-count");
+  args.add_long_argument<size_t>("bootstrap-count", "How many pseudoalignments to resample when bootstrapping (default: number of reads).\n\nLikelihood options:", 0);
 
   // Mean fraction of aligned sequences for the likelihood
   args.add_short_argument<double>('q', "Mean for the beta-binomial component (default: 0.65).", 0.65);
@@ -313,7 +312,7 @@ int main (int argc, char *argv[]) {
       // the pseudoalignment that are needed or not needed depending on
       // the command line arguments.
       std::unique_ptr<Sample> sample;
-      bool bootstrap_mode = args.value<size_t>("iters") > (size_t)1;
+      bool bootstrap_mode = args.value<size_t>("iters") > (size_t)0;
       bool bin_reads = args.value<bool>("bin-reads");
 
       // These are the main inputs to the abundance estimation code.
@@ -361,22 +360,7 @@ int main (int argc, char *argv[]) {
 
 	// Initialize Sample depending on how the alignment needs to be processed.
 	// Note: this is also only used by the root process in MPI configuration.
-	if (bootstrap_mode) {
-	  bool count_provided = CmdOptionPresent(argv, argv+argc, "--bootstrap-count");
-	  if (count_provided && bin_reads) {
-	    sample.reset(new BinningBootstrap(*alignment, args.value<size_t>("iters"), args.value<size_t>("bootstrap-count"), args.value<size_t>("seed")));
-	  } else if (count_provided && !bin_reads) {
-	    sample.reset(new BootstrapSample(*alignment, args.value<size_t>("iters"), args.value<size_t>("bootstrap-count"), args.value<size_t>("seed")));
-	  } else if (bin_reads) {
-	    sample.reset(new BinningBootstrap(*alignment, args.value<size_t>("iters"), args.value<size_t>("seed")));
-	  } else {
-	    sample.reset(new BootstrapSample(*alignment, args.value<size_t>("iters"), args.value<size_t>("seed")));
-	  }
-	} else if (bin_reads) {
-	  sample.reset(new BinningSample(*alignment));
-	} else {
-	  sample.reset(new PlainSample(*alignment));
-	}
+	ConstructSample(*alignment, args.value<size_t>("iters"), args.value<size_t>("bootstrap-count"), args.value<size_t>("seed"), bin_reads, sample);
 
 	log << "  read " << alignment->n_ecs() << " unique alignments" << '\n';
 	log.flush();

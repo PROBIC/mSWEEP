@@ -318,8 +318,7 @@ int main (int argc, char *argv[]) {
       bool bin_reads = args.value<bool>("bin-reads");
 
       // These are the main inputs to the abundance estimation code.
-      seamat::DenseMatrix<double> log_likelihoods;
-      std::vector<double> log_ec_counts;
+      LL_WOR21<double, uint16_t> log_likelihoods(reference.get_grouping(i), args.value<double>('q'), args.value<double>('e'));
       // Check if reading likelihood from file.
       // In MPI configurations, only root needs to read in the data. Distributing the values
       // is handled by the rcgpar::rcg_optl_mpi implementation.
@@ -330,7 +329,7 @@ int main (int argc, char *argv[]) {
 	log << "  reading pseudoalignments" << '\n';
 	std::unique_ptr<telescope::Alignment> alignment;
 	try {
-	  alignment = std::make_unique<telescope::GroupedAlignment>(ReadPseudoalignments(args.value<std::vector<std::string>>("themisto"), args.value<std::string>("themisto-mode"), reference));
+	  ReadPseudoalignments(args.value<std::vector<std::string>>("themisto"), args.value<std::string>("themisto-mode"), reference, alignment, &log_likelihoods);
 	} catch (std::exception &e) {
 	  finalize("Reading the pseudoalignments failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;
@@ -355,30 +354,18 @@ int main (int argc, char *argv[]) {
 	  sample.reset(new PlainSample(*alignment));
 	}
 
-	// Fill log ec counts.
-	log_ec_counts.resize(alignment->n_ecs(), 0);
-#pragma omp parallel for schedule(static)
-	for (uint32_t i = 0; i < alignment->n_ecs(); ++i) {
-	  log_ec_counts[i] = std::log(alignment->reads_in_ec(i));
-	}
-
 	log << "  read " << alignment->n_ecs() << " unique alignments" << '\n';
-	log.flush();
-
-	try {
-	  // Use the alignment data to populate the log_likelihoods matrix.
-	  log << "Building log-likelihood array" << '\n';
-	  log_likelihoods = std::move(likelihood_array_mat<double, uint16_t>(*static_cast<telescope::GroupedAlignment*>(&(*alignment)), reference.get_grouping(i), args.value<double>('q'), args.value<double>('e')));
-	} catch (std::exception &e) {
-	  finalize("Building the log-likelihood array failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
-	  return 1;
-	}
-
 	log.flush();
       } else {
 	try {
 	  // Reading both likelihoods and log_ec_counts from file.
-	  log_likelihoods = std::move(ReadLikelihoodFromFile(args.value<std::string>("read-likelihood"), reference, log.stream(), &log_ec_counts));
+	  log << "  reading likelihoods from file" << '\n';
+	  if (reference.get_n_groupings() > 1) {
+	    throw std::runtime_error("Using more than one grouping with --read-likelihood is not yet implemented.");
+	  }
+
+	  cxxio::In infile(args.value<std::string>("read-likelihood"));
+	  log_likelihoods.from_file(reference.n_groups(i), &infile.stream());
 	} catch (std::exception &e) {
 	  finalize("Reading the likelihoods failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;
@@ -389,9 +376,9 @@ int main (int argc, char *argv[]) {
 	// Write the likelihood to disk here if it was requested.
 	if (rank == 0 && (args.value<bool>("write-likelihood") || args.value<bool>("write-likelihood-bitseq"))) {
 	  if (args.value<bool>("write-likelihood-bitseq")) {
-	    WriteLikelihoodBitSeq(log_likelihoods, log_ec_counts, reference.n_groups(i), *out.likelihoods("bitseq"));
+	    //WriteLikelihoodBitSeq(log_likelihoods, log_ec_counts, reference.n_groups(i), *out.likelihoods("bitseq"));
 	  } else {
-	    WriteLikelihood(log_likelihoods, log_ec_counts, reference.n_groups(i), *out.likelihoods("mSWEEP"));
+	    //WriteLikelihood(log_likelihoods, log_ec_counts, reference.n_groups(i), *out.likelihoods("mSWEEP"));
 	  }
 	}
       } catch (std::exception &e) {
@@ -416,12 +403,12 @@ int main (int argc, char *argv[]) {
 	}
 
 	// Run estimation
-	seamat::DenseMatrix<double> ec_probs = std::move(rcg_optl(args, log_likelihoods, log_ec_counts, prior_counts, log));
+	seamat::DenseMatrix<double> ec_probs = std::move(rcg_optl(args, log_likelihoods.log_mat(), log_likelihoods.log_counts(), prior_counts, log));
 
 	// Run binning if requested and write results to files.
 	if (rank == 0) { // root performs the rest.
 	  // Turn the probs into relative abundances
-	  sample->store_abundances(rcgpar::mixture_components(ec_probs, log_ec_counts));
+	  sample->store_abundances(rcgpar::mixture_components(ec_probs, log_likelihoods.log_counts()));
 
 	  // Bin the reads if requested
 	  if (bin_reads) {
@@ -478,14 +465,15 @@ int main (int argc, char *argv[]) {
 	  for (uint16_t k = 0; k < args.value<size_t>("iters"); ++k) {
 	    // Bootstrap the counts
 	    log << "Bootstrap" << " iter " << k + 1 << "/" << args.value<size_t>("iters") << '\n';
+	    std::vector<double> resampled_counts;
 	    if (rank == 0)
-	      log_ec_counts = std::move(bs->resample_counts());
+	      resampled_counts = std::move(bs->resample_counts());
 
 	    // Estimate with the bootstrapped counts
 	    // Reuse ec_probs since it has already been processed
-	    ec_probs = std::move(rcg_optl(args, log_likelihoods, log_ec_counts, prior_counts, log));
+	    ec_probs = std::move(rcg_optl(args, log_likelihoods.log_mat(), resampled_counts, prior_counts, log));
 	    if (rank == 0)
-	      bs->store_abundances(rcgpar::mixture_components(ec_probs, log_ec_counts));
+	      bs->store_abundances(rcgpar::mixture_components(ec_probs, resampled_counts));
 	  }
 	}
       }

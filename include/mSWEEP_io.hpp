@@ -34,14 +34,11 @@
 #include "Matrix.hpp"
 
 #include "Reference.hpp"
+#include "likelihood.hpp"
 
 // Read functions
 //// Read pseudoalignments
-telescope::GroupedAlignment ReadPseudoalignments(const std::vector<std::string> &alignment_paths,
-						 const std::string &themisto_merge_mode,
-						 const Reference &reference);
-
-seamat::DenseMatrix<double> ReadLikelihoodFromFile(const std::string &likelihood_path, const Reference &reference, std::ostream &log, std::vector<double> *log_ec_counts);
+void ReadPseudoalignments(const std::vector<std::string> &alignment_paths, const std::string &themisto_merge_mode, const Reference &reference, std::unique_ptr<telescope::Alignment> &aln, LL_WOR21<double, uint16_t>* log_likelihoods);
 
 // Write functions
 //// Write likelihoods

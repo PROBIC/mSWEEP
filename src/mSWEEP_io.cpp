@@ -30,7 +30,7 @@
 
 #include "cxxio.hpp"
 
-telescope::GroupedAlignment ReadPseudoalignments(const std::vector<std::string> &alignment_paths, const std::string &themisto_merge_mode, const Reference &reference) {
+void ReadPseudoalignments(const std::vector<std::string> &alignment_paths, const std::string &themisto_merge_mode, const Reference &reference, std::unique_ptr<telescope::Alignment> &aln, LL_WOR21<double, uint16_t>* log_likelihoods) {
   size_t n_files = alignment_paths.size();
   std::vector<cxxio::In> infiles;
   infiles.reserve(n_files);
@@ -43,44 +43,14 @@ telescope::GroupedAlignment ReadPseudoalignments(const std::vector<std::string> 
   } else {
     strands.emplace_back(&std::cin);
   }
-  return telescope::read::ThemistoGrouped(telescope::get_mode(themisto_merge_mode), reference.get_n_refs(), reference.get_group_indicators(0), strands);
-}
+  telescope::read::ThemistoGrouped(telescope::get_mode(themisto_merge_mode), reference.get_n_refs(), reference.get_group_indicators(0), strands, aln);
 
-seamat::DenseMatrix<double> ReadLikelihoodFromFile(const std::string &likelihood_path, const Reference &reference, std::ostream &log, std::vector<double> *log_ec_counts) {
-  log << "  reading likelihoods from file" << '\n';
-  if (reference.get_n_groupings() > 1) {
-    throw std::runtime_error("Using more than one grouping with --read-likelihood is not yet implemented.");
+  try {
+    // Use the alignment data to populate the log_likelihoods matrix.
+    log_likelihoods->from_grouped_alignment(*aln, reference.get_grouping(0));
+  } catch (std::exception &e) {
+    throw e;
   }
-  cxxio::In infile(likelihood_path);
-
-  // Have to read the likelihoods into a temporary because num_ecs is not known
-  uint32_t n_groups = reference.get_grouping(0).get_n_groups();
-  std::vector<std::vector<double>> likelihoods(n_groups, std::vector<double>());
-
-  if (infile.stream().good()) {
-    std::string newline;
-    uint32_t line_nr = 0;
-    while (std::getline(infile.stream(), newline)) {
-      ++line_nr;
-      std::string part;
-      std::stringstream partition(newline);
-      bool ec_count_col = true;
-      uint32_t group_id = 0;
-      while (std::getline(partition, part, '\t')) {
-	if (ec_count_col) {
-	  uint32_t ec_count = std::stol(part);
-	  log_ec_counts->emplace_back(std::log(ec_count));
-	  ec_count_col = false;
-	} else {
-	  likelihoods[group_id].emplace_back(std::stod(part));
-	  ++group_id;
-	}
-      }
-    }
-  } else {
-    throw std::runtime_error("Could not read from the likelihoods file.");
-  }
-  return seamat::DenseMatrix<double>(likelihoods);
 }
 
 void WriteLikelihood(const seamat::DenseMatrix<double> &ll_mat, const std::vector<double> &log_ec_counts, const uint32_t n_groups, std::ostream &of) {

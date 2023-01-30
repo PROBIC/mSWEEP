@@ -49,6 +49,7 @@ public:
   // Getters to access the groupings
   uint32_t n_groups(const size_t grouping_id) const { return this->groupings[grouping_id].get_n_groups(); }
   const std::vector<std::string>& group_names(const size_t grouping_id) const { return this->groupings[grouping_id].get_names(); };
+  const std::vector<uint16_t>& group_sizes(const size_t grouping_id) const { return this->groupings[grouping_id].get_sizes(); }
 
   // Getters
   const Grouping<uint16_t>& get_grouping(const uint16_t grouping_id) const { return this->groupings[grouping_id]; };

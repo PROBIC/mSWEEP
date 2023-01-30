@@ -30,8 +30,6 @@
 
 #include "mSWEEP_openmp_config.hpp"
 
-#include "Grouping.hpp"
-
 #include <cmath>
 #include <cstddef>
 #include <vector>
@@ -71,30 +69,27 @@ private:
   std::vector<T> log_ec_counts;
   std::vector<std::array<T, 2>> bb_params;
 
-  seamat::DenseMatrix<T> precalc_lls(const Grouping<V> &grouping) {
-    size_t n_groups = grouping.get_n_groups();
-
+  seamat::DenseMatrix<T> precalc_lls(const std::vector<V> &group_sizes, const size_t n_groups) {
     V max_size = 0; // Storing the grouping can take a lot less space if it can be done with uint16_t or uint8_t.
     for (size_t i = 0; i < n_groups; ++i) {
-      max_size = (grouping.get_sizes()[i] > max_size ? grouping.get_sizes()[i] : max_size);
+      max_size = (group_sizes[i] > max_size ? group_sizes[i] : max_size);
     }
 
     seamat::DenseMatrix<T> ll_mat(n_groups, max_size + 1, -4.60517);
 #pragma omp parallel for schedule(static) shared(ll_mat)
     for (size_t i = 0; i < n_groups; ++i) {
       for (V j = 1; j <= max_size; ++j) {
-	ll_mat(i, j) = ldbb_scaled(j, grouping.get_sizes()[i], this->bb_params[i][0], this->bb_params[i][1]) - 0.01005034; // log(0.99) = -0.01005034
+	ll_mat(i, j) = ldbb_scaled(j, group_sizes[i], this->bb_params[i][0], this->bb_params[i][1]) - 0.01005034; // log(0.99) = -0.01005034
       }
     }
 
     return ll_mat;
   }
 
-  void fill_ll_mat(const telescope::Alignment &alignment, const Grouping<V> &grouping) {
+  void fill_ll_mat(const telescope::Alignment &alignment, const std::vector<V> &group_sizes, const size_t n_groups) {
     size_t num_ecs = alignment.n_ecs();
-    size_t n_groups = grouping.get_n_groups();
 
-    const seamat::DenseMatrix<T> &precalc_lls_mat = this->precalc_lls(grouping);
+    const seamat::DenseMatrix<T> &precalc_lls_mat = this->precalc_lls(group_sizes, n_groups);
 
     this->log_likelihoods.resize(n_groups, num_ecs, -4.60517); // -4.60517 = log(0.01)
 #pragma omp parallel for schedule(static) shared(precalc_lls_mat)
@@ -115,13 +110,13 @@ private:
   }
 
   // Calculates the group-specific likelihood parameters that depend on the group sizes
-  void update_bb_parameters(const Grouping<V> &grouping, const double bb_constants[2]) {
-    this->bb_params = std::vector<std::array<double, 2>>(grouping.get_n_groups());
-    for (size_t i = 0; i < grouping.get_n_groups(); ++i) {
-      double e = grouping.get_sizes()[i]*bb_constants[0];
-      double phi = 1.0/(grouping.get_sizes()[i] - e + bb_constants[1]);
-      double beta = phi*(grouping.get_sizes()[i] - e);
-      double alpha = (e*beta)/(grouping.get_sizes()[i] - e);
+  void update_bb_parameters(const std::vector<V> &group_sizes, const size_t n_groups, const double bb_constants[2]) {
+    this->bb_params = std::vector<std::array<double, 2>>(n_groups);
+    for (size_t i = 0; i < n_groups; ++i) {
+      double e = group_sizes[i]*bb_constants[0];
+      double phi = 1.0/(group_sizes[i] - e + bb_constants[1]);
+      double beta = phi*(group_sizes[i] - e);
+      double alpha = (e*beta)/(group_sizes[i] - e);
       this->bb_params[i] = std::array<double, 2>{ { alpha, beta } };
     }
   }
@@ -129,13 +124,13 @@ private:
 public:
   LL_WOR21() = default;
 
-  LL_WOR21(const Grouping<V> &grouping, const T tol, const T frac_mu) {
+  LL_WOR21(const std::vector<V> &group_sizes, const size_t n_groups, const T tol, const T frac_mu) {
     T bb_constants[2] = { tol, frac_mu };
-    this->update_bb_parameters(grouping, bb_constants);
+    this->update_bb_parameters(group_sizes, n_groups, bb_constants);
   }
 
-  void from_grouped_alignment(const telescope::Alignment &alignment, const Grouping<V> &grouping) {
-    this->fill_ll_mat(alignment, grouping);
+  void from_grouped_alignment(const telescope::Alignment &alignment, const std::vector<V> &group_sizes, const size_t n_groups) {
+    this->fill_ll_mat(alignment, group_sizes, n_groups);
     this->fill_ec_counts(alignment);
   }
 

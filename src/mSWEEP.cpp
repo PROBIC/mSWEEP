@@ -405,8 +405,13 @@ int main (int argc, char *argv[]) {
 	  prior_counts = std::move(args.value<std::vector<double>>("alphas"));
 	}
 
-	// Run estimation
-	sample->store_probs(rcg_optl(args, log_likelihoods.log_mat(), log_likelihoods.log_counts(), prior_counts, log));
+	try {
+	  // Run estimation
+	  sample->store_probs(rcg_optl(args, log_likelihoods.log_mat(), log_likelihoods.log_counts(), prior_counts, log));
+	} catch (std::exception &e) {
+	  finalize("Estimating relative abundances failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
+	  return 1;
+	}
 
 	// Run binning if requested and write results to files.
 	if (rank == 0) { // root performs the rest.
@@ -425,12 +430,17 @@ int main (int argc, char *argv[]) {
 	      mGEMS::FilterTargetGroups(reference.group_names(i), sample->get_abundances(), args.value<double>("min-abundance"), &target_names);
 	    }
 	    std::vector<std::vector<uint32_t>> bins;
-	    if (bootstrap_mode) {
-	      BinningBootstrap* bs = static_cast<BinningBootstrap*>(&(*sample));
-	      bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), sample->get_probs(), reference.group_names(i), &target_names));
-	    } else {
-	      BinningSample* bs = static_cast<BinningSample*>(&(*sample));
-	      bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), sample->get_probs(), reference.group_names(i), &target_names));
+	    try {
+	      if (bootstrap_mode) {
+		BinningBootstrap* bs = static_cast<BinningBootstrap*>(&(*sample));
+		bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), sample->get_probs(), reference.group_names(i), &target_names));
+	      } else {
+		BinningSample* bs = static_cast<BinningSample*>(&(*sample));
+		bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), sample->get_probs(), reference.group_names(i), &target_names));
+	      }
+	    } catch (std::exception &e) {
+	      finalize("Binning the reads failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
+	      return 1;
 	    }
 
 	    for (size_t j = 0; j < bins.size(); ++j) {
@@ -474,7 +484,12 @@ int main (int argc, char *argv[]) {
 
 	    // Estimate with the bootstrapped counts
 	    // Reuse ec_probs since it has already been processed
-	    bs->store_probs(rcg_optl(args, log_likelihoods.log_mat(), resampled_counts, prior_counts, log));
+	    try {
+	      bs->store_probs(rcg_optl(args, log_likelihoods.log_mat(), resampled_counts, prior_counts, log));
+	    } catch (std::exception &e) {
+	      finalize("Bootstrap iteration " + k "/" + args.value<size_t>("iters") + " failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
+	      return 1;
+	    }
 	    if (rank == 0)
 	      bs->store_abundances(rcgpar::mixture_components(sample->get_probs(), resampled_counts));
 	  }

@@ -114,12 +114,24 @@ private:
     }
   }
 
+  // Calculates the group-specific likelihood parameters that depend on the group sizes
+  void update_bb_parameters(const Grouping<V> &grouping, const double bb_constants[2]) {
+    this->bb_params = std::vector<std::array<double, 2>>(grouping.get_n_groups());
+    for (size_t i = 0; i < grouping.get_n_groups(); ++i) {
+      double e = grouping.get_sizes()[i]*bb_constants[0];
+      double phi = 1.0/(grouping.get_sizes()[i] - e + bb_constants[1]);
+      double beta = phi*(grouping.get_sizes()[i] - e);
+      double alpha = (e*beta)/(grouping.get_sizes()[i] - e);
+      this->bb_params[i] = std::array<double, 2>{ { alpha, beta } };
+    }
+  }
+
 public:
   LL_WOR21() = default;
 
   LL_WOR21(const Grouping<V> &grouping, const T tol, const T frac_mu) {
     T bb_constants[2] = { tol, frac_mu };
-    this->bb_params = std::move(grouping.bb_parameters(bb_constants));
+    this->update_bb_parameters(grouping, bb_constants);
   }
 
   void from_grouped_alignment(const telescope::Alignment &alignment, const Grouping<V> &grouping) {

@@ -58,19 +58,6 @@ public:
     this->sizes[this->name_to_id[group_name]] += 1;
   }
 
-  // Calculates the group-specific likelihood parameters that depend on the group sizes
-  std::vector<std::array<double, 2>> bb_parameters(const double bb_constants[2]) const {
-    std::vector<std::array<double, 2>> bb_params(this->n_groups);
-    for (size_t i = 0; i < this->n_groups; ++i) {
-      double e = this->sizes[i]*bb_constants[0];
-      double phi = 1.0/(this->sizes[i] - e + bb_constants[1]);
-      double beta = phi*(this->sizes[i] - e);
-      double alpha = (e*beta)/(this->sizes[i] - e);
-      bb_params[i] = std::array<double, 2>{ { alpha, beta } };
-    }
-    return bb_params;
-  }
-
   // Find the numeric id of a group by its name
   uint32_t get_id(const std::string &name) const { return this->name_to_id.at(name); };
 

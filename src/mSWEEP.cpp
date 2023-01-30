@@ -487,7 +487,7 @@ int main (int argc, char *argv[]) {
 	    try {
 	      bs->store_probs(rcg_optl(args, log_likelihoods.log_mat(), resampled_counts, prior_counts, log));
 	    } catch (std::exception &e) {
-	      finalize("Bootstrap iteration " + k "/" + args.value<size_t>("iters") + " failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
+	      finalize("Bootstrap iteration " + std::to_string(k) + "/" + std::to_string(args.value<size_t>("iters")) + " failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	      return 1;
 	    }
 	    if (rank == 0)

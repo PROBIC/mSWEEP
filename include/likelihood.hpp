@@ -90,7 +90,7 @@ private:
     return ll_mat;
   }
 
-  void fill_ll_mat(const telescope::GroupedAlignment<V> &alignment, const Grouping<V> &grouping) {
+  void fill_ll_mat(const telescope::Alignment &alignment, const Grouping<V> &grouping) {
     size_t num_ecs = alignment.n_ecs();
     size_t n_groups = grouping.get_n_groups();
 
@@ -100,12 +100,12 @@ private:
 #pragma omp parallel for schedule(static) shared(precalc_lls_mat)
     for (size_t j = 0; j < num_ecs; ++j) {
       for (size_t i = 0; i < n_groups; ++i) {
-	this->log_likelihoods(i, j) = precalc_lls_mat(i, alignment.get_group_count(i, j));
+	this->log_likelihoods(i, j) = precalc_lls_mat(i, alignment(i, j));
       }
     }
   }
 
-  void fill_ec_counts(const telescope::GroupedAlignment<V> &alignment) {
+  void fill_ec_counts(const telescope::Alignment &alignment) {
     // Fill log ec counts.
     this->log_ec_counts.resize(alignment.n_ecs(), 0);
 #pragma omp parallel for schedule(static)
@@ -123,9 +123,8 @@ public:
   }
 
   void from_grouped_alignment(const telescope::Alignment &alignment, const Grouping<V> &grouping) {
-    const telescope::GroupedAlignment<V>* ga_ptr = static_cast<const telescope::GroupedAlignment<V>*>(&alignment);
-    this->fill_ll_mat(*ga_ptr, grouping);
-    this->fill_ec_counts(*ga_ptr);
+    this->fill_ll_mat(alignment, grouping);
+    this->fill_ec_counts(alignment);
   }
 
   void from_file(const size_t n_groups, std::istream* infile) {

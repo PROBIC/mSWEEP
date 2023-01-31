@@ -30,6 +30,7 @@
 #include <fstream>
 #include <exception>
 #include <memory>
+#include <limits>
 
 #include "cxxargs.hpp"
 #include "Matrix.hpp"
@@ -316,7 +317,18 @@ int main (int argc, char *argv[]) {
       bool bin_reads = args.value<bool>("bin-reads");
 
       // These are the main inputs to the abundance estimation code.
-      LL_WOR21<double, uint8_t> log_likelihoods(static_cast<const AdaptiveReference<uint8_t>*>(&(*reference))->group_sizes<uint8_t>(i), reference->n_groups(i), args.value<double>('q'), args.value<double>('e'));
+      size_t n_refs = reference->get_n_refs();
+      std::unique_ptr<Likelihood<double>> log_likelihoods;
+      if (n_refs <= std::numeric_limits<uint8_t>::max()) {
+	log_likelihoods.reset(new LL_WOR21<double, uint8_t>(static_cast<const AdaptiveReference<uint8_t>*>(&(*reference))->group_sizes<uint8_t>(i), reference->n_groups(i), args.value<double>('q'), args.value<double>('e')));
+      } else if (n_refs <= std::numeric_limits<uint16_t>::max()) {
+	log_likelihoods.reset(new LL_WOR21<double, uint16_t>(static_cast<const AdaptiveReference<uint16_t>*>(&(*reference))->group_sizes<uint16_t>(i), reference->n_groups(i), args.value<double>('q'), args.value<double>('e')));
+      } else if (n_refs <= std::numeric_limits<uint32_t>::max()) {
+	log_likelihoods.reset(new LL_WOR21<double, uint32_t>(static_cast<const AdaptiveReference<uint32_t>*>(&(*reference))->group_sizes<uint32_t>(i), reference->n_groups(i), args.value<double>('q'), args.value<double>('e')));
+      } else {
+	log_likelihoods.reset(new LL_WOR21<double, uint32_t>(static_cast<const AdaptiveReference<uint32_t>*>(&(*reference))->group_sizes<uint32_t>(i), reference->n_groups(i), args.value<double>('q'), args.value<double>('e')));
+      }
+
       // Check if reading likelihood from file.
       // In MPI configurations, only root needs to read in the data. Distributing the values
       // is handled by the rcgpar::rcg_optl_mpi implementation.
@@ -344,7 +356,17 @@ int main (int argc, char *argv[]) {
 	  }
 
 	  // Read the pseudoalignment
-	  telescope::read::ThemistoGrouped(telescope::get_mode(args.value<std::string>("themisto-mode")), reference->get_n_refs(), static_cast<const AdaptiveReference<uint8_t>*>(&(*reference))->get_group_indicators(i), strands, alignment);
+	  if (n_refs <= std::numeric_limits<uint8_t>::max()) {
+	    telescope::read::ThemistoGrouped(telescope::get_mode(args.value<std::string>("themisto-mode")), n_refs, static_cast<const AdaptiveReference<uint8_t>*>(&(*reference))->get_group_indicators(i), strands, alignment);
+	  } else if (n_refs <= std::numeric_limits<uint16_t>::max()) {
+	    telescope::read::ThemistoGrouped(telescope::get_mode(args.value<std::string>("themisto-mode")), n_refs, static_cast<const AdaptiveReference<uint16_t>*>(&(*reference))->get_group_indicators(i), strands, alignment);
+	  } else if (n_refs <= std::numeric_limits<uint32_t>::max()) {
+	    telescope::read::ThemistoGrouped(telescope::get_mode(args.value<std::string>("themisto-mode")), n_refs, static_cast<const AdaptiveReference<uint32_t>*>(&(*reference))->get_group_indicators(i), strands, alignment);
+	  } else {
+	    telescope::read::ThemistoGrouped(telescope::get_mode(args.value<std::string>("themisto-mode")), n_refs, static_cast<const AdaptiveReference<uint64_t>*>(&(*reference))->get_group_indicators(i), strands, alignment);
+	  }
+
+
 	} catch (std::exception &e) {
 	  finalize("Reading the pseudoalignments failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;
@@ -352,7 +374,15 @@ int main (int argc, char *argv[]) {
 
 	// Use the alignment data to populate the log_likelihoods matrix.
 	try {
-	  log_likelihoods.from_grouped_alignment(*alignment, static_cast<const AdaptiveReference<uint8_t>*>(&(*reference))->group_sizes<uint8_t>(i), reference->n_groups(i));
+	  if (n_refs <= std::numeric_limits<uint8_t>::max()) {
+	    static_cast<LL_WOR21<double, uint8_t>*>(&(*log_likelihoods))->from_grouped_alignment(*alignment, static_cast<const AdaptiveReference<uint8_t>*>(&(*reference))->group_sizes<uint8_t>(i), reference->n_groups(i));
+	  } else if (n_refs <= std::numeric_limits<uint16_t>::max()) {
+	    static_cast<LL_WOR21<double, uint16_t>*>(&(*log_likelihoods))->from_grouped_alignment(*alignment, static_cast<const AdaptiveReference<uint16_t>*>(&(*reference))->group_sizes<uint16_t>(i), reference->n_groups(i));
+	  } else if (n_refs <= std::numeric_limits<uint32_t>::max()) {
+	    static_cast<LL_WOR21<double, uint32_t>*>(&(*log_likelihoods))->from_grouped_alignment(*alignment, static_cast<const AdaptiveReference<uint32_t>*>(&(*reference))->group_sizes<uint32_t>(i), reference->n_groups(i));
+	  } else {
+	    static_cast<LL_WOR21<double, uint64_t>*>(&(*log_likelihoods))->from_grouped_alignment(*alignment, static_cast<const AdaptiveReference<uint64_t>*>(&(*reference))->group_sizes<uint64_t>(i), reference->n_groups(i));
+	  }
 	}  catch (std::exception &e) {
 	  finalize("Building the log-likelihood array failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;
@@ -373,7 +403,7 @@ int main (int argc, char *argv[]) {
 	  }
 
 	  cxxio::In infile(args.value<std::string>("read-likelihood"));
-	  log_likelihoods.from_file(reference->n_groups(i), &infile.stream());
+	  log_likelihoods->from_file(reference->n_groups(i), &infile.stream());
 	} catch (std::exception &e) {
 	  finalize("Reading the likelihoods failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;
@@ -383,7 +413,7 @@ int main (int argc, char *argv[]) {
       try {
 	// Write the likelihood to disk here if it was requested.
 	if (rank == 0 && (args.value<bool>("write-likelihood") || args.value<bool>("write-likelihood-bitseq")))
-	  log_likelihoods.write((args.value<bool>("write-likelihood-bitseq") ? "bitseq" : "mSWEEP"), out.likelihoods((args.value<bool>("write-likelihood-bitseq") ? "bitseq" : "mSWEEP")));
+	  log_likelihoods->write((args.value<bool>("write-likelihood-bitseq") ? "bitseq" : "mSWEEP"), out.likelihoods((args.value<bool>("write-likelihood-bitseq") ? "bitseq" : "mSWEEP")));
       } catch (std::exception &e) {
 	finalize("Writing the likelihood to file failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	return 1;
@@ -407,7 +437,7 @@ int main (int argc, char *argv[]) {
 
 	try {
 	  // Run estimation
-	  sample->store_probs(rcg_optl(args, log_likelihoods.log_mat(), log_likelihoods.log_counts(), prior_counts, log));
+	  sample->store_probs(rcg_optl(args, log_likelihoods->log_mat(), log_likelihoods->log_counts(), prior_counts, log));
 	} catch (std::exception &e) {
 	  finalize("Estimating relative abundances failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;
@@ -416,7 +446,7 @@ int main (int argc, char *argv[]) {
 	// Run binning if requested and write results to files.
 	if (rank == 0) { // root performs the rest.
 	  // Turn the probs into relative abundances
-	  sample->store_abundances(rcgpar::mixture_components(sample->get_probs(), log_likelihoods.log_counts()));
+	  sample->store_abundances(rcgpar::mixture_components(sample->get_probs(), log_likelihoods->log_counts()));
 
 	  // Bin the reads if requested
 	  if (bin_reads) {
@@ -483,7 +513,7 @@ int main (int argc, char *argv[]) {
 	    // Estimate with the bootstrapped counts
 	    // Reuse ec_probs since it has already been processed
 	    try {
-	      sample->store_probs(rcg_optl(args, log_likelihoods.log_mat(), resampled_counts, prior_counts, log));
+	      sample->store_probs(rcg_optl(args, log_likelihoods->log_mat(), resampled_counts, prior_counts, log));
 	    } catch (std::exception &e) {
 	      finalize("Bootstrap iteration " + std::to_string(k) + "/" + std::to_string(args.value<size_t>("iters")) + " failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	      return 1;

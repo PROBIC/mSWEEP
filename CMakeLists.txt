@@ -76,14 +76,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/mSWEEP_openmp_config.hpp.in ${
 ## Configure MPI if it's supported on the system.
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/mSWEEP_mpi_config.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/include/mSWEEP_mpi_config.hpp @ONLY)
 
-add_executable(mSWEEP
-${CMAKE_SOURCE_DIR}/src/Sample.cpp
-${CMAKE_SOURCE_DIR}/src/PlainSample.cpp
-${CMAKE_SOURCE_DIR}/src/BootstrapSample.cpp
-${CMAKE_SOURCE_DIR}/src/Reference.cpp
-${CMAKE_SOURCE_DIR}/src/Grouping.cpp
-${CMAKE_SOURCE_DIR}/src/OutfileDesignator.cpp
-${CMAKE_SOURCE_DIR}/src/mSWEEP.cpp)
+add_executable(mSWEEP ${CMAKE_SOURCE_DIR}/src/mSWEEP.cpp)
 
 ## Check supported compression types
 find_package(BZip2)
@@ -335,6 +328,17 @@ if(MPI_FOUND)
   add_dependencies(mSWEEP rcgmpi bigmpi)
   target_link_libraries(mSWEEP rcgmpi ${LIBRARY_OUTPUT_PATH}/libbigmpi.a)
 endif()
+
+add_library(libmsweep
+${CMAKE_SOURCE_DIR}/src/Sample.cpp
+${CMAKE_SOURCE_DIR}/src/PlainSample.cpp
+${CMAKE_SOURCE_DIR}/src/BootstrapSample.cpp
+${CMAKE_SOURCE_DIR}/src/Reference.cpp
+${CMAKE_SOURCE_DIR}/src/Grouping.cpp
+${CMAKE_SOURCE_DIR}/src/OutfileDesignator.cpp)
+
+set_target_properties(libmsweep PROPERTIES OUTPUT_NAME msweep)
+target_link_libraries(mSWEEP libmsweep)
 
 # Link libraries
 if (OPENMP_FOUND)

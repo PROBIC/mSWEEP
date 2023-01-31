@@ -60,6 +60,17 @@ class Likelihood {
 public:
   virtual T& operator()(const size_t row, const size_t col) =0;
   virtual const T& operator()(const size_t row, const size_t col) const =0;
+
+  virtual void from_file(const size_t n_groups, std::istream* infile) =0;
+
+  virtual void write(const std::string &format, std::ostream *of) const =0;
+
+  // Get the matrix
+  virtual const seamat::Matrix<T>& log_mat() const =0;
+
+  // Get the ec counts
+  virtual const std::vector<T>& log_counts() const =0;
+
 };
 
 template <typename T, typename V>
@@ -165,7 +176,7 @@ public:
     this->log_likelihoods = std::move(likelihoods);
   }
 
-  void write_likelihood_mSWEEP(std::ostream *of) {
+  void write_likelihood_mSWEEP(std::ostream *of) const {
     // Write likelihoods to a file
     size_t n_ecs = this->log_ec_counts.size();
     size_t n_groups = this->log_likelihoods.get_rows();
@@ -185,7 +196,7 @@ public:
     }
   }
 
-  void write_likelihood_BitSeq(std::ostream *of) {
+  void write_likelihood_BitSeq(std::ostream *of) const {
     // Write likelihoods to a file
     // *Note*: will write in BitSeq format!
     // Use Sample::write_likelihoods if tab-separated matrix format is needed.
@@ -223,7 +234,7 @@ public:
     }
   }
 
-  void write(const std::string &format, std::ostream *of) {
+  void write(const std::string &format, std::ostream *of) const override {
     if (format == "bitseq") {
       this->write_likelihood_BitSeq(of);
     } else {
@@ -235,10 +246,10 @@ public:
   const T& operator()(const size_t row, const size_t col) const override { return this->log_likelihoods(row, col); }
 
   // Get the matrix
-  const seamat::DenseMatrix<T>& log_mat() const { return this->log_likelihoods; };
+  const seamat::Matrix<T>& log_mat() const override { return this->log_likelihoods; };
 
   // Get the ec counts
-  const std::vector<T>& log_counts() const { return this->log_ec_counts; };
+  const std::vector<T>& log_counts() const override { return this->log_ec_counts; };
 
 };
 

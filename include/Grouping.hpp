@@ -25,12 +25,10 @@
 #ifndef MSWEEP_GROUPING_HPP
 #define MSWEEP_GROUPING_HPP
 
+#include <string>
 #include <cstddef>
 #include <vector>
-#include <string>
 #include <unordered_map>
-#include <array>
-#include <limits>
 #include <memory>
 
 class Grouping {

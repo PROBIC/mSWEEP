@@ -24,6 +24,9 @@
 //
 #include "Reference.hpp"
 
+#include <set>
+#include <limits>
+
 std::unique_ptr<Reference> ConstructAdaptiveReference(std::istream *in, const char delimiter) {
   std::vector<std::string> group_indicators;
   std::set<std::string> group_names;

@@ -32,13 +32,13 @@
 
 #include <cmath>
 #include <cstddef>
+#include <fstream>
+#include <string>
 #include <vector>
 #include <array>
 #include <sstream>
-
-#include "openmp_config.hpp"
-
-#include "Grouping.hpp"
+#include <exception>
+#include <algorithm>
 
 template <typename T>
 T lbeta(T x, T y) {
@@ -115,7 +115,7 @@ private:
     // Fill log ec counts.
     this->log_ec_counts.resize(alignment.n_ecs(), 0);
 #pragma omp parallel for schedule(static)
-    for (uint32_t i = 0; i < alignment.n_ecs(); ++i) {
+    for (size_t i = 0; i < alignment.n_ecs(); ++i) {
       this->log_ec_counts[i] = std::log(alignment.reads_in_ec(i));
     }
   }
@@ -152,16 +152,16 @@ public:
 
     if (infile->good()) {
       std::string newline;
-      uint32_t line_nr = 0;
+      size_t line_nr = 0;
       while (std::getline(*infile, newline)) {
 	++line_nr;
 	std::string part;
 	std::stringstream partition(newline);
 	bool ec_count_col = true;
-	uint32_t group_id = 0;
+	size_t group_id = 0;
 	while (std::getline(partition, part, '\t')) {
 	  if (ec_count_col) {
-	    uint32_t ec_count = std::stol(part);
+	    size_t ec_count = std::stol(part);
 	    this->log_ec_counts.emplace_back(std::log(ec_count));
 	    ec_count_col = false;
 	  } else {
@@ -182,10 +182,10 @@ public:
     size_t n_groups = this->log_likelihoods.get_rows();
 
     if (of->good()) {
-      for (uint32_t i = 0; i < n_ecs; ++i){
-	uint32_t ec_hit_count = std::round(std::exp(log_ec_counts[i]));
+      for (size_t i = 0; i < n_ecs; ++i){
+	size_t ec_hit_count = std::round(std::exp(log_ec_counts[i]));
 	*of << ec_hit_count << '\t';
-	for (uint32_t j = 0; j < n_groups; ++j) {
+	for (size_t j = 0; j < n_groups; ++j) {
 	  *of << this->log_likelihoods(j, i);
 	  *of << (j == n_groups - 1 ? '\n' : '\t');
 	}
@@ -215,13 +215,13 @@ public:
       *of << "# LOGFORMAT (probabilities saved on log scale.)" << '\n';
       *of << "# r_name num_alignments (tr_id prob )^*{num_alignments}" << '\n';
 
-      uint32_t read_id = 1;
-      for (uint32_t i = 0; i < n_ecs; ++i) {
-	uint32_t ec_hit_count = std::round(std::exp(log_ec_counts[i]));
-	for (uint32_t k = 0; k < ec_hit_count; ++k) {
+      size_t read_id = 1;
+      for (size_t i = 0; i < n_ecs; ++i) {
+	size_t ec_hit_count = std::round(std::exp(log_ec_counts[i]));
+	for (size_t k = 0; k < ec_hit_count; ++k) {
 	  *of << read_id << ' ';
 	  *of << n_groups + 1 << ' ';
-	  for (uint32_t j = 0; j < n_groups; ++j) {
+	  for (size_t j = 0; j < n_groups; ++j) {
 	    *of << j + 1 << ' ' << this->log_likelihoods(j, i) << ' ';
 	  }
 	  *of << 0 << ' ' << "-10000.00" << '\n';

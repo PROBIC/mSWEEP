@@ -31,7 +31,6 @@
 
 #include <string>
 #include <cstddef>
-#include <exception>
 #include <fstream>
 
 #include "bxzstr.hpp"

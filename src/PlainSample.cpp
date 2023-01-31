@@ -24,6 +24,8 @@
 //
 #include "Sample.hpp"
 
+#include <exception>
+
 #include "mSWEEP_version.h"
 
 void PlainSample::write_abundances(const std::vector<std::string> &group_names, std::ostream *of) const {

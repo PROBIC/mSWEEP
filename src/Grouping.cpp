@@ -24,6 +24,8 @@
 //
 #include "Grouping.hpp"
 
+#include <limits>
+
 std::unique_ptr<Grouping> ConstructAdaptive(const std::vector<std::string> &indicators) {
   std::unordered_map<std::string, size_t> name_to_size;
   for (size_t i = 0; i < indicators.size(); ++i) {

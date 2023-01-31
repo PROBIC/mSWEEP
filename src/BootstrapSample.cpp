@@ -24,6 +24,8 @@
 //
 #include "Sample.hpp"
 
+#include <exception>
+
 #include "mSWEEP_openmp_config.hpp"
 #include "mSWEEP_version.h"
 
@@ -57,13 +59,13 @@ void BootstrapSample::construct(const telescope::Alignment &alignment, const siz
 std::vector<double> BootstrapSample::resample_counts() {
   std::vector<uint32_t> tmp_counts(this->num_ecs);
 
-  for (uint32_t i = 0; i < this->bootstrap_count; ++i) {
-    uint32_t ec_id = ec_distribution(this->gen);
+  for (size_t i = 0; i < this->bootstrap_count; ++i) {
+    size_t ec_id = ec_distribution(this->gen);
     tmp_counts[ec_id] += 1;
   }
   std::vector<double> resampled_log_ec_counts(this->num_ecs);
 #pragma omp parallel for schedule(static)
-  for (uint32_t i = 0; i < this->num_ecs; ++i) {
+  for (size_t i = 0; i < this->num_ecs; ++i) {
     resampled_log_ec_counts[i] = std::log(tmp_counts[i]);
   }
   return resampled_log_ec_counts;
@@ -81,7 +83,7 @@ void BootstrapSample::write_abundances(const std::vector<std::string> &group_nam
     for (size_t i = 0; i < group_names.size(); ++i) {
       (*of) << group_names[i] << '\t';
       (*of) << this->bootstrap_results[0][i] << '\t'; // First vec has the relative abundances without bootstrapping
-      for (uint16_t j = 0; j < this->iters; ++j) {
+      for (size_t j = 0; j < this->iters; ++j) {
 	(*of) << this->bootstrap_results[j + 1][i] << (j == this->iters - 1 ? '\n' : '\t');
       }
     }

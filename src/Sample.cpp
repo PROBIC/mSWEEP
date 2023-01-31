@@ -24,7 +24,7 @@
 //
 #include "Sample.hpp"
 
-#include "mSWEEP_version.h"
+#include <exception>
 
 void ConstructSample(const telescope::Alignment &alignment, const size_t bootstrap_iters, const size_t bootstrap_count, const size_t bootstrap_seed, const bool bin_reads, std::unique_ptr<Sample> &sample) {
   // Wrapper for determining which Sample type to construct.
@@ -50,9 +50,9 @@ void ConstructSample(const telescope::Alignment &alignment, const size_t bootstr
 
 void Sample::count_alignments(const telescope::Alignment &alignment) {
   // Count the number of aligned reads and store in counts_total
-  uint32_t aln_counts_total = 0;
+  size_t aln_counts_total = 0;
 #pragma omp parallel for schedule(static) reduction(+:aln_counts_total)
-  for (uint32_t i = 0; i < alignment.n_ecs(); ++i) {
+  for (size_t i = 0; i < alignment.n_ecs(); ++i) {
     aln_counts_total += alignment.reads_in_ec(i);
   }
   this->counts_total = aln_counts_total;
@@ -64,13 +64,13 @@ void Sample::write_probs(const std::vector<std::string> &cluster_indicators_to_s
     *of << "ec_id" << '\t';
     size_t n_rows = this->ec_probabilities.get_rows();
     size_t n_cols = this->ec_probabilities.get_cols();
-    for (uint32_t i = 0; i < n_rows; ++i) {
+    for (size_t i = 0; i < n_rows; ++i) {
       *of << cluster_indicators_to_string[i];
       *of << (i < n_rows - 1 ? '\t' : '\n');
     }
-    for (uint32_t i = 0; i < n_cols; ++i) {
+    for (size_t i = 0; i < n_cols; ++i) {
 	*of << i << '\t';
-	for (uint32_t j = 0; j < n_rows; ++j) {
+	for (size_t j = 0; j < n_rows; ++j) {
 	  *of << std::exp(this->ec_probabilities(j, i));
 	  *of << (j < n_rows - 1 ? '\t' : '\n');
 	}

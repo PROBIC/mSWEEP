@@ -27,18 +27,17 @@
 
 #include <cstddef>
 #include <vector>
-#include <random>
-#include <iostream>
+#include <string>
 #include <fstream>
-#include <cmath>
-#include <exception>
+#include <random>
+#include <memory>
 
-#include "telescope.hpp"
 #include "Matrix.hpp"
+#include "telescope.hpp"
 
 class Sample {
 private:
-  uint32_t counts_total;
+  size_t counts_total;
   seamat::DenseMatrix<double> ec_probabilities;
 
 protected:
@@ -61,7 +60,7 @@ public:
   void write_probs(const std::vector<std::string> &cluster_indicators_to_string, std::ostream *of);
 
   // Getters
-  uint32_t get_counts_total() const { return this->counts_total; };
+  size_t get_counts_total() const { return this->counts_total; };
   const seamat::DenseMatrix<double>& get_probs() const { return this->ec_probabilities; }
 
 };

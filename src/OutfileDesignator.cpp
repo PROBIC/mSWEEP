@@ -24,6 +24,8 @@
 //
 #include "OutfileDesignator.hpp"
 
+#include <exception>
+
 void OutfileDesignator::open(std::string &filename) {
   if (this->compress) {
     filename += this->extension;

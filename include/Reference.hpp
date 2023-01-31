@@ -30,37 +30,112 @@
 #include <string>
 #include <fstream>
 #include <memory>
+#include <sstream>
+#include <algorithm>
+#include <set>
 
 #include "Grouping.hpp"
 
 class Reference {
-private:
-  uint32_t n_refs = 0;
-  uint16_t n_groupings = 0;
+public:
+  // Getters to access the groupings
+  virtual size_t n_groups(const size_t grouping_id) const =0;
+  virtual const std::vector<std::string>& group_names(const size_t grouping_id) const =0;
 
-  std::vector<std::vector<uint32_t>> groups_indicators;
+  // Getters
+  virtual const Grouping& get_grouping(const size_t grouping_id) const =0;
+  virtual size_t get_n_refs() const =0;
+  virtual size_t get_n_groupings() const =0;
+};
+
+template <typename T>
+class AdaptiveReference : public Reference {
+private:
+  size_t n_refs = 0;
+  size_t n_groupings = 0;
+
+  std::vector<std::vector<T>> groups_indicators;
   std::vector<std::unique_ptr<Grouping>> groupings;
 
-  void add_sequence(const std::string &seq_name, const uint16_t grouping_id);
+  void add_sequence(const std::string &seq_name, const size_t grouping_id) {
+    if (grouping_id == 0) {
+      this->n_refs += 1;
+    }
+    this->groups_indicators[grouping_id].emplace_back(this->groupings[grouping_id]->get_id(seq_name));
+  }
 
 public:
-  void read_from_file(std::istream &indicator_file, const char delimiter = '\t');
-  void match_with_fasta(const char delimiter, std::istream &groups_file, std::istream &fasta_file);
+  AdaptiveReference(const std::vector<std::string> &indicator_lines, const char delimiter = '\t') {
+    std::vector<std::vector<std::string>> group_indicators;
+    for (size_t i = 0; i < indicator_lines.size(); ++i) {
+      std::string indicator_s;
+      std::stringstream indicators(indicator_lines[i]);
+      std::string indicator;
+      size_t grouping_id = 0;
+      while (std::getline(indicators, indicator, delimiter)) {
+	if (grouping_id >= this->n_groupings) {
+	  this->groups_indicators.emplace_back(std::vector<T>());
+	  group_indicators.emplace_back(std::vector<std::string>());
+	  ++this->n_groupings;
+	}
+	group_indicators[grouping_id].emplace_back(indicator);
+	++grouping_id;
+      }
+    }
+
+    for (size_t i = 0; i < n_groupings; ++i) {
+      this->groupings.emplace_back(ConstructAdaptive(group_indicators[i]));
+      for (size_t j = 0; j < group_indicators[i].size(); ++j) {
+	this->add_sequence(group_indicators[i][j], i);
+      }
+    }
+    if (this->n_refs == 0) {
+      throw std::runtime_error("The grouping contains 0 reference sequences");
+    }
+  }
 
   // Getters to access the groupings
-  uint32_t n_groups(const size_t grouping_id) const { return (*this->groupings[grouping_id]).get_n_groups(); }
-  const std::vector<std::string>& group_names(const size_t grouping_id) const { return (*this->groupings[grouping_id]).get_names(); };
-  template <typename T, typename V>
-  const std::vector<T>& group_sizes(const size_t grouping_id) const {
-    return static_cast<const AdaptiveGrouping<T, V>*>(&(*this->groupings[grouping_id]))->get_sizes();
+  size_t n_groups(const size_t grouping_id) const override { return (size_t)(*this->groupings[grouping_id]).get_n_groups(); }
+  const std::vector<std::string>& group_names(const size_t grouping_id) const override { return (*this->groupings[grouping_id]).get_names(); };
+
+  template <typename U>
+  const std::vector<U>& group_sizes(const size_t grouping_id) const {
+    return static_cast<const AdaptiveGrouping<U, T>*>(&(*this->groupings[grouping_id]))->get_sizes();
   }
 
   // Getters
-  const Grouping& get_grouping(const uint16_t grouping_id) const { return (*this->groupings[grouping_id]); };
-  const std::vector<uint32_t>& get_group_indicators(const uint16_t grouping_id) const { return this->groups_indicators[grouping_id]; };
-  uint32_t get_n_refs() const { return this->n_refs; };
-  uint16_t get_n_groupings() const { return this->n_groupings; };
+  const Grouping& get_grouping(const size_t grouping_id) const override { return (*this->groupings[grouping_id]); };
+  const std::vector<T>& get_group_indicators(const size_t grouping_id) const { return this->groups_indicators[grouping_id]; };
+  size_t get_n_refs() const override { return (size_t)this->n_refs; };
+  size_t get_n_groupings() const override { return (size_t)this->n_groupings; };
 
 };
+
+inline std::unique_ptr<Reference> ConstructAdaptiveReference(std::istream *in, const char delimiter = '\t') {
+  std::vector<std::string> group_indicators;
+  std::set<std::string> group_names;
+  if (in->good()) {
+    std::string line;
+    while (std::getline(*in, line)) {
+      group_indicators.emplace_back(line);
+      group_names.insert(line);
+    }
+  } else {
+    throw std::runtime_error("Could not read cluster indicators.");
+  }
+  size_t n_groups = group_names.size();
+
+  std::unique_ptr<Reference> ret;
+  if (n_groups <= std::numeric_limits<uint8_t>::max()) {
+    ret.reset(new AdaptiveReference<uint8_t>(group_indicators, delimiter));
+  } else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
+    ret.reset(new AdaptiveReference<uint16_t>(group_indicators, delimiter));
+  } else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
+    ret.reset(new AdaptiveReference<uint32_t>(group_indicators, delimiter));
+  } else {
+    ret.reset(new AdaptiveReference<uint64_t>(group_indicators, delimiter));
+  }
+  return ret;
+}
 
 #endif

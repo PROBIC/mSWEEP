@@ -268,17 +268,17 @@ int main (int argc, char *argv[]) {
 #endif
 
   // First read the group indicators
-  Reference reference;
+  std::unique_ptr<Reference> reference;
   log << "Reading the input files" << '\n';
   try {
     if (rank == 0) { // Only root reads in data
       log << "  reading group indicators" << '\n';
       cxxio::In indicators(args.value<std::string>('i'));
-      reference.read_from_file(indicators.stream(), '\t');
-      if (reference.get_n_groupings() > 1) {
-	log << "  read " << reference.get_n_groupings() << " groupings" << '\n';
+      reference = std::move(ConstructAdaptiveReference(&indicators.stream(), '\t'));
+      if (reference->get_n_groupings() > 1) {
+	log << "  read " << reference->get_n_groupings() << " groupings" << '\n';
       }
-      log << "  read " << reference.get_n_refs() << " group indicators" << '\n';
+      log << "  read " << reference->get_n_refs() << " group indicators" << '\n';
     }
   } catch (std::exception &e) {
     finalize("Reading group indicators failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
@@ -288,7 +288,7 @@ int main (int argc, char *argv[]) {
   // Estimate abundances with all groupings that were provided
   uint16_t n_groupings;
   if (rank == 0) { // rank 0
-    n_groupings = reference.get_n_groupings();
+    n_groupings = reference->get_n_groupings();
   }
 #if defined(MSWEEP_MPI_SUPPORT) && (MSWEEP_MPI_SUPPORT) == 1
   // Only root process has read in the input.
@@ -303,7 +303,7 @@ int main (int argc, char *argv[]) {
       // Send the number of groups in this grouping from root to all processes
       uint16_t n_groups;
       if (rank == 0) // rank 0
-	n_groups = reference.n_groups(i);
+	n_groups = reference->n_groups(i);
 #if defined(MSWEEP_MPI_SUPPORT) && (MSWEEP_MPI_SUPPORT) == 1
       MPI_Bcast(&n_groups, 1, MPI_UINT16_T, 0, MPI_COMM_WORLD);
 #endif
@@ -316,7 +316,7 @@ int main (int argc, char *argv[]) {
       bool bin_reads = args.value<bool>("bin-reads");
 
       // These are the main inputs to the abundance estimation code.
-      LL_WOR21<double, uint8_t> log_likelihoods(reference.group_sizes<uint8_t, uint8_t>(i), reference.n_groups(i), args.value<double>('q'), args.value<double>('e'));
+      LL_WOR21<double, uint8_t> log_likelihoods(static_cast<const AdaptiveReference<uint8_t>*>(&(*reference))->group_sizes<uint8_t>(i), reference->n_groups(i), args.value<double>('q'), args.value<double>('e'));
       // Check if reading likelihood from file.
       // In MPI configurations, only root needs to read in the data. Distributing the values
       // is handled by the rcgpar::rcg_optl_mpi implementation.
@@ -344,7 +344,7 @@ int main (int argc, char *argv[]) {
 	  }
 
 	  // Read the pseudoalignment
-	  telescope::read::ThemistoGrouped(telescope::get_mode(args.value<std::string>("themisto-mode")), reference.get_n_refs(), reference.get_group_indicators(i), strands, alignment);
+	  telescope::read::ThemistoGrouped(telescope::get_mode(args.value<std::string>("themisto-mode")), reference->get_n_refs(), static_cast<const AdaptiveReference<uint8_t>*>(&(*reference))->get_group_indicators(i), strands, alignment);
 	} catch (std::exception &e) {
 	  finalize("Reading the pseudoalignments failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;
@@ -352,7 +352,7 @@ int main (int argc, char *argv[]) {
 
 	// Use the alignment data to populate the log_likelihoods matrix.
 	try {
-	  log_likelihoods.from_grouped_alignment(*alignment, reference.group_sizes<uint8_t, uint8_t>(i), reference.n_groups(i));
+	  log_likelihoods.from_grouped_alignment(*alignment, static_cast<const AdaptiveReference<uint8_t>*>(&(*reference))->group_sizes<uint8_t>(i), reference->n_groups(i));
 	}  catch (std::exception &e) {
 	  finalize("Building the log-likelihood array failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;
@@ -368,12 +368,12 @@ int main (int argc, char *argv[]) {
 	try {
 	  // Reading both likelihoods and log_ec_counts from file.
 	  log << "  reading likelihoods from file" << '\n';
-	  if (reference.get_n_groupings() > 1) {
+	  if (reference->get_n_groupings() > 1) {
 	    throw std::runtime_error("Using more than one grouping with --read-likelihood is not yet implemented.");
 	  }
 
 	  cxxio::In infile(args.value<std::string>("read-likelihood"));
-	  log_likelihoods.from_file(reference.n_groups(i), &infile.stream());
+	  log_likelihoods.from_file(reference->n_groups(i), &infile.stream());
 	} catch (std::exception &e) {
 	  finalize("Reading the likelihoods failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;
@@ -424,19 +424,19 @@ int main (int argc, char *argv[]) {
 	    if (CmdOptionPresent(argv, argv+argc, "--target-groups")) {
 	      target_names = std::move(args.value<std::vector<std::string>>("target-groups"));
 	    } else {
-	      target_names = reference.group_names(i);
+	      target_names = reference->group_names(i);
 	    }
 	    if (CmdOptionPresent(argv, argv+argc, "--min-abundance")) {
-	      mGEMS::FilterTargetGroups(reference.group_names(i), sample->get_abundances(), args.value<double>("min-abundance"), &target_names);
+	      mGEMS::FilterTargetGroups(reference->group_names(i), sample->get_abundances(), args.value<double>("min-abundance"), &target_names);
 	    }
 	    std::vector<std::vector<uint32_t>> bins;
 	    try {
 	      if (bootstrap_mode) {
 		BinningBootstrap* bs = static_cast<BinningBootstrap*>(&(*sample));
-		bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), sample->get_probs(), reference.group_names(i), &target_names));
+		bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), sample->get_probs(), reference->group_names(i), &target_names));
 	      } else {
 		BinningSample* bs = static_cast<BinningSample*>(&(*sample));
-		bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), sample->get_probs(), reference.group_names(i), &target_names));
+		bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), sample->get_probs(), reference->group_names(i), &target_names));
 	      }
 	    } catch (std::exception &e) {
 	      finalize("Binning the reads failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
@@ -459,10 +459,10 @@ int main (int argc, char *argv[]) {
 	      // Note: this ignores the printing_output variable because
 	      // we might want to print the probs even when writing to
 	      // pipe them somewhere.
-	      sample->write_probs(reference.group_names(i), &std::cout);
+	      sample->write_probs(reference->group_names(i), &std::cout);
 	    }
 	    if (args.value<bool>("write-probs")) {
-	      sample->write_probs(reference.group_names(i), out.probs());
+	      sample->write_probs(reference->group_names(i), out.probs());
 	    }
 	  } catch (std::exception &e) {
 	    finalize("Writing the probabilities failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
@@ -497,7 +497,7 @@ int main (int argc, char *argv[]) {
       // Write relative abundances
       if (rank == 0) {
 	try {
-	  sample->write_abundances(reference.group_names(i), out.abundances());
+	  sample->write_abundances(reference->group_names(i), out.abundances());
 	} catch (std::exception &e) {
 	  finalize("Writing the relative abundances failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;

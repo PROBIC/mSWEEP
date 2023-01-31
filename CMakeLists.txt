@@ -331,19 +331,12 @@ if(CMAKE_BUILD_ZLIB)
   add_dependencies(mSWEEP zlibstatic)
 endif()
 
-add_library(msweeptools ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/matchfasta.cpp)
-add_executable(matchfasta ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/main.cpp)
-
 if(MPI_FOUND)
   add_dependencies(mSWEEP rcgmpi bigmpi)
   target_link_libraries(mSWEEP rcgmpi ${LIBRARY_OUTPUT_PATH}/libbigmpi.a)
 endif()
 
 # Link libraries
-target_link_libraries(mSWEEP ${ZLIB} msweeptools)
-target_link_libraries(matchfasta msweeptools)
 if (OPENMP_FOUND)
   target_link_libraries(mSWEEP OpenMP::OpenMP_CXX)
-  target_link_libraries(matchfasta OpenMP::OpenMP_CXX)
-  target_link_libraries(msweeptools OpenMP::OpenMP_CXX)
 endif()

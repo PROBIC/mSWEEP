@@ -28,6 +28,7 @@
 
 #include "mSWEEP_version.h"
 
+namespace mSWEEP {
 void PlainSample::write_abundances(const std::vector<std::string> &group_names, std::ostream *of) const {
   // Write relative abundances to &of,
   if (of->good()) {
@@ -41,4 +42,6 @@ void PlainSample::write_abundances(const std::vector<std::string> &group_names, 
   } else {
     throw std::runtime_error("Can't write to abundances file.");
   }
+}
+
 }

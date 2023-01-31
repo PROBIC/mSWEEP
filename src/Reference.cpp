@@ -27,6 +27,7 @@
 #include <set>
 #include <limits>
 
+namespace mSWEEP {
 std::unique_ptr<Reference> ConstructAdaptiveReference(std::istream *in, const char delimiter) {
   std::vector<std::string> group_indicators;
   std::set<std::string> group_names;
@@ -52,4 +53,6 @@ std::unique_ptr<Reference> ConstructAdaptiveReference(std::istream *in, const ch
     ret.reset(new AdaptiveReference<uint64_t>(group_indicators, delimiter));
   }
   return ret;
+}
+
 }

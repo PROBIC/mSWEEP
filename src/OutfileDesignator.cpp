@@ -26,6 +26,7 @@
 
 #include <exception>
 
+namespace mSWEEP {
 void OutfileDesignator::open(std::string &filename) {
   if (this->compress) {
     filename += this->extension;
@@ -119,4 +120,5 @@ void OutfileDesignator::next_grouping() {
     this->prefix += "_";
     this->prefix += std::to_string(this->current_grouping);
   }
+}
 }

@@ -35,6 +35,7 @@
 #include "Matrix.hpp"
 #include "telescope.hpp"
 
+namespace mSWEEP {
 class Sample {
 private:
   size_t counts_total;
@@ -178,5 +179,7 @@ public:
 };
 
 void ConstructSample(const telescope::Alignment &alignment, const size_t bootstrap_iters, const size_t bootstrap_count, const size_t bootstrap_seed, const bool bin_reads, std::unique_ptr<Sample> &sample);
+
+}
 
 #endif

@@ -36,6 +36,7 @@
 #include "bxzstr.hpp"
 #include "cxxio.hpp"
 
+namespace mSWEEP {
 class OutfileDesignator {
 private:
   // Was printing abundances requested?
@@ -78,5 +79,7 @@ public:
   void next_grouping();
 
 };
+
+}
 
 #endif

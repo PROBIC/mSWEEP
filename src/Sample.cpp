@@ -26,6 +26,7 @@
 
 #include <exception>
 
+namespace mSWEEP {
 void ConstructSample(const telescope::Alignment &alignment, const size_t bootstrap_iters, const size_t bootstrap_count, const size_t bootstrap_seed, const bool bin_reads, std::unique_ptr<Sample> &sample) {
   // Wrapper for determining which Sample type to construct.
   // Initialize Sample depending on how the alignment needs to be processed.
@@ -80,4 +81,6 @@ void Sample::write_probs(const std::vector<std::string> &cluster_indicators_to_s
   } else {
     throw std::runtime_error("Can't write to probs file.");
   }
+}
+
 }

@@ -40,6 +40,7 @@
 #include <exception>
 #include <algorithm>
 
+namespace mSWEEP {
 template <typename T>
 T lbeta(T x, T y) {
   return(std::lgamma(x) + std::lgamma(y) - std::lgamma(x + y));
@@ -252,5 +253,7 @@ public:
   const std::vector<T>& log_counts() const override { return this->log_ec_counts; };
 
 };
+
+}
 
 #endif

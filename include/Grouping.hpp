@@ -31,6 +31,7 @@
 #include <unordered_map>
 #include <memory>
 
+namespace mSWEEP {
 class Grouping {
 public:
   // Increase the count of sequences assigned to group_name, and add
@@ -99,5 +100,7 @@ public:
 };
 
 std::unique_ptr<Grouping> ConstructAdaptive(const std::vector<std::string> &indicators);
+
+}
 
 #endif

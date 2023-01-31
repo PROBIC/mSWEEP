@@ -13,6 +13,7 @@
 #include "cxxio.hpp"
 #include "mSWEEP_mpi_config.hpp"
 
+namespace mSWEEP {
 class Log : public cxxio::Out {
  public:
   bool verbose;
@@ -61,6 +62,8 @@ Log& operator<<(Log &os, T t) {
     }
   }
   return os;
+}
+
 }
 
 #endif

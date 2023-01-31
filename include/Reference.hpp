@@ -34,6 +34,7 @@
 
 #include "Grouping.hpp"
 
+namespace mSWEEP {
 class Reference {
 public:
   // Getters to access the groupings
@@ -110,5 +111,7 @@ public:
 };
 
 std::unique_ptr<Reference> ConstructAdaptiveReference(std::istream *in, const char delimiter = '\t');
+
+}
 
 #endif

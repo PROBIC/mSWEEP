@@ -29,6 +29,7 @@
 #include "mSWEEP_openmp_config.hpp"
 #include "mSWEEP_version.h"
 
+namespace mSWEEP {
 void BootstrapSample::init_bootstrap(const telescope::Alignment &alignment) {
   // Clear the bootstrap abundances in case we're estimating the same sample again.
   this->bootstrap_results = std::vector<std::vector<double>>();
@@ -91,4 +92,6 @@ void BootstrapSample::write_abundances(const std::vector<std::string> &group_nam
   } else {
     throw std::runtime_error("Could not write to abundances file.");
   }
+}
+
 }

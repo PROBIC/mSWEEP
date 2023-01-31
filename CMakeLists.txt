@@ -77,6 +77,8 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/mSWEEP_openmp_config.hpp.in ${
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/mSWEEP_mpi_config.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/include/mSWEEP_mpi_config.hpp @ONLY)
 
 add_executable(mSWEEP
+${CMAKE_SOURCE_DIR}/src/Sample.cpp
+${CMAKE_SOURCE_DIR}/src/PlainSample.cpp
 ${CMAKE_SOURCE_DIR}/src/BootstrapSample.cpp
 ${CMAKE_SOURCE_DIR}/src/mSWEEP.cpp)
 

@@ -42,15 +42,7 @@ private:
   seamat::DenseMatrix<double> ec_probabilities;
 
 protected:
-  void count_alignments(const telescope::Alignment &alignment) {
-    // Count the number of aligned reads and store in counts_total
-    uint32_t aln_counts_total = 0;
-#pragma omp parallel for schedule(static) reduction(+:aln_counts_total)
-    for (uint32_t i = 0; i < alignment.n_ecs(); ++i) {
-      aln_counts_total += alignment.reads_in_ec(i);
-    }
-    this->counts_total = aln_counts_total;
-  }
+  void count_alignments(const telescope::Alignment &alignment);
 
 public:
   // Virtual functions
@@ -66,29 +58,7 @@ public:
   // Store equivalence class probabilities
   void store_probs(const seamat::DenseMatrix<double> &probs) { this->ec_probabilities = std::move(probs); }
 
-  void write_probs(const std::vector<std::string> &cluster_indicators_to_string, std::ostream *of) {
-    // Write the probability matrix to a file.
-    if (of->good()) {
-      *of << "ec_id" << '\t';
-      size_t n_rows = this->ec_probabilities.get_rows();
-      size_t n_cols = this->ec_probabilities.get_cols();
-      for (uint32_t i = 0; i < n_rows; ++i) {
-	*of << cluster_indicators_to_string[i];
-	*of << (i < n_rows - 1 ? '\t' : '\n');
-      }
-      for (uint32_t i = 0; i < n_cols; ++i) {
-	*of << i << '\t';
-	for (uint32_t j = 0; j < n_rows; ++j) {
-	  *of << std::exp(this->ec_probabilities(j, i));
-	  *of << (j < n_rows - 1 ? '\t' : '\n');
-	}
-      }
-      *of << std::endl;
-      of->flush();
-    } else {
-      throw std::runtime_error("Can't write to probs file.");
-    }
-  }
+  void write_probs(const std::vector<std::string> &cluster_indicators_to_string, std::ostream *of);
 
   // Getters
   uint32_t get_counts_total() const { return this->counts_total; };
@@ -106,9 +76,7 @@ protected:
   Binning() = default;
 
   // Function for derived classes to set aligned_reads.
-  void store_aligned_reads(const std::vector<std::vector<uint32_t>> &_aligned_reads) {
-    this->aligned_reads = _aligned_reads;
-  }
+  void store_aligned_reads(const std::vector<std::vector<uint32_t>> &_aligned_reads) { this->aligned_reads = _aligned_reads; }
 
 public:
   // Getters
@@ -210,26 +178,6 @@ public:
 
 };
 
-inline void ConstructSample(const telescope::Alignment &alignment, const size_t bootstrap_iters, const size_t bootstrap_count, const size_t bootstrap_seed, const bool bin_reads, std::unique_ptr<Sample> &sample) {
-  // Wrapper for determining which Sample type to construct.
-  // Initialize Sample depending on how the alignment needs to be processed.
-  if (bootstrap_iters > 0) {
-    // Bootstrap mode
-    bool count_provided = bootstrap_count > 0;
-    if (count_provided && bin_reads) {
-      sample.reset(new BinningBootstrap(alignment, bootstrap_iters, bootstrap_count, bootstrap_seed));
-    } else if (count_provided && !bin_reads) {
-      sample.reset(new BootstrapSample(alignment, bootstrap_iters, bootstrap_iters, bootstrap_seed));
-    } else if (bin_reads) {
-      sample.reset(new BinningBootstrap(alignment, bootstrap_iters, bootstrap_seed));
-    } else {
-      sample.reset(new BootstrapSample(alignment, bootstrap_iters, bootstrap_seed));
-    }
-  } else if (bin_reads) {
-    sample.reset(new BinningSample(alignment));
-  } else {
-    sample.reset(new PlainSample(alignment));
-  }
-}
+void ConstructSample(const telescope::Alignment &alignment, const size_t bootstrap_iters, const size_t bootstrap_count, const size_t bootstrap_seed, const bool bin_reads, std::unique_ptr<Sample> &sample);
 
 #endif

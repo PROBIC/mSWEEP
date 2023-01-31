@@ -27,21 +27,6 @@
 #include "mSWEEP_openmp_config.hpp"
 #include "mSWEEP_version.h"
 
-void PlainSample::write_abundances(const std::vector<std::string> &group_names, std::ostream *of) const {
-  // Write relative abundances to &of,
-  if (of->good()) {
-    (*of) << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
-    (*of) << "#total_hits:" << '\t' << this->get_counts_total() << '\n';
-    (*of) << "#c_id" << '\t' << "mean_theta" << '\n';
-    for (size_t i = 0; i < this->relative_abundances.size(); ++i) {
-      (*of) << group_names[i] << '\t' << this->relative_abundances[i] << '\n';
-    }
-    of->flush();
-  } else {
-    throw std::runtime_error("Can't write to abundances file.");
-  }
-}
-
 void BootstrapSample::init_bootstrap(const telescope::Alignment &alignment) {
   // Clear the bootstrap abundances in case we're estimating the same sample again.
   this->bootstrap_results = std::vector<std::vector<double>>();

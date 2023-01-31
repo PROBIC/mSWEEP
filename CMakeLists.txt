@@ -82,6 +82,7 @@ ${CMAKE_SOURCE_DIR}/src/PlainSample.cpp
 ${CMAKE_SOURCE_DIR}/src/BootstrapSample.cpp
 ${CMAKE_SOURCE_DIR}/src/Reference.cpp
 ${CMAKE_SOURCE_DIR}/src/Grouping.cpp
+${CMAKE_SOURCE_DIR}/src/OutfileDesignator.cpp
 ${CMAKE_SOURCE_DIR}/src/mSWEEP.cpp)
 
 ## Check supported compression types

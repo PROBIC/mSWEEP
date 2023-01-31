@@ -111,31 +111,6 @@ public:
 
 };
 
-inline std::unique_ptr<Reference> ConstructAdaptiveReference(std::istream *in, const char delimiter = '\t') {
-  std::vector<std::string> group_indicators;
-  std::set<std::string> group_names;
-  if (in->good()) {
-    std::string line;
-    while (std::getline(*in, line)) {
-      group_indicators.emplace_back(line);
-      group_names.insert(line);
-    }
-  } else {
-    throw std::runtime_error("Could not read cluster indicators.");
-  }
-  size_t n_groups = group_names.size();
-
-  std::unique_ptr<Reference> ret;
-  if (n_groups <= std::numeric_limits<uint8_t>::max()) {
-    ret.reset(new AdaptiveReference<uint8_t>(group_indicators, delimiter));
-  } else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
-    ret.reset(new AdaptiveReference<uint16_t>(group_indicators, delimiter));
-  } else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
-    ret.reset(new AdaptiveReference<uint32_t>(group_indicators, delimiter));
-  } else {
-    ret.reset(new AdaptiveReference<uint64_t>(group_indicators, delimiter));
-  }
-  return ret;
-}
+std::unique_ptr<Reference> ConstructAdaptiveReference(std::istream *in, const char delimiter = '\t');
 
 #endif

@@ -39,6 +39,9 @@
 #include <sstream>
 #include <exception>
 #include <algorithm>
+#include <memory>
+
+#include "Grouping.hpp"
 
 namespace mSWEEP {
 template <typename T>
@@ -253,6 +256,54 @@ public:
   const std::vector<T>& log_counts() const override { return this->log_ec_counts; };
 
 };
+template <typename T>
+std::unique_ptr<Likelihood<T>> ConstructAdaptiveLikelihood(const Grouping &grouping, const T q, const T e) {
+    size_t max_group_size = grouping.max_group_size();
+    size_t n_groups = grouping.get_n_groups();
+    std::unique_ptr<Likelihood<T>> log_likelihoods;
+    if (max_group_size <= std::numeric_limits<uint8_t>::max()) {
+	if (n_groups <= std::numeric_limits<uint8_t>::max()) {
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint8_t>(static_cast<const AdaptiveGrouping<uint8_t, uint8_t>*>(&grouping)->get_sizes(), n_groups, q, e));
+	} else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint8_t>(static_cast<const AdaptiveGrouping<uint8_t, uint16_t>*>(&grouping)->get_sizes(), n_groups, q, e));
+	} else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint8_t>(static_cast<const AdaptiveGrouping<uint8_t, uint32_t>*>(&grouping)->get_sizes(), n_groups, q, e));
+	} else {
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint8_t>(static_cast<const AdaptiveGrouping<uint8_t, uint64_t>*>(&grouping)->get_sizes(), n_groups, q, e));		
+	}
+    } else if (max_group_size <= std::numeric_limits<uint16_t>::max()) {
+	if (n_groups <= std::numeric_limits<uint8_t>::max()) {
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint16_t>(static_cast<const AdaptiveGrouping<uint16_t, uint8_t>*>(&grouping)->get_sizes(), n_groups, q, e));
+	} else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint16_t>(static_cast<const AdaptiveGrouping<uint16_t, uint16_t>*>(&grouping)->get_sizes(), n_groups, q, e));
+	} else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint16_t>(static_cast<const AdaptiveGrouping<uint16_t, uint32_t>*>(&grouping)->get_sizes(), n_groups, q, e));
+	} else {
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint16_t>(static_cast<const AdaptiveGrouping<uint16_t, uint64_t>*>(&grouping)->get_sizes(), n_groups, q, e));		
+	}
+    } else if (max_group_size <= std::numeric_limits<uint32_t>::max()) {
+	if (n_groups <= std::numeric_limits<uint8_t>::max()) {
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint32_t>(static_cast<const AdaptiveGrouping<uint32_t, uint8_t>*>(&grouping)->get_sizes(), n_groups, q, e));
+	} else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint16_t>(static_cast<const AdaptiveGrouping<uint16_t, uint16_t>*>(&grouping)->get_sizes(), n_groups, q, e));
+	} else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint32_t>(static_cast<const AdaptiveGrouping<uint32_t, uint32_t>*>(&grouping)->get_sizes(), n_groups, q, e));
+	} else {
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint32_t>(static_cast<const AdaptiveGrouping<uint32_t, uint64_t>*>(&grouping)->get_sizes(), n_groups, q, e));		
+	}
+    } else {
+	if (n_groups <= std::numeric_limits<uint8_t>::max()) {
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint64_t>(static_cast<const AdaptiveGrouping<uint64_t, uint8_t>*>(&grouping)->get_sizes(), n_groups, q, e));
+	} else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint64_t>(static_cast<const AdaptiveGrouping<uint64_t, uint16_t>*>(&grouping)->get_sizes(), n_groups, q, e));
+	} else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint64_t>(static_cast<const AdaptiveGrouping<uint64_t, uint32_t>*>(&grouping)->get_sizes(), n_groups, q, e));
+	} else {
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint64_t>(static_cast<const AdaptiveGrouping<uint64_t, uint64_t>*>(&grouping)->get_sizes(), n_groups, q, e));		
+	}
+    }
+    return log_likelihoods;
+}
 
 }
 

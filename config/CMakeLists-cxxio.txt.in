@@ -5,7 +5,7 @@ include(ExternalProject)
 
 ExternalProject_Add(cxxio-download
   GIT_REPOSITORY    https://github.com/tmaklin/cxxio.git
-  GIT_TAG           main
+  GIT_TAG           0b79d96b7eb51757fa1a9c3aa1b5c0348361019f
   SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/cxxio"
   BUILD_IN_SOURCE   1
   CONFIGURE_COMMAND ""

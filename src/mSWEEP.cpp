@@ -514,7 +514,7 @@ int main (int argc, char *argv[]) {
       }
 
       // Write relative abundances
-      if (rank == 0) {
+      if (rank == 0 && !args.value<bool>("no-fit-model")) {
 	try {
 	  sample->write_abundances(reference->group_names(i), out.abundances());
 	} catch (std::exception &e) {

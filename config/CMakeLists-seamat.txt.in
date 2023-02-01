@@ -5,7 +5,7 @@ include(ExternalProject)
 
 ExternalProject_Add(seamat-download
   GIT_REPOSITORY    https://github.com/tmaklin/seamat
-  GIT_TAG           use-bitmagic-for-sparse-classes
+  GIT_TAG           v0.2.0
   SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/seamat"
   BUILD_IN_SOURCE   0
   BUILD_COMMAND	    ""

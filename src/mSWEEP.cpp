@@ -318,16 +318,7 @@ int main (int argc, char *argv[]) {
 
       // These are the main inputs to the abundance estimation code.
       size_t n_refs = reference->get_n_refs();
-      std::unique_ptr<mSWEEP::Likelihood<double>> log_likelihoods;
-      if (n_refs <= std::numeric_limits<uint8_t>::max()) {
-	log_likelihoods.reset(new mSWEEP::LL_WOR21<double, uint8_t>(static_cast<const mSWEEP::AdaptiveReference<uint8_t>*>(&(*reference))->group_sizes<uint8_t>(i), reference->n_groups(i), args.value<double>('q'), args.value<double>('e')));
-      } else if (n_refs <= std::numeric_limits<uint16_t>::max()) {
-	log_likelihoods.reset(new mSWEEP::LL_WOR21<double, uint16_t>(static_cast<const mSWEEP::AdaptiveReference<uint16_t>*>(&(*reference))->group_sizes<uint16_t>(i), reference->n_groups(i), args.value<double>('q'), args.value<double>('e')));
-      } else if (n_refs <= std::numeric_limits<uint32_t>::max()) {
-	log_likelihoods.reset(new mSWEEP::LL_WOR21<double, uint32_t>(static_cast<const mSWEEP::AdaptiveReference<uint32_t>*>(&(*reference))->group_sizes<uint32_t>(i), reference->n_groups(i), args.value<double>('q'), args.value<double>('e')));
-      } else {
-	log_likelihoods.reset(new mSWEEP::LL_WOR21<double, uint32_t>(static_cast<const mSWEEP::AdaptiveReference<uint32_t>*>(&(*reference))->group_sizes<uint32_t>(i), reference->n_groups(i), args.value<double>('q'), args.value<double>('e')));
-      }
+      const std::unique_ptr<mSWEEP::Likelihood<double>> &log_likelihoods = mSWEEP::ConstructAdaptiveLikelihood<double>(reference->get_grouping(i), args.value<double>('q'), args.value<double>('e'));
 
       // Check if reading likelihood from file.
       // In MPI configurations, only root needs to read in the data. Distributing the values
@@ -356,17 +347,15 @@ int main (int argc, char *argv[]) {
 	  }
 
 	  // Read the pseudoalignment
-	  if (n_refs <= std::numeric_limits<uint8_t>::max()) {
+	  if (n_groups <= std::numeric_limits<uint8_t>::max()) {
 	    telescope::read::ThemistoGrouped(telescope::get_mode(args.value<std::string>("themisto-mode")), n_refs, static_cast<const mSWEEP::AdaptiveReference<uint8_t>*>(&(*reference))->get_group_indicators(i), strands, alignment);
-	  } else if (n_refs <= std::numeric_limits<uint16_t>::max()) {
+	  } else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
 	    telescope::read::ThemistoGrouped(telescope::get_mode(args.value<std::string>("themisto-mode")), n_refs, static_cast<const mSWEEP::AdaptiveReference<uint16_t>*>(&(*reference))->get_group_indicators(i), strands, alignment);
-	  } else if (n_refs <= std::numeric_limits<uint32_t>::max()) {
+	  } else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
 	    telescope::read::ThemistoGrouped(telescope::get_mode(args.value<std::string>("themisto-mode")), n_refs, static_cast<const mSWEEP::AdaptiveReference<uint32_t>*>(&(*reference))->get_group_indicators(i), strands, alignment);
 	  } else {
 	    telescope::read::ThemistoGrouped(telescope::get_mode(args.value<std::string>("themisto-mode")), n_refs, static_cast<const mSWEEP::AdaptiveReference<uint64_t>*>(&(*reference))->get_group_indicators(i), strands, alignment);
 	  }
-
-
 	} catch (std::exception &e) {
 	  finalize("Reading the pseudoalignments failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;
@@ -374,11 +363,11 @@ int main (int argc, char *argv[]) {
 
 	// Use the alignment data to populate the log_likelihoods matrix.
 	try {
-	  if (n_refs <= std::numeric_limits<uint8_t>::max()) {
+	  if (n_groups <= std::numeric_limits<uint8_t>::max()) {
 	    static_cast<mSWEEP::LL_WOR21<double, uint8_t>*>(&(*log_likelihoods))->from_grouped_alignment(*alignment, static_cast<const mSWEEP::AdaptiveReference<uint8_t>*>(&(*reference))->group_sizes<uint8_t>(i), reference->n_groups(i));
-	  } else if (n_refs <= std::numeric_limits<uint16_t>::max()) {
+	  } else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
 	    static_cast<mSWEEP::LL_WOR21<double, uint16_t>*>(&(*log_likelihoods))->from_grouped_alignment(*alignment, static_cast<const mSWEEP::AdaptiveReference<uint16_t>*>(&(*reference))->group_sizes<uint16_t>(i), reference->n_groups(i));
-	  } else if (n_refs <= std::numeric_limits<uint32_t>::max()) {
+	  } else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
 	    static_cast<mSWEEP::LL_WOR21<double, uint32_t>*>(&(*log_likelihoods))->from_grouped_alignment(*alignment, static_cast<const mSWEEP::AdaptiveReference<uint32_t>*>(&(*reference))->group_sizes<uint32_t>(i), reference->n_groups(i));
 	  } else {
 	    static_cast<mSWEEP::LL_WOR21<double, uint64_t>*>(&(*log_likelihoods))->from_grouped_alignment(*alignment, static_cast<const mSWEEP::AdaptiveReference<uint64_t>*>(&(*reference))->group_sizes<uint64_t>(i), reference->n_groups(i));

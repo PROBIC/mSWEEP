@@ -56,33 +56,33 @@ std::unique_ptr<Grouping> ConstructAdaptive(const std::vector<std::string> &indi
     }
   } else if (max_size <= std::numeric_limits<uint16_t>::max()) {
     if (n_groups <= std::numeric_limits<uint8_t>::max()) {
-      ret.reset(new AdaptiveGrouping<uint8_t, uint8_t>(indicators));
+      ret.reset(new AdaptiveGrouping<uint16_t, uint8_t>(indicators));
     } else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
-      ret.reset(new AdaptiveGrouping<uint8_t, uint16_t>(indicators));
+      ret.reset(new AdaptiveGrouping<uint16_t, uint16_t>(indicators));
     } else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
-      ret.reset(new AdaptiveGrouping<uint8_t, uint32_t>(indicators));
+      ret.reset(new AdaptiveGrouping<uint16_t, uint32_t>(indicators));
     } else {
-      ret.reset(new AdaptiveGrouping<uint8_t, uint64_t>(indicators));
+      ret.reset(new AdaptiveGrouping<uint16_t, uint64_t>(indicators));
     }
   } else if (max_size <= std::numeric_limits<uint32_t>::max()) {
     if (n_groups <= std::numeric_limits<uint8_t>::max()) {
-      ret.reset(new AdaptiveGrouping<uint8_t, uint8_t>(indicators));
+      ret.reset(new AdaptiveGrouping<uint32_t, uint8_t>(indicators));
     } else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
-      ret.reset(new AdaptiveGrouping<uint8_t, uint16_t>(indicators));
+      ret.reset(new AdaptiveGrouping<uint32_t, uint16_t>(indicators));
     } else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
-      ret.reset(new AdaptiveGrouping<uint8_t, uint32_t>(indicators));
+      ret.reset(new AdaptiveGrouping<uint32_t, uint32_t>(indicators));
     } else {
-      ret.reset(new AdaptiveGrouping<uint8_t, uint64_t>(indicators));
+      ret.reset(new AdaptiveGrouping<uint32_t, uint64_t>(indicators));
     }
   } else {
     if (n_groups <= std::numeric_limits<uint8_t>::max()) {
-      ret.reset(new AdaptiveGrouping<uint8_t, uint8_t>(indicators));
+      ret.reset(new AdaptiveGrouping<uint64_t, uint8_t>(indicators));
     } else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
-      ret.reset(new AdaptiveGrouping<uint8_t, uint16_t>(indicators));
+      ret.reset(new AdaptiveGrouping<uint64_t, uint16_t>(indicators));
     } else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
-      ret.reset(new AdaptiveGrouping<uint8_t, uint32_t>(indicators));
+      ret.reset(new AdaptiveGrouping<uint64_t, uint32_t>(indicators));
     } else {
-      ret.reset(new AdaptiveGrouping<uint8_t, uint64_t>(indicators));
+      ret.reset(new AdaptiveGrouping<uint64_t, uint64_t>(indicators));
     }
   }
   return ret;

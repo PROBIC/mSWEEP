@@ -318,7 +318,7 @@ int main (int argc, char *argv[]) {
 
       // These are the main inputs to the abundance estimation code.
       size_t n_refs = reference->get_n_refs();
-      const std::unique_ptr<mSWEEP::Likelihood<double>> &log_likelihoods = mSWEEP::ConstructAdaptiveLikelihood<double>(reference->get_grouping(i), args.value<double>('q'), args.value<double>('e'));
+      std::unique_ptr<mSWEEP::Likelihood<double>> log_likelihoods;
 
       // Check if reading likelihood from file.
       // In MPI configurations, only root needs to read in the data. Distributing the values
@@ -363,15 +363,7 @@ int main (int argc, char *argv[]) {
 
 	// Use the alignment data to populate the log_likelihoods matrix.
 	try {
-	  if (n_groups <= std::numeric_limits<uint8_t>::max()) {
-	    static_cast<mSWEEP::LL_WOR21<double, uint8_t>*>(&(*log_likelihoods))->from_grouped_alignment(*alignment, static_cast<const mSWEEP::AdaptiveReference<uint8_t>*>(&(*reference))->group_sizes<uint8_t>(i), reference->n_groups(i));
-	  } else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
-	    static_cast<mSWEEP::LL_WOR21<double, uint16_t>*>(&(*log_likelihoods))->from_grouped_alignment(*alignment, static_cast<const mSWEEP::AdaptiveReference<uint16_t>*>(&(*reference))->group_sizes<uint16_t>(i), reference->n_groups(i));
-	  } else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
-	    static_cast<mSWEEP::LL_WOR21<double, uint32_t>*>(&(*log_likelihoods))->from_grouped_alignment(*alignment, static_cast<const mSWEEP::AdaptiveReference<uint32_t>*>(&(*reference))->group_sizes<uint32_t>(i), reference->n_groups(i));
-	  } else {
-	    static_cast<mSWEEP::LL_WOR21<double, uint64_t>*>(&(*log_likelihoods))->from_grouped_alignment(*alignment, static_cast<const mSWEEP::AdaptiveReference<uint64_t>*>(&(*reference))->group_sizes<uint64_t>(i), reference->n_groups(i));
-	  }
+	    log_likelihoods = mSWEEP::ConstructAdaptiveLikelihood<double>(*alignment, reference->get_grouping(i), args.value<double>('q'), args.value<double>('e'));
 	}  catch (std::exception &e) {
 	  finalize("Building the log-likelihood array failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;

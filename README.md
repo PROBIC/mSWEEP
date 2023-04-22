@@ -36,6 +36,11 @@ Install mSWEEP from bioconda with
 conda install -y -c bioconda -c conda-forge -c defaults msweep
 ```
 
+check that the installation succeeded by running
+```
+mSWEEP --help
+```
+
 ## Precompiled binaries
 Precompiled binaries are available for
 * [Linux 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.6.1/mSWEEP_linux-v1.6.1.tar.gz)

@@ -25,15 +25,22 @@ You can also watch a talk from [ISMB/ECCB
 from the mSWEEP paper [in YouTube](https://www.youtube.com/watch?v=VDfChoJwSKg).
 
 # Installation
-mSWEEP can be obtained either in the form of a precompiled binary
-* [Linux 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.6.1/mSWEEP_linux-v1.6.1.tar.gz)
-* [macOS 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.6.1/mSWEEP_macOS-v1.6.1.tar.gz)
-or by following the instructions below for compiling mSWEEP from source.
-
 In addition to mSWEEP, you will need to install either [Themisto
 (recommended)](https://github.com/algbio/themisto) or
 [kallisto](https://github.com/pachterlab/kallisto) for
 pseudoalignment.
+
+## Conda
+Install mSWEEP from bioconda with
+```
+conda install -y -c bioconda -c conda-forge -c defaults msweep
+```
+
+## Precompiled binaries
+Precompiled binaries are available for
+* [Linux 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.6.1/mSWEEP_linux-v1.6.1.tar.gz)
+* [macOS 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.5.2/mSWEEP_macOS-v1.5.2.tar.gz)
+or by following the instructions below for compiling mSWEEP from source.
 
 ## Compiling from source
 ### Requirements

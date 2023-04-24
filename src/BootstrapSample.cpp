@@ -77,6 +77,7 @@ void BootstrapSample::write_abundances(const std::vector<std::string> &group_nam
   // outputs to std::cout if outfile is empty.
   if (of->good()) {
     (*of) << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
+    (*of) << "#n_reads:" << '\t' << this->get_n_reads() << '\n';
     (*of) << "#total_hits:" << '\t' << this->get_counts_total() << '\n';
     (*of) << "#bootstrap_iters:" << '\t' << this->iters << '\n';
     (*of) << "#c_id" << '\t' << "mean_theta" << '\t' << "bootstrap_mean_thetas" << '\n';

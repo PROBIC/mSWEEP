@@ -22,6 +22,12 @@ if(CMAKE_BUILD_TYPE MATCHES Release)
   endif()
 endif()
 
+if(CMAKE_BUILD_WITH_FLTO)
+  cmake_policy(SET CMP0069 NEW)
+  set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION 1)
+endif()
+
 ## Check dependencies
 find_package(OpenMP)
 if (OPENMP_FOUND)

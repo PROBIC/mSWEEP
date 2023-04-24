@@ -33,8 +33,8 @@ void PlainSample::write_abundances(const std::vector<std::string> &group_names, 
   // Write relative abundances to &of,
   if (of->good()) {
     (*of) << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
-    (*of) << "#n_reads:" << '\t' << this->get_n_reads() << '\n';
-    (*of) << "#total_hits:" << '\t' << this->get_counts_total() << '\n';
+    (*of) << "#num_reads:" << '\t' << this->get_n_reads() << '\n';
+    (*of) << "#num_aligned:" << '\t' << this->get_counts_total() << '\n';
     (*of) << "#c_id" << '\t' << "mean_theta" << '\n';
     for (size_t i = 0; i < this->relative_abundances.size(); ++i) {
       (*of) << group_names[i] << '\t' << this->relative_abundances[i] << '\n';

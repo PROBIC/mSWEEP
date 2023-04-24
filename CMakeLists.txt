@@ -95,25 +95,6 @@ if (ZLIB_FOUND)
   target_link_libraries(mSWEEP ${ZLIB_LIBRARIES})
 endif()
 
-if(NOT ZLIB_FOUND OR CMAKE_BUILD_ZLIB)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-zlib.txt.in ${CMAKE_CURRENT_BINARY_DIR}/external/zlib-download/CMakeLists.txt)
-  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-    RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external/zlib-download )
-  if(result)
-    message(FATAL_ERROR "CMake step for zlib failed: ${result}")
-  endif()
-  execute_process(COMMAND ${CMAKE_COMMAND} --build .
-    RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external/zlib-download )
-  if(result)
-    message(FATAL_ERROR "Build step for zlib failed: ${result}")
-  endif()
-  set(ZLIB ${CMAKE_CURRENT_BINARY_DIR}/lib/libz.a)
-else()
-  set(ZLIB ZLIB::ZLIB)
-endif()
-
 ## bxzstr
 if (DEFINED CMAKE_BXZSTR_HEADERS)
   message(STATUS "bxzstr headers provided in: ${CMAKE_BXZSTR_HEADERS}")
@@ -313,16 +294,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include
 ${CMAKE_CURRENT_SOURCE_DIR}/external ${CMAKE_CURRENT_SOURCE_DIR}/include/tools
 ${CMAKE_CURRENT_SOURCE_DIR}/external/cxxio
 ${CMAKE_CURRENT_BINARY_DIR}/include)
-
-## Handle compiling zlib from source
-if(CMAKE_BUILD_ZLIB)
-  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/external/zlib
-                   ${CMAKE_CURRENT_BINARY_DIR}/external/zlib)
-  set_target_properties(example PROPERTIES EXCLUDE_FROM_ALL 1)
-  set_target_properties(minigzip PROPERTIES EXCLUDE_FROM_ALL 1)
-  set_target_properties(zlib PROPERTIES EXCLUDE_FROM_ALL 1)
-  add_dependencies(mSWEEP zlibstatic)
-endif()
 
 if(MPI_FOUND)
   add_dependencies(mSWEEP rcgmpi bigmpi)

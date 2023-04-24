@@ -38,6 +38,7 @@
 namespace mSWEEP {
 class Sample {
 private:
+  size_t n_reads;
   size_t counts_total;
   seamat::DenseMatrix<double> ec_probabilities;
 
@@ -62,6 +63,7 @@ public:
 
   // Getters
   size_t get_counts_total() const { return this->counts_total; };
+  size_t get_n_reads() const { return this->n_reads; };
   const seamat::DenseMatrix<double>& get_probs() const { return this->ec_probabilities; }
 
 };

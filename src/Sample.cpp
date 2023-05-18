@@ -57,6 +57,7 @@ void Sample::count_alignments(const telescope::Alignment &alignment) {
     aln_counts_total += alignment.reads_in_ec(i);
   }
   this->counts_total = aln_counts_total;
+  this->n_reads = alignment.n_reads();
 }
 
 void Sample::write_probs(const std::vector<std::string> &cluster_indicators_to_string, std::ostream *of) {

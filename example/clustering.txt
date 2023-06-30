@@ -1,8 +1,0 @@
-clust2
-clust1
-clust4
-clust3
-clust4
-clust2
-clust1
-clust3

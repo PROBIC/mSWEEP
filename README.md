@@ -67,24 +67,25 @@ mSWEEP --themisto fwd.txt,rev.txt -i clustering.txt -t 2
 
 Both commands above will print the results. To write the result into a file called `result_abundances.txt` instead, run
 ```
-mSWEEP --themisto fwd.txt,rev.txt -i clustering.txt -t 2 -o result
+mSWEEP --themisto-1 fwd.txt --themisto-2 rev.txt -i clustering.txt -t 2 -o result
 ```
 
 ## Binning reads
 Estimate relative abundances and bin reads for all lineages with a relative abundance higher than 0.01 by running
 ```
-mSWEEP --themisto-1 fwd.txt --themisto-2 rev.txt -i clustering.txt -t 2 --min-abundance
+mSWEEP --themisto-1 fwd.txt --themisto-2 rev.txt -i clustering.txt -t 2 --min-abundance 0.01
 ```
 
-Extract reads for reference lineages `lineage_1` and `lineage_2` by running
+Extract reads only for reference lineages `lineage_1` and `lineage_2` by running
 ```
 mSWEEP --themisto-1 fwd.txt --themisto-2 rev.txt -i clustering.txt -t 2 --target-groups lineage_1,lineage_2
 ```
 
-Extract reads for reference lineages `lineage_1` and `lineage_2` if their relative abundance is higher than 0.01 by running
+Extract reads only for reference lineages `lineage_1` and `lineage_2` if their relative abundance is higher than 0.01 by running
 ```
 mSWEEP --themisto-1 fwd.txt --themisto-2 rev.txt -i clustering.txt -t 2 --target-groups lineage_1,lineage_2 --min-abundance 0.01
 ```
+i.e. the file format is automatically detected (alignment-writer v0.4.0 and newer).
 
 ## QC'ing binned reads
 We recommend running [demix\_check](https://github.com/tmaklin/coreutils_demix_check) on the binned reads and/or [checkm](https://github.com/Ecogenomics/CheckM) on the bin-assembled genomes (BAGs) to evaluate the accuracy of the results.

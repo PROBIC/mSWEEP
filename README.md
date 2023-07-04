@@ -22,8 +22,7 @@ mSWEEP --help
 
 ## Precompiled binaries
 Precompiled binaries are available for
-* [Linux 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.6.1/mSWEEP_linux-v1.6.1.tar.gz).
-* [macOS 64-bit binary](https://github.com/PROBIC/mSWEEP/releases/download/v1.5.2/mSWEEP_macOS-v1.5.2.tar.gz).
+* [Linux x86\_64 (mSWEEP-v2.0.0)](https://github.com/PROBIC/mSWEEP/releases/download/v2.0.0/mSWEEP_linux-v2.0.0.tar.gz).
 
 ## Compiling from source
 ### Requirements
@@ -56,7 +55,7 @@ For more info on compiling mSWEEP from source, please see the [documentation on 
 More information about using mSWEEP is available in the [usage documentation](/docs/README.md).
 
 ## Abundance estimation
-Estimate relative abundances of pseudoalignments `fwd.txt` and `rev.txt` using the lineages in `clustering.txt` with two threads by running 
+Estimate relative abundances of [Themisto](https://github.com/algbio/themisto) pseudoalignments `fwd.txt` and `rev.txt` using the lineages in `clustering.txt` with two threads by running 
 ```
 mSWEEP --themisto-1 fwd.txt --themisto-2 rev.txt -i clustering.txt -t 2
 ```

@@ -13,7 +13,7 @@ ls -d $(pwd)"/assemblies/"*.fasta.gz > input_sequences.txt
 Index the input data with [Themisto](https://github.com/algbio/themisto) (v3.0.0 or newer)
 ```
 mkdir tmp
-themisto_linux-v3.1.3/themisto build -k 31 -i input_sequences.txt -o themisto_index --temp-dir tmp -t 2 --mem-gigas 4
+themisto build -k 31 -i input_sequences.txt -o themisto_index --temp-dir tmp -t 2 --mem-gigas 4
 ```
 this will create the `themisto_index.tcolors` and `themisto_index.tdbg` files.
 

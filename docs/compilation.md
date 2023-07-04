@@ -1,5 +1,5 @@
-# Compilation tips for mSWEEP
-## Improving performance
+# Compiling mSWEEP
+## Compiler flags
 ### CPU instructions
 If you intend to run mSWEEP on the machine used in compiling the
 source code, you might want to add the '-march=native -mtune=native'
@@ -11,22 +11,22 @@ Using these options significantly reduces the runtime of mSWEEP in
 some environments (e.g. most HPC setups).
 
 ### Link time optimization
-mSWEEP can be compiled with link time optimization. This can slightly improve the performance on large problems and can be enabled with
+mSWEEP can be compiled with link time optimization. This can improve performance on large problems and can be enabled with
 ```
 > cmake -DCMAKE_BUILD_WITH_FLTO=1 ..
 ```
 
-### Intel C compiler
-If the [Intel C++ compiler](https://software.intel.com/en-us/c-compilers) is available in your environment, you might want to use that to compile mSWEEP — especially if running on Intel hardware. The compiler can be specified by running
+## Using the Intel C compiler
+The [Intel C++ compiler](https://software.intel.com/en-us/c-compilers) can be enabled by compiling mSWEEP with
 ```
 > cmake -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc ..
 ```
 
-## MPI support
+## MPI support (experimental)
 mSWEEP can be compiled with MPI support, distributing the mixture
 component estimation part of the program to several processes. To
 compile with MPI support, set your environment appropriately and build
-mSWEEP with the following commands (example case for OpenMPI):
+mSWEEP with the following commands:
 ```
 > mkdir build
 > cd build
@@ -35,25 +35,24 @@ mSWEEP with the following commands (example case for OpenMPI):
 > make
 ```
 
-The project should configure itself appropriately. To distribute the
-computation to 4 processes after compiling, call mSWEEP with:
+The `CMAKE_ENABLE_MPI_SUPPORT` flag configures the project accordingly.
+
+### Running with MPI
+Using mSWEEP through MPI will result in increased memory usage.
+
+Distribute computation to 4 processes by calling mSWEEP with:
 ```
-mpirun -np 4 mSWEEP --themisto-1 forward_aln.gz --themisto-2 reverse_aln.gz -i cluster_indicators.txt
+mpirun -np 4 mSWEEP --themisto-1 fwd.txt --themisto-2 rev.txt -i cluster_indicators.txt
 ```
 
-In some cases it might be useful to use hybrid parallellization with
-multiple threads per process. This can be accomplished through use of
-the `-t` flag:
+Enable hybrid parallellization with multiple threads per process through use of the `-t` flag:
 ```
 mpirun -np 2 mSWEEP --themisto-1 forward_aln.gz --themisto-2 reverse_aln.gz -i cluster_indicators.txt -t 2
 ```
-
-which will distribute computation to two processes with two
-threads. The optimal configuration will depend on the size and
+Hybrid parallelization might require binding the processes (refer to your HPC documentation on how to do this).
+The optimal configuration between ranks and threads will depend on the size and
 structure of your data.
 
-Note that when mSWEEP is called through MPI, the root process will
+When mSWEEP is called through MPI, the root process will
 handle all read and write operations and only the estimation part is
 distributed.
-
-WARNING: Using mSWEEP through MPI will result in increased memory usage.

@@ -22,6 +22,12 @@ if(CMAKE_BUILD_TYPE MATCHES Release)
   endif()
 endif()
 
+if(CMAKE_BUILD_WITH_FLTO)
+  cmake_policy(SET CMP0069 NEW)
+  set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION 1)
+endif()
+
 ## Check dependencies
 find_package(OpenMP)
 if (OPENMP_FOUND)
@@ -32,7 +38,7 @@ if (OPENMP_FOUND)
 else()
   set(MSWEEP_OPENMP_SUPPORT 0)
 endif()
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ### MPI
@@ -49,8 +55,8 @@ else()
   set(MSWEEP_MPI_SUPPORT 0)
 endif()
 
-set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 ## Get version number from git tags
 find_package(Git)
@@ -70,21 +76,13 @@ endif()
 string(TIMESTAMP _BUILD_TIMESTAMP)
 
 ## Generate a version.h file containing build version and timestamp
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/version.h.in ${CMAKE_BINARY_DIR}/include/version.h @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/mSWEEP_version.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/mSWEEP_version.h @ONLY)
 ## Configure OpenMP if it supported on the system.
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/openmp_config.hpp.in ${CMAKE_BINARY_DIR}/include/openmp_config.hpp @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/mSWEEP_openmp_config.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/include/mSWEEP_openmp_config.hpp @ONLY)
 ## Configure MPI if it's supported on the system.
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/mpi_config.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/include/mpi_config.hpp @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/mSWEEP_mpi_config.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/include/mSWEEP_mpi_config.hpp @ONLY)
 
-add_executable(mSWEEP
-${CMAKE_SOURCE_DIR}/src/BootstrapSample.cpp
-${CMAKE_SOURCE_DIR}/src/Reference.cpp
-${CMAKE_SOURCE_DIR}/src/Grouping.cpp
-${CMAKE_SOURCE_DIR}/src/Sample.cpp
-${CMAKE_SOURCE_DIR}/src/likelihood.cpp
-${CMAKE_SOURCE_DIR}/src/mSWEEP.cpp
-${CMAKE_SOURCE_DIR}/src/parse_arguments.cpp
-${CMAKE_SOURCE_DIR}/src/main.cpp)
+add_executable(mSWEEP ${CMAKE_CURRENT_SOURCE_DIR}/src/mSWEEP.cpp)
 
 ## Check supported compression types
 find_package(BZip2)
@@ -103,39 +101,20 @@ if (ZLIB_FOUND)
   target_link_libraries(mSWEEP ${ZLIB_LIBRARIES})
 endif()
 
-if(NOT ZLIB_FOUND OR CMAKE_BUILD_ZLIB)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-zlib.txt.in ${CMAKE_BINARY_DIR}/external/zlib-download/CMakeLists.txt)
-  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-    RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/zlib-download )
-  if(result)
-    message(FATAL_ERROR "CMake step for zlib failed: ${result}")
-  endif()
-  execute_process(COMMAND ${CMAKE_COMMAND} --build .
-    RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/zlib-download )
-  if(result)
-    message(FATAL_ERROR "Build step for zlib failed: ${result}")
-  endif()
-  set(ZLIB ${CMAKE_BINARY_DIR}/lib/libz.a)
-else()
-  set(ZLIB ZLIB::ZLIB)
-endif()
-
 ## bxzstr
 if (DEFINED CMAKE_BXZSTR_HEADERS)
   message(STATUS "bxzstr headers provided in: ${CMAKE_BXZSTR_HEADERS}")
 else()
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-bxzstr.txt.in ${CMAKE_BINARY_DIR}/external/bxzstr-download/CMakeLists.txt)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-bxzstr.txt.in ${CMAKE_CURRENT_BINARY_DIR}/external/bxzstr-download/CMakeLists.txt)
   execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
     RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/bxzstr-download )
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external/bxzstr-download )
   if(result)
     message(FATAL_ERROR "CMake step for bxzstr failed: ${result}")
   endif()
   execute_process(COMMAND ${CMAKE_COMMAND} --build .
     RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/bxzstr-download )
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external/bxzstr-download )
   if(result)
     message(FATAL_ERROR "Build step for bxzstr failed: ${result}")
   endif()
@@ -148,16 +127,16 @@ include_directories(${CMAKE_BXZSTR_HEADERS})
 if (DEFINED CMAKE_CXXIO_HEADERS)
   message(STATUS "cxxio headers provided in: ${CMAKE_CXXIO_HEADERS}")
 else()
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-cxxio.txt.in ${CMAKE_BINARY_DIR}/external/cxxio-download/CMakeLists.txt)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-cxxio.txt.in ${CMAKE_CURRENT_BINARY_DIR}/external/cxxio-download/CMakeLists.txt)
   execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
     RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/cxxio-download )
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external/cxxio-download )
   if(result)
     message(FATAL_ERROR "CMake step for cxxio failed: ${result}")
   endif()
   execute_process(COMMAND ${CMAKE_COMMAND} --build .
     RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/cxxio-download )
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external/cxxio-download )
   if(result)
     message(FATAL_ERROR "Build step for cxxio failed: ${result}")
   endif()
@@ -169,16 +148,16 @@ include_directories("${CMAKE_CXXIO_HEADERS}")
 if (DEFINED CMAKE_CXXARGS_HEADERS)
   message(STATUS "cxxargs headers provided in: ${CMAKE_CXXARGS_HEADERS}")
 else()
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-cxxargs.txt.in ${CMAKE_BINARY_DIR}/external/cxxargs-download/CMakeLists.txt)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-cxxargs.txt.in ${CMAKE_CURRENT_BINARY_DIR}/external/cxxargs-download/CMakeLists.txt)
   execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
     RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/cxxargs-download )
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external/cxxargs-download )
   if(result)
     message(FATAL_ERROR "CMake step for cxxargs failed: ${result}")
   endif()
   execute_process(COMMAND ${CMAKE_COMMAND} --build .
     RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/cxxargs-download )
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external/cxxargs-download )
   if(result)
     message(FATAL_ERROR "Build step for cxxargs failed: ${result}")
   endif()
@@ -186,48 +165,97 @@ else()
 endif()
 include_directories("${CMAKE_CXXARGS_HEADERS}")
 
+## alignment-writer
+if (DEFINED CMAKE_ALIGNMENT_WRITER_HEADERS)
+  message(STATUS "alignment-writer headers provided in: ${CMAKE_ALIGNMENT_WRITER_HEADERS}")
+else()
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-alignment-writer.txt.in ${CMAKE_CURRENT_BINARY_DIR}/external/alignment-writer-download/CMakeLists.txt)
+  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external/alignment-writer-download )
+  if(result)
+    message(FATAL_ERROR "CMake step for alignment-writer failed: ${result}")
+  endif()
+  execute_process(COMMAND ${CMAKE_COMMAND} --build .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external/alignment-writer-download )
+  if(result)
+    message(FATAL_ERROR "Build step for alignment-writer failed: ${result}")
+  endif()
+  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/external/alignment-writer
+                   ${CMAKE_CURRENT_BINARY_DIR}/external/alignment-writer/build)
+  set_target_properties(alignment-writer PROPERTIES EXCLUDE_FROM_ALL 1)
+  set(CMAKE_ALIGNMENT_WRITER_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/alignment-writer/include)
+endif()
+include_directories(${CMAKE_ALIGNMENT_WRITER_HEADERS})
+
 ## telescope
 if (DEFINED CMAKE_TELESCOPE_LIBRARY AND DEFINED CMAKE_TELESCOPE_HEADERS)
   find_library(TELESCOPE NAMES telescope HINTS ${CMAKE_TELESCOPE_LIBRARY})
   target_link_libraries(mSWEEP ${TELESCOPE})
 else()
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-telescope.txt.in ${CMAKE_BINARY_DIR}/external/telescope-download/CMakeLists.txt)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-telescope.txt.in ${CMAKE_CURRENT_BINARY_DIR}/external/telescope-download/CMakeLists.txt)
   execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
     RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/telescope-download )
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external/telescope-download )
   if(result)
     message(FATAL_ERROR "CMake step for telescope failed: ${result}")
   endif()
   execute_process(COMMAND ${CMAKE_COMMAND} --build .
     RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/telescope-download )
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external/telescope-download )
   if(result)
     message(FATAL_ERROR "Build step for telescope failed: ${result}")
   endif()
   add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/external/telescope
                    ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/build)
   set_target_properties(telescope PROPERTIES EXCLUDE_FROM_ALL 1)
-  target_link_libraries(mSWEEP libtelescope)
   set(CMAKE_TELESCOPE_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/include)
   set(CMAKE_BITMAGIC_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/external/BitMagic-7.12.3/src)
+  get_property(CMAKE_TELESCOPE_LIBRARY TARGET telescope PROPERTY LOCATION)
+  target_link_libraries(mSWEEP libtelescope libalignmentwriter)
 endif()
 include_directories(${CMAKE_TELESCOPE_HEADERS} ${CMAKE_BITMAGIC_HEADERS})
+
+## seamat
+if (DEFINED CMAKE_SEAMAT_HEADERS)
+  message(STATUS "seamat headers provided in: ${CMAKE_SEAMAT_HEADERS}")
+else()
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-seamat.txt.in ${CMAKE_CURRENT_BINARY_DIR}/external/seamat-download/CMakeLists.txt)
+  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external/seamat-download )
+  if(result)
+    message(FATAL_ERROR "CMake step for seamat failed: ${result}")
+  endif()
+  execute_process(COMMAND ${CMAKE_COMMAND} --build .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external/seamat-download )
+  if(result)
+    message(FATAL_ERROR "Build step for seamat failed: ${result}")
+  endif()
+  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/external/seamat
+                   ${CMAKE_CURRENT_BINARY_DIR}/external/seamat/build)
+  target_link_libraries(mSWEEP rcgomp)
+  set(CMAKE_SEAMAT_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/seamat/include)
+endif()
+include_directories(${CMAKE_SEAMAT_HEADERS})
 
 ## rcgpar
 if (DEFINED CMAKE_RCGPAR_LIBRARY AND DEFINED CMAKE_RCGPAR_HEADERS)
   find_library(RCGPAR NAMES rcgpar HINTS ${CMAKE_RCGPAR_LIBRARY})
   target_link_libraries(mSWEEP ${RCGPAR})
 else()
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-rcgpar.txt.in ${CMAKE_BINARY_DIR}/external/rcgpar-download/CMakeLists.txt)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-rcgpar.txt.in ${CMAKE_CURRENT_BINARY_DIR}/external/rcgpar-download/CMakeLists.txt)
   execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
     RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/rcgpar-download )
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external/rcgpar-download )
   if(result)
     message(FATAL_ERROR "CMake step for rcgpar failed: ${result}")
   endif()
   execute_process(COMMAND ${CMAKE_COMMAND} --build .
     RESULT_VARIABLE result
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/rcgpar-download )
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external/rcgpar-download )
   if(result)
     message(FATAL_ERROR "Build step for rcgpar failed: ${result}")
   endif()
@@ -238,34 +266,58 @@ else()
 endif()
 include_directories(${CMAKE_RCGPAR_HEADERS})
 
-include_directories(${CMAKE_SOURCE_DIR}/include
-${CMAKE_SOURCE_DIR}/external ${CMAKE_SOURCE_DIR}/include/tools
-${CMAKE_SOURCE_DIR}/external/cxxio
-${CMAKE_CURRENT_BINARY_DIR}/include)
+## BitMagic
+set(CMAKE_BITMAGIC_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/external/BitMagic-7.12.3/src)
+include_directories(${CMAKE_BITMAGIC_HEADERS})
 
-## Handle compiling zlib from source
-if(CMAKE_BUILD_ZLIB)
-  add_subdirectory(${CMAKE_BINARY_DIR}/external/zlib
-                   ${CMAKE_BINARY_DIR}/external/zlib)
-  set_target_properties(example PROPERTIES EXCLUDE_FROM_ALL 1)
-  set_target_properties(minigzip PROPERTIES EXCLUDE_FROM_ALL 1)
-  set_target_properties(zlib PROPERTIES EXCLUDE_FROM_ALL 1)
-  add_dependencies(mSWEEP zlibstatic)
+## mGEMS
+if (DEFINED CMAKE_MGEMS_LIBRARY AND DEFINED CMAKE_MGEMS_HEADERS)
+  find_library(MGEMS NAMES mgems HINTS ${CMAKE_MGEMS_LIBRARY})
+  target_link_libraries(mSWEEP ${MGEMS})
+else()
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config/CMakeLists-mGEMS.txt.in ${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS-download/CMakeLists.txt)
+  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS-download )
+  if(result)
+    message(FATAL_ERROR "CMake step for libmgems failed: ${result}")
+  endif()
+  execute_process(COMMAND ${CMAKE_COMMAND} --build .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS-download )
+  if(result)
+    message(FATAL_ERROR "Build step for libmgems failed: ${result}")
+  endif()
+  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS
+                   ${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS/build)
+  set_target_properties(mGEMS PROPERTIES EXCLUDE_FROM_ALL 1)
+  target_link_libraries(mSWEEP libmgems)
+  set(CMAKE_MGEMS_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS/include)
 endif()
+include_directories(${CMAKE_MGEMS_HEADERS})
 
-add_library(msweeptools ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/matchfasta.cpp)
-add_executable(matchfasta ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/main.cpp)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include
+${CMAKE_CURRENT_SOURCE_DIR}/external ${CMAKE_CURRENT_SOURCE_DIR}/include/tools
+${CMAKE_CURRENT_SOURCE_DIR}/external/cxxio
+${CMAKE_CURRENT_BINARY_DIR}/include)
 
 if(MPI_FOUND)
   add_dependencies(mSWEEP rcgmpi bigmpi)
   target_link_libraries(mSWEEP rcgmpi ${LIBRARY_OUTPUT_PATH}/libbigmpi.a)
 endif()
 
+add_library(libmsweep
+${CMAKE_CURRENT_SOURCE_DIR}/src/Sample.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/src/PlainSample.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/src/BootstrapSample.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/src/Reference.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/src/Grouping.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/src/OutfileDesignator.cpp)
+
+set_target_properties(libmsweep PROPERTIES OUTPUT_NAME msweep)
+target_link_libraries(mSWEEP libmsweep)
+
 # Link libraries
-target_link_libraries(mSWEEP ${ZLIB} msweeptools)
-target_link_libraries(matchfasta msweeptools)
 if (OPENMP_FOUND)
   target_link_libraries(mSWEEP OpenMP::OpenMP_CXX)
-  target_link_libraries(matchfasta OpenMP::OpenMP_CXX)
-  target_link_libraries(msweeptools OpenMP::OpenMP_CXX)
 endif()

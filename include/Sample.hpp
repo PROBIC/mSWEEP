@@ -1,56 +1,122 @@
+// mSWEEP: Estimate abundances of reference lineages in DNA sequencing reads.
+//
+// MIT License
+//
+// Copyright (c) 2023 Probabilistic Inference and Computational Biology group @ UH
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
 #ifndef MSWEEP_SAMPLE_HPP
 #define MSWEEP_SAMPLE_HPP
 
 #include <cstddef>
-#include <string>
 #include <vector>
+#include <string>
 #include <fstream>
 #include <random>
+#include <memory>
 
-#include "telescope.hpp"
 #include "Matrix.hpp"
+#include "telescope.hpp"
 
-#include "Grouping.hpp"
-#include "parse_arguments.hpp"
-
+namespace mSWEEP {
 class Sample {
 private:
-  uint32_t m_num_ecs;
-  std::string cell_id;
+  size_t n_reads;
+  size_t counts_total;
+  seamat::DenseMatrix<double> ec_probabilities;
+
+protected:
+  void count_alignments(const telescope::Alignment &alignment);
 
 public:
-  uint32_t counts_total;
-
-  rcgpar::Matrix<double> ll_mat;
-  rcgpar::Matrix<double> ec_probs;
-  std::vector<double> log_ec_counts;
-  std::vector<double> relative_abundances;
-
-  // Alignments class from telescope
-    telescope::KallistoAlignment pseudos;
-
-  // Calculate log_ec_counts and counts_total.
-  void process_aln(const bool bootstrap_mode);
-
-  // Count the number of pseudoalignments in groups defined by the given indicators.
-  std::vector<uint16_t> group_counts(const std::vector<uint32_t> indicators, const uint32_t ec_id, const uint32_t n_groups) const;
-
-  // Write estimated relative abundances
-  void write_abundances(const std::vector<std::string> &cluster_indicators_to_string, std::ostream &of) const;
-  // Write estimated read-reference posterior probabilities (gamma_Z)
-  void write_probabilities(const std::vector<std::string> &cluster_indicators_to_string, std::ostream &outfile) const;
-  // Write likelihoods
-  void write_likelihood(const uint32_t n_groups, std::ostream &of) const;
-  // Write likelihoods in BitSeq-compatible format
-  void write_likelihood_bitseq(const uint32_t n_groups, std::ostream &of) const;
-
-  // Read in the likelihoods from a file
-  void read_likelihood(const Grouping &grouping, std::istream &infile);
+  // Virtual functions
+  // Store the relative abundances for later.
+  virtual void store_abundances(const std::vector<double> &abundances) =0;
 
   // Getters
-  std::string cell_name() const { return cell_id; };
-  uint32_t num_ecs() const { return m_num_ecs; };
-  uint32_t get_counts_total() const { return this->counts_total; };
+  virtual const std::vector<double>& get_abundances() const =0;
+  // Write the relative abundances
+  virtual void write_abundances(const std::vector<std::string> &group_names, std::ostream *of) const =0;
+
+  // Non-virtuals
+  // Store equivalence class probabilities
+  void store_probs(const seamat::DenseMatrix<double> &probs) { this->ec_probabilities = std::move(probs); }
+
+  void write_probs(const std::vector<std::string> &cluster_indicators_to_string, std::ostream *of);
+
+  // Getters
+  size_t get_counts_total() const { return this->counts_total; };
+  size_t get_n_reads() const { return this->n_reads; };
+  const seamat::DenseMatrix<double>& get_probs() const { return this->ec_probabilities; }
+
+};
+
+class Binning {
+private:
+  // Need to store the read assignments to equivalence classes if also binning
+  std::vector<std::vector<uint32_t>> aligned_reads;
+
+protected:
+  // This class should never be initialized.
+  Binning() = default;
+
+  // Function for derived classes to set aligned_reads.
+  void store_aligned_reads(const std::vector<std::vector<uint32_t>> &_aligned_reads) { this->aligned_reads = _aligned_reads; }
+
+public:
+  // Getters
+  const std::vector<std::vector<uint32_t>>& get_aligned_reads() const { return this->aligned_reads; }
+
+};
+
+class PlainSample : public Sample {
+private:
+  std::vector<double> relative_abundances;
+
+public:
+  PlainSample() = default;
+
+  PlainSample(const telescope::Alignment &alignment) {
+    this->count_alignments(alignment);
+  }
+
+  // Store relative abundances for writing
+  void store_abundances(const std::vector<double> &abundances) override { this->relative_abundances = std::move(abundances); }
+
+  // Write the relative abundances
+  void write_abundances(const std::vector<std::string> &group_names, std::ostream *of) const override;
+
+  // Getters
+  const std::vector<double>& get_abundances() const override { return this->relative_abundances; }
+
+};
+
+class BinningSample : public PlainSample, public Binning {
+public:
+  BinningSample() = default;
+
+  BinningSample(const telescope::Alignment &alignment) {
+    this->count_alignments(alignment);
+    this->store_aligned_reads(alignment.get_aligned_reads());
+  }
+
 };
 
 class BootstrapSample : public Sample {
@@ -58,29 +124,64 @@ private:
   std::mt19937_64 gen;
   std::discrete_distribution<uint32_t> ec_distribution;
 
-  // Run estimation and add results to relative_abundances
-  void bootstrap_iter(const std::vector<double> &resampled_log_ec_counts,
-		      const std::vector<double> &alpha0, const double tolerance,
-		      const uint16_t max_iters);
+  // Max number of bootstrap iterations
+  size_t iters;
 
-public:
-  // Set seed in constructor
-  BootstrapSample(const int32_t seed);
+  // Number of ecs to bootstrap
+  size_t bootstrap_count;
 
+  // Need to store this for resampling counts.
+  size_t num_ecs;
+
+  // First element has the relative abundances without bootstrapping.
   std::vector<std::vector<double>> bootstrap_results;
 
+  // Set all variables required to bootstrap the ec_counts later
+  void init_bootstrap(const telescope::Alignment &alignment);
+
+protected:
+  void construct(const telescope::Alignment &alignment, const size_t _iters, const int32_t seed, const size_t bootstrap_count=0);
+
+public:
+  BootstrapSample() = default;
+
+  // Set seed in constructor
+  BootstrapSample(const telescope::Alignment &alignment, const size_t _iters, const int32_t seed) {
+    this->construct(alignment, _iters, seed);
+  }
+  BootstrapSample(const telescope::Alignment &alignment, const size_t _iters, const size_t _bootstrap_count, const int32_t seed) {
+    this->construct(alignment, _iters, seed, _bootstrap_count);
+  }
+
   // Resample the equivalence class counts
-  std::vector<double> resample_counts(const uint32_t how_many);
+  std::vector<double> resample_counts();
 
-  void init_bootstrap();
+  // Store relative abundances in bootstrap_results
+  void store_abundances(const std::vector<double> &abundances) override { this->bootstrap_results.emplace_back(std::move(abundances)); }
 
-  // Estimate the mixture components with bootstrap iterations
-  void estimate_abundances(const Arguments &args);
+  // Write the bootstrap results
+  void write_abundances(const std::vector<std::string> &group_names, std::ostream *os) const override;
 
-  void write_bootstrap(const std::vector<std::string> &cluster_indicators_to_string,
-		       const uint16_t iters, std::ostream &of) const;
-  void bootstrap_ec_counts(const Arguments &args);
+  // Getters
+  const std::vector<double>& get_abundances() const override { return this->bootstrap_results[0]; }
 
 };
+
+class BinningBootstrap : public BootstrapSample, public Binning {
+public:
+  BinningBootstrap(const telescope::Alignment &alignment, const size_t _iters, const int32_t seed) {
+    this->construct(alignment, _iters, seed);
+    this->store_aligned_reads(alignment.get_aligned_reads());
+  }
+  BinningBootstrap(const telescope::Alignment &alignment, const size_t _iters, const size_t _bootstrap_count, const int32_t seed) {
+    this->construct(alignment, _iters, seed, _bootstrap_count);
+    this->store_aligned_reads(alignment.get_aligned_reads());
+  }
+
+};
+
+void ConstructSample(const telescope::Alignment &alignment, const size_t bootstrap_iters, const size_t bootstrap_count, const size_t bootstrap_seed, const bool bin_reads, std::unique_ptr<Sample> &sample);
+
+}
 
 #endif

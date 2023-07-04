@@ -1,3 +1,36 @@
+# v2.0.0 (4 July 2023)
+First major version increment of mSWEEP (breaks backwards-compatibility).
+
+Output format changes:
+- Add the total number of reads to the abundances file (resolves #21)
+- Renamed `total_hits` to `num_aligned` in the abundances file (#21)
+
+## New features
+- Added an option to evaluate the [mGEMS binning](https://github.com/PROBIC/mGEMS) algorithm from the mSWEEP call with the `--bin-reads` toggle. (https://github.com/PROBIC/mSWEEP/commit/54004d8c2408764dbd970cd1a49c253ede92ce5d)
+- Support reading alignments compressed with [alignment-writer](https://github.com/tmaklin/alignment-writer). (https://github.com/PROBIC/mSWEEP/commit/f169fccbf976a0994863e0ffca4a62718778594c)
+- Read alignments from cin. (https://github.com/PROBIC/mSWEEP/commit/9878f8ef4d342b72877409001e153ffc0433318a)
+
+## Removed features:
+- Matching a fasta file to groups indicators is no longer supported (deprecated options `--fasta`, `--groups-list`, `--groups-delimiter`).
+
+## Pseudoaligner support
+- Removed kallisto support ([remove-kallisto-support](https://github.com/PROBIC/mSWEEP/tree/remove-kallisto-support))
+- Removed support for Themisto v1.2.0 and older.  ([remove-kallisto-support](https://github.com/PROBIC/mSWEEP/tree/remove-kallisto-support))
+
+## Installation
+- Added a conda recipe and instructions on installing mSWEEP from bioconda. (#22)
+
+## Build pipeline changes
+- Require C++17 to build from source.
+- Removed support for building zlib from source (https://github.com/PROBIC/mSWEEP/commit/5c94591b392932efd7b1d16cb6c3e3ddc688c8e1)
+- Added the `CMAKE_BUILD_WITH_FLTO` flag for building with link-time optimization (https://github.com/PROBIC/mSWEEP/commit/ee1db015e9902eca05293a416576e89f1d54af7a)
+
+## Internal changes
+- Bump C++ standard to C++17.
+- Rewrote most of the codebase.
+- Fixed dependency versions to avoid conflicts.
+
+
 # v1.6.3 (1 February 2023)
 Fix build issues caused by an update in one of the dependencies.
 

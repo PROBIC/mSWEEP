@@ -50,10 +50,10 @@ enter the directory and run
 ```
 This will compile the mSWEEP executable in `build/bin/mSWEEP`.
 
-For more info on compiling mSWEEP from source, please see the [compilation tips](/docs/compilation.md).
+For more info on compiling mSWEEP from source, please see the [documentation on compiling mSWEEP](/docs/compilation.md).
 
 # Usage
-Please see the documentation for a description of the full pipeline including indexing and clustering the reference data and running Themisto.
+More information about using mSWEEP is available in the [usage documentation](/docs/README.md).
 
 ## Abundance estimation
 Estimate relative abundances of pseudoalignments `fwd.txt` and `rev.txt` using the lineages in `clustering.txt` with two threads by running 

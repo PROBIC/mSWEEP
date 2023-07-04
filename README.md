@@ -50,7 +50,7 @@ enter the directory and run
 ```
 This will compile the mSWEEP executable in `build/bin/mSWEEP`.
 
-For more info on compiling mSWEEP from source, please see the [compilation tips](COMPILATION.md).
+For more info on compiling mSWEEP from source, please see the [compilation tips](/docs/compilation.md).
 
 # Usage
 Please see the documentation for a description of the full pipeline including indexing and clustering the reference data and running Themisto.

@@ -83,6 +83,7 @@ private:
   seamat::DenseMatrix<T> log_likelihoods;
   std::vector<T> log_ec_counts;
   std::vector<std::array<T, 2>> bb_params;
+  double zero_inflation;
 
   seamat::DenseMatrix<T> precalc_lls(const std::vector<V> &group_sizes, const size_t n_groups) {
     V max_size = 0; // Storing the grouping can take a lot less space if it can be done with uint16_t or uint8_t.
@@ -90,11 +91,11 @@ private:
       max_size = (group_sizes[i] > max_size ? group_sizes[i] : max_size);
     }
 
-    seamat::DenseMatrix<T> ll_mat(n_groups, max_size + 1, -4.60517);
+    seamat::DenseMatrix<T> ll_mat(n_groups, max_size + 1, std::log(this->zero_inflation));
 #pragma omp parallel for schedule(static) shared(ll_mat)
     for (size_t i = 0; i < n_groups; ++i) {
       for (V j = 1; j <= max_size; ++j) {
-	ll_mat(i, j) = ldbb_scaled(j, group_sizes[i], this->bb_params[i][0], this->bb_params[i][1]) - 0.01005034; // log(0.99) = -0.01005034
+	ll_mat(i, j) = ldbb_scaled(j, group_sizes[i], this->bb_params[i][0], this->bb_params[i][1]) + std::log1p(-this->zero_inflation); // log(0.99) = -0.01005034
       }
     }
 
@@ -106,7 +107,7 @@ private:
 
     const seamat::DenseMatrix<T> &precalc_lls_mat = this->precalc_lls(group_sizes, n_groups);
 
-    this->log_likelihoods.resize(n_groups, num_ecs, -4.60517); // -4.60517 = log(0.01)
+    this->log_likelihoods.resize(n_groups, num_ecs, std::log(zero_inflation)); // -4.60517 = log(0.01)
 #pragma omp parallel for schedule(static) shared(precalc_lls_mat)
     for (size_t j = 0; j < num_ecs; ++j) {
       for (size_t i = 0; i < n_groups; ++i) {
@@ -139,8 +140,9 @@ private:
 public:
   LL_WOR21() = default;
 
-  LL_WOR21(const std::vector<V> &group_sizes, const telescope::Alignment &alignment, const size_t n_groups, const T tol, const T frac_mu) {
+  LL_WOR21(const std::vector<V> &group_sizes, const telescope::Alignment &alignment, const size_t n_groups, const T tol, const T frac_mu, const T _zero_inflation) {
     T bb_constants[2] = { tol, frac_mu };
+    this->zero_inflation = _zero_inflation;
     this->update_bb_parameters(group_sizes, n_groups, bb_constants);
     this->from_grouped_alignment(alignment, group_sizes, n_groups);
   }
@@ -258,49 +260,49 @@ public:
 
 };
 template <typename T>
-std::unique_ptr<Likelihood<T>> ConstructAdaptiveLikelihood(const telescope::Alignment &alignment, const Grouping &grouping, const T q, const T e) {
+std::unique_ptr<Likelihood<T>> ConstructAdaptiveLikelihood(const telescope::Alignment &alignment, const Grouping &grouping, const T q, const T e, const T zero_inflation) {
     size_t max_group_size = grouping.max_group_size();
     size_t n_groups = grouping.get_n_groups();
     std::unique_ptr<Likelihood<T>> log_likelihoods;
     if (max_group_size <= std::numeric_limits<uint8_t>::max()) {
 	if (n_groups <= std::numeric_limits<uint8_t>::max()) {
-	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint8_t>(static_cast<const AdaptiveGrouping<uint8_t, uint8_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e));
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint8_t>(static_cast<const AdaptiveGrouping<uint8_t, uint8_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e, zero_inflation));
 	} else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
-	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint8_t>(static_cast<const AdaptiveGrouping<uint8_t, uint16_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e));
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint8_t>(static_cast<const AdaptiveGrouping<uint8_t, uint16_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e, zero_inflation));
 	} else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
-	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint8_t>(static_cast<const AdaptiveGrouping<uint8_t, uint32_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e));
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint8_t>(static_cast<const AdaptiveGrouping<uint8_t, uint32_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e, zero_inflation));
 	} else {
-	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint8_t>(static_cast<const AdaptiveGrouping<uint8_t, uint64_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e));		
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint8_t>(static_cast<const AdaptiveGrouping<uint8_t, uint64_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e, zero_inflation));		
 	}
     } else if (max_group_size <= std::numeric_limits<uint16_t>::max()) {
 	if (n_groups <= std::numeric_limits<uint8_t>::max()) {
-	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint16_t>(static_cast<const AdaptiveGrouping<uint16_t, uint8_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e));
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint16_t>(static_cast<const AdaptiveGrouping<uint16_t, uint8_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e, zero_inflation));
 	} else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
-	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint16_t>(static_cast<const AdaptiveGrouping<uint16_t, uint16_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e));
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint16_t>(static_cast<const AdaptiveGrouping<uint16_t, uint16_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e, zero_inflation));
 	} else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
-	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint16_t>(static_cast<const AdaptiveGrouping<uint16_t, uint32_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e));
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint16_t>(static_cast<const AdaptiveGrouping<uint16_t, uint32_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e, zero_inflation));
 	} else {
-	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint16_t>(static_cast<const AdaptiveGrouping<uint16_t, uint64_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e));		
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint16_t>(static_cast<const AdaptiveGrouping<uint16_t, uint64_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e, zero_inflation));		
 	}
     } else if (max_group_size <= std::numeric_limits<uint32_t>::max()) {
 	if (n_groups <= std::numeric_limits<uint8_t>::max()) {
-	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint32_t>(static_cast<const AdaptiveGrouping<uint32_t, uint8_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e));
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint32_t>(static_cast<const AdaptiveGrouping<uint32_t, uint8_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e, zero_inflation));
 	} else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
-	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint32_t>(static_cast<const AdaptiveGrouping<uint32_t, uint16_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e));
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint32_t>(static_cast<const AdaptiveGrouping<uint32_t, uint16_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e, zero_inflation));
 	} else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
-	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint32_t>(static_cast<const AdaptiveGrouping<uint32_t, uint32_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e));
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint32_t>(static_cast<const AdaptiveGrouping<uint32_t, uint32_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e, zero_inflation));
 	} else {
-	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint32_t>(static_cast<const AdaptiveGrouping<uint32_t, uint64_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e));		
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint32_t>(static_cast<const AdaptiveGrouping<uint32_t, uint64_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e, zero_inflation));		
 	}
     } else {
 	if (n_groups <= std::numeric_limits<uint8_t>::max()) {
-	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint64_t>(static_cast<const AdaptiveGrouping<uint64_t, uint8_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e));
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint64_t>(static_cast<const AdaptiveGrouping<uint64_t, uint8_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e, zero_inflation));
 	} else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
-	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint64_t>(static_cast<const AdaptiveGrouping<uint64_t, uint16_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e));
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint64_t>(static_cast<const AdaptiveGrouping<uint64_t, uint16_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e, zero_inflation));
 	} else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
-	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint64_t>(static_cast<const AdaptiveGrouping<uint64_t, uint32_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e));
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint64_t>(static_cast<const AdaptiveGrouping<uint64_t, uint32_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e, zero_inflation));
 	} else {
-	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint64_t>(static_cast<const AdaptiveGrouping<uint64_t, uint64_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e));		
+	    log_likelihoods.reset(new mSWEEP::LL_WOR21<T, uint64_t>(static_cast<const AdaptiveGrouping<uint64_t, uint64_t>*>(&grouping)->get_sizes(), alignment,  n_groups, q, e, zero_inflation));		
 	}
     }
     return log_likelihoods;

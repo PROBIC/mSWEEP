@@ -5,7 +5,7 @@ include(ExternalProject)
 
 ExternalProject_Add(rcgpar-download
   GIT_REPOSITORY    https://github.com/tmaklin/rcgpar
-  GIT_TAG           v1.1.0
+  GIT_TAG           build-system-patch-1
   SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/rcgpar"
   BUILD_IN_SOURCE   0
   BUILD_COMMAND	    ""

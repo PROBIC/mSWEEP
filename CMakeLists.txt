@@ -236,8 +236,7 @@ else()
   endif()
   add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/external/seamat
                    ${CMAKE_CURRENT_BINARY_DIR}/external/seamat/build)
-  target_link_libraries(mSWEEP rcgomp)
-  set(CMAKE_SEAMAT_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/seamat/include)
+  set(CMAKE_SEAMAT_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/seamat/include ${CMAKE_CURRENT_BINARY_DIR}/external/seamat/build/include)
 endif()
 include_directories(${CMAKE_SEAMAT_HEADERS})
 
@@ -261,7 +260,7 @@ else()
   endif()
   add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/external/rcgpar
                    ${CMAKE_CURRENT_BINARY_DIR}/external/rcgpar/build)
-  target_link_libraries(mSWEEP rcgomp)
+  target_link_libraries(mSWEEP rcgomp rcgutils)
   set(CMAKE_RCGPAR_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/rcgpar/include)
 endif()
 include_directories(${CMAKE_RCGPAR_HEADERS})

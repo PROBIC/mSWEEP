@@ -10,10 +10,14 @@ jobs:
         id: install-wget
         run: yum install -y wget
 
+      - name: Create io directory
+        id: mkdir-io
+        run: mkdir /io && cd /io
+
       - name: Download build script
         id: dl-build-script
         run: wget https://raw.githubusercontent.com/tmaklin/biobins/master/linux/mSWEEP/build.sh
 
       - name: Compile binary in Holy Build Box container
         id: compile-in-container
-        run: chmod +x build.sh && mkdir /io && cd /io && ./build.sh 2.0.0
+        run: chmod +x build.sh && ./build.sh 2.0.0

@@ -8,7 +8,7 @@ jobs:
     steps:
       - name: Install wget
         id: install-wget
-        run: apt-get install -y wget
+        run: yum install -y wget
 
       - name: Download build script
         id: dl-build-script

@@ -1,5 +1,10 @@
 name: Build binaries
-on: [push]
+on:
+  push:
+    tags:
+      - "v*.*.*"
+    branches:
+      - tmaklin-patch-1
 
 jobs:
   build_linux-x86_64:
@@ -20,7 +25,14 @@ jobs:
 
       - name: Compile binary in Holy Build Box container
         id: compile-in-container
-        run: chmod +x build.sh && ./build.sh 2.0.0
+        run: chmod +x build.sh && ./build.sh ${{ github.ref_name }}
+
+      - name: Upload linux-x86_64 binary
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: mSWEEP-${{ github.ref_name }}-x86_64-redhat-linux
+          path: /io/mSWEEP-${{ github.ref_name }}-x86_64-redhat-linux.tar.gz
 
   build_macOS-x86_64:
     runs-on: ubuntu-latest
@@ -42,9 +54,16 @@ jobs:
         id: dl-build-script
         run: wget https://raw.githubusercontent.com/tmaklin/biobins/master/macOS/mSWEEP/build.sh
 
-      - name: Compile binary in Holy Build Box container
+      - name: Compile binary in macOS Cross Compiler container
         id: compile-in-container
-        run: chmod +x build.sh && ./build.sh 2.0.0 x86-64
+        run: chmod +x build.sh && ./build.sh ${{ github.ref_name }}
+
+      - name: Upload macOS-x86_64 binary
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: mSWEEP-${{ github.ref_name }}-x86_64-apple-darwin22
+          path: /io/mSWEEP-${{ github.ref_name }}-x86_64-apple-darwin22.tar.gz
 
   build_macOS-arm64:
     runs-on: ubuntu-latest
@@ -66,6 +85,13 @@ jobs:
         id: dl-build-script
         run: wget https://raw.githubusercontent.com/tmaklin/biobins/master/macOS/mSWEEP/build.sh
 
-      - name: Compile binary in Holy Build Box container
+      - name: Compile binary in macOS Cross Compiler container
         id: compile-in-container
         run: chmod +x build.sh && ./build.sh 2.0.0 arm64
+
+      - name: Upload macOS-arm64 binary
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: mSWEEP-${{ github.ref_name }}-arm64-apple-darwin22
+          path: /io/mSWEEP-${{ github.ref_name }}-arm64-apple-darwin22.tar.gz

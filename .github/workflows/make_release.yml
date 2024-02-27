@@ -1,0 +1,14 @@
+on: [push]
+
+jobs:
+  hello_world_job:
+    runs-on: ubuntu-latest
+    name: Build linux-x86_64 binary
+    steps:
+      - name: Download build script
+        id: dl-build-script
+        run: wget https://github.com/tmaklin/biobins/blob/master/linux/mSWEEP/build.sh
+      - name: Compile binary in Holy Build Box container
+        id: compile-in-container
+        uses: phusion/holy-build-box-64@3.0.2
+        run: ./build.sh 2.0.0

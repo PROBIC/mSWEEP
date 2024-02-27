@@ -136,8 +136,10 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   // Dispersion term for likelihood
   args.add_short_argument<double>('e', "Dispersion term for the beta-binomial component (default: 0.01).", 0.01);
   // Prior parameters for estimation
-  args.add_long_argument<std::vector<double>>("alphas", "Prior counts for the relative abundances, supply as comma-separated nonzero values (default: all 1.0).");
+  args.add_long_argument<std::vector<double>>("alphas", "Prior counts for the relative abundances, supply as comma-separated nonzero values (default: all 1.0).\n\nExperimental options:");
   args.set_not_required("alphas");
+
+  args.add_long_argument<bool>("run-rate", "Calculate relative reliability for each abundance estimate using RATE (default: false).", false);
 
   if (CmdOptionPresent(argv, argv+argc, "--help")) {
     // Print help message and continue.
@@ -424,6 +426,11 @@ int main (int argc, char *argv[]) {
 	  return 1;
 	}
 
+	if (args.value<bool>("run-rate")) {
+	    std::cerr << "WARNING: --run-rate is an experimental option that has not been thoroughly tested and is subject to change.\n" << std::endl;
+	    sample->dirichlet_kld(log_likelihoods->log_counts());
+	}
+
 	// Run binning if requested and write results to files.
 	if (rank == 0) { // root performs the rest.
 	  // Turn the probs into relative abundances
@@ -508,7 +515,30 @@ int main (int argc, char *argv[]) {
       // Write relative abundances
       if (rank == 0 && !args.value<bool>("no-fit-model")) {
 	try {
-	  sample->write_abundances(reference->group_names(i), out.abundances());
+	  if (sample->get_rate_run()) {
+	      const std::vector<double> &log_kld = sample->get_log_klds();
+	      const std::vector<double> &RATE = sample->get_rates();
+	      const std::vector<double> &relative_abundances = sample->get_abundances();
+	      const std::vector<std::string> &group_names = reference->group_names(i);
+
+	      std::ostream *of = out.abundances();
+	      // Write relative abundances to &of,
+	      if (of->good()) {
+		  (*of) << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
+		  (*of) << "#num_reads:" << '\t' << sample->get_n_reads() << '\n';
+		  (*of) << "#num_aligned:" << '\t' << sample->get_counts_total() << '\n';
+		  (*of) << "#c_id" << '\t' << "mean_theta" << '\t' << "RATE" << '\t' << "KLD" << '\n';
+		  for (size_t i = 0; i < relative_abundances.size(); ++i) {
+		      double KLD = std::exp(log_kld[i]);
+		      (*of) << group_names[i] << '\t' << relative_abundances[i] << '\t' << RATE[i] << '\t' << KLD <<'\n';
+		  }
+		  of->flush();
+	      } else {
+		  throw std::runtime_error("Can't write to abundances file.");
+	      }
+	  } else {
+	    sample->write_abundances(reference->group_names(i), out.abundances());
+	  }
 	} catch (std::exception &e) {
 	  finalize("Writing the relative abundances failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;

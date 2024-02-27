@@ -100,6 +100,23 @@ mSWEEP --themisto-1 fwd_compressed.aln --themisto-2 rev_compressed.aln -i cluste
 
 ```
 
+## (experimental) Reliability of abundance estimates
+Add the `--run-rate` flag to calculate a relative reliability value for each abundance estimate using a variation of the [RATE method](https://doi.org/10.1214/18-AOAS1222)
+```
+mSWEEP --themisto compressed.aln -i clustering.txt -t 2 --run-rate
+```
+This will append the RATE and KLD columns to the output. RATE values that exceed `1/(number of lineages in clustering.txt)` are considered reliably estimated.
+
+If the reference contains many sequences that have zero or very few pseudoalignments, the denominator should be set to the number of lineages that have a nonzero abundance estimate instead of the total lineage count.
+
+A reliably estimated value means that an abundance estimate from
+mSWEEP has a large effect on how well the statistical model in mSWEEP
+fits to the input alignment data. This translates to a high value in
+the KLD column and the RATE columns, which is derived from the KLD
+values by dividing each value by the sum of all KLDs.
+
+__RATE as implemented in mSWEEP has not been tested thoroughly and is considered experimental.__ Consider using additional methods to verify the correctness of your results after filtering by RATE.
+
 ## More options
 mSWEEP additionally accepts the following flags:
 
@@ -153,6 +170,9 @@ Likelihood options:
 -q	Mean for the beta-binomial component (default: 0.65).
 -e	Dispersion term for the beta-binomial component (default: 0.01).
 --alphas	Prior counts for the relative abundances, supply as comma-separated nonzero values (default: all 1.0).
+
+Experimental options:
+--run-rate	Calculate relative reliability for each abundance estimate using RATE (default: false).
 ```
 
 # References

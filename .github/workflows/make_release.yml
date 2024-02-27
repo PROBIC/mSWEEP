@@ -4,7 +4,7 @@ on: [push]
 jobs:
   build_linux-x86_64:
     runs-on: ubuntu-latest
-    container: phusion/holy-build-box-64@3.0.2
+    container: phusion/holy-build-box-64:3.0.2
     steps:
       - name: Download build script
         id: dl-build-script

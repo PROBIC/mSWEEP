@@ -12,7 +12,7 @@ jobs:
 
       - name: Download build script
         id: dl-build-script
-        run: wget https://github.com/tmaklin/biobins/blob/master/linux/mSWEEP/build.sh
+        run: wget https://raw.githubusercontent.com/tmaklin/biobins/master/linux/mSWEEP/build.sh
 
       - name: Compile binary in Holy Build Box container
         id: compile-in-container

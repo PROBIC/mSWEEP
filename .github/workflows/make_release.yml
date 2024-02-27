@@ -56,7 +56,7 @@ jobs:
 
       - name: Compile binary in macOS Cross Compiler container
         id: compile-in-container
-        run: chmod +x build.sh && ./build.sh ${{ github.ref_name }}
+        run: chmod +x build.sh && ./build.sh ${{ github.ref_name }} x86-64
 
       - name: Upload macOS-x86_64 binary
         if: success()
@@ -87,7 +87,7 @@ jobs:
 
       - name: Compile binary in macOS Cross Compiler container
         id: compile-in-container
-        run: chmod +x build.sh && ./build.sh 2.0.0 arm64
+        run: chmod +x build.sh && ./build.sh ${{ github.ref_name }} arm64
 
       - name: Upload macOS-arm64 binary
         if: success()

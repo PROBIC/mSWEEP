@@ -28,7 +28,7 @@ jobs:
     steps:
       - name: Install wget
         id: install-wget
-        run: yum install -y wget
+        run: apt install -y wget
 
       - name: Create io directory
         id: mkdir-io
@@ -52,7 +52,7 @@ jobs:
     steps:
       - name: Install wget
         id: install-wget
-        run: yum install -y wget
+        run: apt install -y wget
 
       - name: Create io directory
         id: mkdir-io

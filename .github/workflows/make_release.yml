@@ -4,7 +4,7 @@ on:
     tags:
       - "v*.*.*"
     branches:
-      - tmaklin-patch-1
+      - msweep-release-testing
 
 jobs:
   build_linux-x86_64:
@@ -120,7 +120,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           name: Release ${{ github.ref_name }}
-          draft: true
+          draft: false
           prerelease: false
           fail_on_unmatched_files: true
           generate_release_notes: true

@@ -42,6 +42,10 @@ private:
   size_t counts_total;
   seamat::DenseMatrix<double> ec_probabilities;
 
+  // Relative abundance estimate scoring via RATEs
+  bool rate_run = false;
+  std::vector<double> log_KLDs;
+
 protected:
   void count_alignments(const telescope::Alignment &alignment);
 
@@ -59,13 +63,23 @@ public:
   // Store equivalence class probabilities
   void store_probs(const seamat::DenseMatrix<double> &probs) { this->ec_probabilities = std::move(probs); }
 
+  // Write equivalence class probabilities
   void write_probs(const std::vector<std::string> &cluster_indicators_to_string, std::ostream *of);
+
+  // Calculate KLDs from probs
+  void dirichlet_kld(const std::vector<double> &log_ec_hit_counts);
 
   // Getters
   size_t get_counts_total() const { return this->counts_total; };
   size_t get_n_reads() const { return this->n_reads; };
-  const seamat::DenseMatrix<double>& get_probs() const { return this->ec_probabilities; }
 
+  const seamat::DenseMatrix<double>& get_probs() const { return this->ec_probabilities; }
+  const std::vector<double>& get_log_klds() const { return this->log_KLDs; }
+  std::vector<double> get_rates() const;
+
+  size_t get_n_ecs() const { return this->ec_probabilities.get_rows(); }
+  size_t get_n_refs() const { return this->ec_probabilities.get_cols(); }
+  size_t get_rate_run() const { return this->rate_run; }
 };
 
 class Binning {

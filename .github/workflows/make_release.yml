@@ -1,4 +1,4 @@
-name: Build linux-x86_64 binary
+name: Build binaries
 on: [push]
 
 jobs:
@@ -21,3 +21,51 @@ jobs:
       - name: Compile binary in Holy Build Box container
         id: compile-in-container
         run: chmod +x build.sh && ./build.sh 2.0.0
+
+  build_macOS-x86_64:
+    runs-on: ubuntu-latest
+    container: ghcr.io/shepherdjerred/macos-cross-compiler:latest
+    steps:
+      - name: Install wget
+        id: install-wget
+        run: yum install -y wget
+
+      - name: Create io directory
+        id: mkdir-io
+        run: mkdir /io && cd /io
+
+      - name: Download toolchain file
+        id: dl-toolchain-file
+        run: wget https://raw.githubusercontent.com/tmaklin/biobins/master/macOS/x86-64-toolchain.cmake && cp x86-64-toolchain.cmake ../
+
+      - name: Download build script
+        id: dl-build-script
+        run: wget https://raw.githubusercontent.com/tmaklin/biobins/master/macOS/mSWEEP/build.sh
+
+      - name: Compile binary in Holy Build Box container
+        id: compile-in-container
+        run: chmod +x build.sh && ./build.sh 2.0.0 x86-64
+
+  build_macOS-arm64:
+    runs-on: ubuntu-latest
+    container: ghcr.io/shepherdjerred/macos-cross-compiler:latest
+    steps:
+      - name: Install wget
+        id: install-wget
+        run: yum install -y wget
+
+      - name: Create io directory
+        id: mkdir-io
+        run: mkdir /io && cd /io
+
+      - name: Download toolchain file
+        id: dl-toolchain-file
+        run: wget https://raw.githubusercontent.com/tmaklin/biobins/master/macOS/arm64-toolchain.cmake && cp arm64-toolchain.cmake ../
+
+      - name: Download build script
+        id: dl-build-script
+        run: wget https://raw.githubusercontent.com/tmaklin/biobins/master/macOS/mSWEEP/build.sh
+
+      - name: Compile binary in Holy Build Box container
+        id: compile-in-container
+        run: chmod +x build.sh && ./build.sh 2.0.0 arm64

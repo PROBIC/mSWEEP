@@ -6,6 +6,10 @@ jobs:
     runs-on: ubuntu-latest
     container: phusion/holy-build-box-64:3.0.2
     steps:
+      - name: Install wget
+      - id: install-wget
+      - run: apt install -y wget
+
       - name: Download build script
         id: dl-build-script
         run: wget https://github.com/tmaklin/biobins/blob/master/linux/mSWEEP/build.sh

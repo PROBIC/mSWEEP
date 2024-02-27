@@ -60,7 +60,7 @@ jobs:
 
       - name: Download toolchain file
         id: dl-toolchain-file
-        run: wget https://raw.githubusercontent.com/tmaklin/biobins/master/macOS/x86-64-toolchain.cmake && cp x86-64-toolchain.cmake /io/x86-64-toolchain.cmake && cp x86-64-toolchain.cmake /x86-64-toolchain.cmake
+        run: wget https://raw.githubusercontent.com/tmaklin/biobins/master/macOS/arm64-toolchain.cmake && cp arm64-toolchain.cmake /io/arm64-toolchain.cmake && cp arm64-toolchain.cmake /arm64-toolchain.cmake
 
       - name: Download build script
         id: dl-build-script

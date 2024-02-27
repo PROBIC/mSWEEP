@@ -16,4 +16,4 @@ jobs:
 
       - name: Compile binary in Holy Build Box container
         id: compile-in-container
-        run: chmod +x build.sh && ./build.sh 2.0.0
+        run: chmod +x build.sh && mkdir /io && cd /io && ./build.sh 2.0.0

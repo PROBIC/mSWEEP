@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.11)
 project(mSWEEP)
-include(ExternalProject)
+include(FetchContent)
 
 ## Determine build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -22,6 +22,8 @@ if(CMAKE_BUILD_TYPE MATCHES Release)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -ffast-math -funroll-loops")
   endif()
 endif()
+
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH} ${CURRENT_BINARY_DIR}/cmake")
 
 if(CMAKE_BUILD_WITH_FLTO)
   cmake_policy(SET CMP0069 NEW)
@@ -106,19 +108,19 @@ endif()
 if (DEFINED CMAKE_BXZSTR_HEADERS)
   message(STATUS "bxzstr headers provided in: ${CMAKE_BXZSTR_HEADERS}")
 else()
-  ExternalProject_Add(bxzstr
+  FetchContent_Declare(bxzstr
     GIT_REPOSITORY    https://github.com/tmaklin/bxzstr.git
     GIT_TAG           v1.1.0
     PREFIX            "external"
-    SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/bxzstr"
-    BUILD_IN_SOURCE   1
+    SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/bxzstr"
+    BUILD_IN_SOURCE   0
     CMAKE_ARGS        -D ZSTD_FOUND=0
     BUILD_COMMAND     ""
     CONFIGURE_COMMAND ""
     INSTALL_COMMAND   ""
     )
-  add_dependencies(mSWEEP bxzstr)
-  set(CMAKE_BXZSTR_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/bxzstr/include)
+  FetchContent_MakeAvailable(bxzstr)
+  set(CMAKE_BXZSTR_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/bxzstr/include)
 endif()
 include_directories(${CMAKE_BXZSTR_HEADERS})
 
@@ -127,19 +129,18 @@ include_directories(${CMAKE_BXZSTR_HEADERS})
 if (DEFINED CMAKE_CXXIO_HEADERS)
   message(STATUS "cxxio headers provided in: ${CMAKE_CXXIO_HEADERS}")
 else()
-  ExternalProject_Add(cxxio
+  FetchContent_Declare(cxxio
     GIT_REPOSITORY    https://github.com/tmaklin/cxxio.git
     GIT_TAG           v0.1.0
     PREFIX            "external"
-    SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/cxxio"
-    BUILD_IN_SOURCE   1
+    SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/cxxio"
+    BUILD_IN_SOURCE   0
     BUILD_COMMAND     ""
     CONFIGURE_COMMAND ""
     INSTALL_COMMAND   ""
-    DEPENDS           bxzstr
     )
-  add_dependencies(mSWEEP cxxio)
-  set(CMAKE_CXXIO_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/cxxio/include)
+  FetchContent_MakeAvailable(cxxio)
+  set(CMAKE_CXXIO_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/cxxio/include)
 endif()
 include_directories("${CMAKE_CXXIO_HEADERS}")
 
@@ -147,18 +148,18 @@ include_directories("${CMAKE_CXXIO_HEADERS}")
 if (DEFINED CMAKE_CXXARGS_HEADERS)
   message(STATUS "cxxargs headers provided in: ${CMAKE_CXXARGS_HEADERS}")
 else()
-  ExternalProject_Add(cxxargs
+  FetchContent_Declare(cxxargs
     GIT_REPOSITORY    https://github.com/tmaklin/cxxargs.git
     GIT_TAG           v1.1.4
     PREFIX            "external"
-    SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/cxxargs"
-    BUILD_IN_SOURCE   1
+    SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/cxxargs"
+    BUILD_IN_SOURCE   0
     BUILD_COMMAND     ""
     CONFIGURE_COMMAND ""
     INSTALL_COMMAND   ""
     )
-  add_dependencies(mSWEEP cxxargs)
-  set(CMAKE_CXXARGS_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/cxxargs/include)
+  FetchContent_MakeAvailable(cxxargs)
+  set(CMAKE_CXXARGS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/cxxargs/include)
 endif()
 include_directories("${CMAKE_CXXARGS_HEADERS}")
 
@@ -167,10 +168,11 @@ if (DEFINED CMAKE_ALIGNMENT_WRITER_HEADERS AND DEFINED CMAKE_ALIGNMENT_WRITER_LI
   message(STATUS "alignment-writer headers provided in: ${CMAKE_ALIGNMENT_WRITER_HEADERS}")
   message(STATUS "alignment-writer library provided in: ${CMAKE_ALIGNMENT_WRITER_LIBRARY}")
 else()
-  ExternalProject_Add(alignment-writer-compile
+  FetchContent_Declare(alignment-writer
     GIT_REPOSITORY    https://github.com/tmaklin/alignment-writer.git
     GIT_TAG           v0.4.0
     PREFIX            "external"
+    SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/alignment-writer"
     BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/alignment-writer"
     BUILD_IN_SOURCE   0
     CMAKE_ARGS      -D CMAKE_BXZSTR_HEADERS=${CMAKE_BXZSTR_HEADERS}
@@ -181,12 +183,12 @@ else()
 		    -D "CMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
 		    -D "CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
     INSTALL_COMMAND   ""
-    DEPENDS         bxzstr
-                    cxxargs
     )
-  add_dependencies(mSWEEP alignment-writer-compile)
-  set(CMAKE_ALIGNMENT_WRITER_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/external/alignment-writer/build/lib/libalignmentwriter.a)
-  set(CMAKE_ALIGNMENT_WRITER_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/alignment-writer/include)
+  FetchContent_MakeAvailable(alignment-writer)
+  add_dependencies(mSWEEP libalignmentwriter)
+  set_target_properties(alignment-writer PROPERTIES EXCLUDE_FROM_ALL 1)
+  set(CMAKE_ALIGNMENT_WRITER_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/alignment-writer/include)
+  set(CMAKE_ALIGNMENT_WRITER_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/lib/libalignment-writer.a)
 endif()
 include_directories(${CMAKE_ALIGNMENT_WRITER_HEADERS})
 target_link_libraries(mSWEEP ${CMAKE_ALIGNMENT_WRITER_LIBRARY})
@@ -196,65 +198,68 @@ if (DEFINED CMAKE_TELESCOPE_LIBRARY AND DEFINED CMAKE_TELESCOPE_HEADERS)
   message(STATUS "telescope headers provided in: ${CMAKE_TELESCOPE_HEADERS}")
   message(STATUS "telescope library provided in: ${CMAKE_TELESCOPE_LIBRARY}")
 else()
-  ExternalProject_Add(telescope-compile
+  FetchContent_Declare(telescope
     GIT_REPOSITORY    https://github.com/tmaklin/telescope.git
     GIT_TAG           v0.6.2
     PREFIX            "external"
+    SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/telescope"
     BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/telescope"
     BUILD_IN_SOURCE   0
     CMAKE_ARGS      -D CMAKE_BXZSTR_HEADERS=${CMAKE_BXZSTR_HEADERS}
 		    -D CMAKE_CXXARGS_HEADERS=${CMAKE_CXXARGS_HEADERS}
 		    -D CMAKE_CXXIO_HEADERS=${CMAKE_CXXIO_HEADERS}
 		    -D CMAKE_ALIGNMENT_WRITER_HEADERS=${CMAKE_ALIGNMENT_WRITER_HEADERS}
-		    -D CMAKE_BITMAGIC_HEADERS=${CMAKE_CURRENT_BINARY_DIR}/external/telescope/external/BitMagic-7.12.3/src
+		    -D CMAKE_ALIGNMENT_WRITER_LIBRARY=${CMAKE_ALIGNMENT_WRITER_LIBRARY}
+		    -D CMAKE_BITMAGIC_HEADERS=${CMAKE_CURRENT_SOURCE_DIR}/external/telescope/external/BitMagic-7.12.3/src
 		    -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 		    -D "CMAKE_C_FLAGS=${CMAKE_C_FLAGS}"
 		    -D "CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
 		    -D "CMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
 		    -D "CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
     INSTALL_COMMAND   ""
-    DEPENDS         bxzstr
-                    cxxargs
-                    cxxio
-                    alignment-writer-compile
     )
-  add_dependencies(mSWEEP telescope-compile)
-  set(CMAKE_TELESCOPE_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/include)
-  set(CMAKE_TELESCOPE_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/build/lib/libtelescope.a)
-  set(CMAKE_BITMAGIC_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/telescope/external/BitMagic-7.12.3/src)
+  FetchContent_MakeAvailable(telescope)
+  add_dependencies(telescope libalignmentwriter)
+  add_dependencies(mSWEEP libtelescope)
+  set_target_properties(telescope PROPERTIES EXCLUDE_FROM_ALL 1)
+  set(CMAKE_TELESCOPE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/telescope/include)
+  set(CMAKE_TELESCOPE_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/lib/libtelescope.a)
+  set(CMAKE_BITMAGIC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/telescope/external/BitMagic-7.12.3/src)
 endif()
 include_directories(${CMAKE_TELESCOPE_HEADERS} ${CMAKE_BITMAGIC_HEADERS})
-target_link_libraries(mSWEEP ${CMAKE_TELESCOPE_LIBRARY} ${CMAKE_ALIGNMENT_WRITER_LIBRARY})
+target_link_libraries(mSWEEP ${CMAKE_TELESCOPE_LIBRARY})
 
 ## seamat
 if (DEFINED CMAKE_SEAMAT_HEADERS)
   message(STATUS "seamat headers provided in: ${CMAKE_SEAMAT_HEADERS}")
 else()
-  ExternalProject_Add(seamat
+  FetchContent_Declare(seamat
     GIT_REPOSITORY    https://github.com/tmaklin/seamat.git
     GIT_TAG           v0.2.1
     PREFIX            "external"
-    SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/seamat"
-    BUILD_IN_SOURCE   1
+    SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/seamat"
+    BUILD_IN_SOURCE   0
     CMAKE_ARGS        -D CMAKE_BUILD_TESTS=0
     BUILD_COMMAND     ""
     CONFIGURE_COMMAND ""
     INSTALL_COMMAND   ""
     )
-  add_dependencies(mSWEEP seamat)
-  set(CMAKE_SEAMAT_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/seamat/include)
+  FetchContent_MakeAvailable(seamat)
+  set(CMAKE_SEAMAT_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/seamat/include)
 endif()
 include_directories(${CMAKE_SEAMAT_HEADERS})
 
 ## rcgpar
-if (DEFINED CMAKE_RCGPAR_LIBRARY AND DEFINED CMAKE_RCGPAR_HEADERS)
+if (DEFINED CMAKE_RCGPAR_LIBRARY AND DEFINED CMAKE_RCGPAR_HEADERS AND DEFINED CMAKE_RCGUTILS_LIBRARY)
   message(STATUS "rcgpar headers provided in: ${CMAKE_RCGPAR_HEADERS}")
   message(STATUS "rcgpar library provided in: ${CMAKE_RCGPAR_LIBRARY}")
+  message(STATUS "rcgutils library provided in: ${CMAKE_RCGUTILS_LIBRARY}")
 else()
-  ExternalProject_Add(rcgpar-compile
-    GIT_REPOSITORY    https://github.com/tmaklin/telescope.git
-    GIT_TAG           v1.1.0
+  FetchContent_Declare(rcgpar
+    GIT_REPOSITORY    https://github.com/tmaklin/rcgpar.git
+    GIT_TAG           v1.1.2
     PREFIX            "external"
+    SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/rcgpar"
     BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/rcgpar"
     BUILD_IN_SOURCE   0
     CMAKE_ARGS      -D CMAKE_ENABLE_MPI_SUPPORT=${MSWEEP_MPI_SUPPORT}
@@ -266,13 +271,14 @@ else()
 		    -D "CMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
 		    -D "CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
     INSTALL_COMMAND   ""
-    DEPENDS         seamat
     )
-  add_dependencies(mSWEEP rcgpar-compile)
-  set(CMAKE_RCGPAR_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/rcgpar/include)
-  set(CMAKE_RCGPAR_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/external/rcgpar/build/lib/librcgomp.a)
+  FetchContent_MakeAvailable(rcgpar)
+  add_dependencies(mSWEEP rcgomp)
+  set(CMAKE_RCGPAR_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/rcgpar/include)
+  set(CMAKE_RCGPAR_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/lib/librcgomp.a")
+  set(CMAKE_RCGUTILS_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/lib/librcgutils.a")
 endif()
-target_link_libraries(mSWEEP ${CMAKE_RCGPAR_LIBRARY})
+target_link_libraries(mSWEEP ${CMAKE_RCGPAR_LIBRARY} ${CMAKE_RCGUTILS_LIBRARY})
 include_directories(${CMAKE_RCGPAR_HEADERS})
 
 ## mGEMS
@@ -280,10 +286,11 @@ if (DEFINED CMAKE_MGEMS_LIBRARY AND DEFINED CMAKE_MGEMS_HEADERS)
   message(STATUS "mGEMS headers provided in: ${CMAKE_MGEMS_HEADERS}")
   message(STATUS "mGEMS library provided in: ${CMAKE_MGEMS_LIBRARY}")
 else()
-  ExternalProject_Add(mGEMS-compile
+  FetchContent_Declare(mGEMS
     GIT_REPOSITORY    https://github.com/PROBIC/mGEMS.git
     GIT_TAG           v1.3.0
     PREFIX            "external"
+    SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/mGEMS"
     BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS"
     BUILD_IN_SOURCE   0
     CMAKE_ARGS      -D CMAKE_BXZSTR_HEADERS=${CMAKE_BXZSTR_HEADERS}
@@ -299,18 +306,15 @@ else()
 		    -D "CMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
 		    -D "CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
     INSTALL_COMMAND   ""
-    DEPENDS         bxzstr
-                    cxxargs
-                    cxxio
-                    alignment-writer-compile
-                    seamat
-                    telescope-compile
     )
-  add_dependencies(mSWEEP mGEMS-compile)
-  set(CMAKE_MGEMS_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS/include)
-  set(CMAKE_MGEMS_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS/build/lib/libmgems.a)
+  FetchContent_MakeAvailable(mGEMS)
+  add_dependencies(mGEMS libtelescope libalignmentwriter)
+  add_dependencies(mSWEEP libmgems)
+  set_target_properties(mGEMS PROPERTIES EXCLUDE_FROM_ALL 1)
+  set(CMAKE_MGEMS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/mGEMS/include)
+  set(CMAKE_MGEMS_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS/lib/libmgems.a)
 endif()
-target_link_libraries(mSWEEP ${CMAKE_MGEMS_LIBRARY})
+target_link_libraries(mSWEEP ${CMAKE_MGEMS_LIBRARY} ${CMAKE_TELESCOPE_LIBRARY} ${CMAKE_ALIGNMENT_WRITER_LIBRARY})
 include_directories(${CMAKE_MGEMS_HEADERS})
 
 include_directories(

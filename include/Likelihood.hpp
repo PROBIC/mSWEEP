@@ -86,7 +86,8 @@ private:
   std::vector<T> log_ec_counts;
   std::vector<std::array<T, 2>> bb_params;
   std::vector<bool> groups_mask;
-  double zero_inflation;
+  T zero_inflation;
+  T bb_constants[2];
 
   seamat::DenseMatrix<T> precalc_lls(const std::vector<V> &group_sizes, const size_t n_groups) {
     V max_size = 0; // Storing the grouping can take a lot less space if it can be done with uint16_t or uint8_t.
@@ -111,7 +112,6 @@ private:
     this->groups_mask = std::vector<bool>(n_groups, !mask_groups);
     if (mask_groups) {
 	// Create mask identifying groups that have at least 1 alignment
-#pragma omp parallel for schedule(static) shared(groups_mask)
 	for (size_t i = 0; i < num_ecs; ++i) {
 	    for (size_t j = 0; j < n_groups; ++j) {
 		this->groups_mask[j] = groups_mask[j] || (alignment(j, i) > 0);
@@ -119,7 +119,6 @@ private:
 	}
     }
     size_t n_masked_groups = 0;
-#pragma omp parallel for schedule(static) reduction(+:n_masked_groups)
     for (size_t i = 0; i < n_groups; ++i) {
 	n_masked_groups += groups_mask[i];
     }
@@ -135,9 +134,10 @@ private:
 	masked_group_sizes = group_sizes;
     }
 
+    this->update_bb_parameters(masked_group_sizes, n_masked_groups, this->bb_constants);
     const seamat::DenseMatrix<T> &precalc_lls_mat = this->precalc_lls(masked_group_sizes, n_masked_groups);
 
-    this->log_likelihoods.resize(n_masked_groups, num_ecs, std::log(zero_inflation);
+    this->log_likelihoods.resize(n_masked_groups, num_ecs, std::log(this->zero_inflation));
 #pragma omp parallel for schedule(static) shared(precalc_lls_mat)
     for (size_t j = 0; j < num_ecs; ++j) {
       for (size_t i = 0; i < n_masked_groups; ++i) {
@@ -170,10 +170,10 @@ private:
 public:
   LL_WOR21() = default;
 
-  LL_WOR21(const std::vector<V> &group_sizes, const telescope::Alignment &alignment, const size_t n_groups, const T tol, const T frac_mu, const bool mask_groups, const T_zero_inflation) {
-    T bb_constants[2] = { tol, frac_mu };
+  LL_WOR21(const std::vector<V> &group_sizes, const telescope::Alignment &alignment, const size_t n_groups, const T tol, const T frac_mu, const bool mask_groups, const T _zero_inflation) {
+    this->bb_constants[0] = tol;
+    this->bb_constants[1] = frac_mu;
     this->zero_inflation = _zero_inflation;
-    this->update_bb_parameters(group_sizes, n_groups, bb_constants);
     this->from_grouped_alignment(alignment, group_sizes, n_groups, mask_groups);
   }
 

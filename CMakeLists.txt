@@ -170,7 +170,7 @@ if (DEFINED CMAKE_ALIGNMENT_WRITER_HEADERS AND DEFINED CMAKE_ALIGNMENT_WRITER_LI
 else()
   FetchContent_Declare(alignment-writer
     GIT_REPOSITORY    https://github.com/tmaklin/alignment-writer.git
-    GIT_TAG           v0.4.0
+    GIT_TAG           v0.5.0
     PREFIX            "external"
     SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/alignment-writer"
     BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/alignment-writer"
@@ -200,7 +200,7 @@ if (DEFINED CMAKE_TELESCOPE_LIBRARY AND DEFINED CMAKE_TELESCOPE_HEADERS)
 else()
   FetchContent_Declare(telescope
     GIT_REPOSITORY    https://github.com/tmaklin/telescope.git
-    GIT_TAG           v0.6.2
+    GIT_TAG           v0.7.0-prerelease
     PREFIX            "external"
     SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/telescope"
     BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/telescope"
@@ -220,7 +220,7 @@ else()
     )
   FetchContent_MakeAvailable(telescope)
   add_dependencies(telescope libalignmentwriter)
-  add_dependencies(mSWEEP libtelescope)
+  add_dependencies(mSWEEP telescope)
   set_target_properties(telescope PROPERTIES EXCLUDE_FROM_ALL 1)
   set(CMAKE_TELESCOPE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/telescope/include)
   set(CMAKE_TELESCOPE_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/lib/libtelescope.a)
@@ -308,7 +308,7 @@ else()
     INSTALL_COMMAND   ""
     )
   FetchContent_MakeAvailable(mGEMS)
-  add_dependencies(mGEMS libtelescope libalignmentwriter)
+  add_dependencies(mGEMS telescope libalignmentwriter)
   add_dependencies(mSWEEP libmgems)
   set_target_properties(mGEMS PROPERTIES EXCLUDE_FROM_ALL 1)
   set(CMAKE_MGEMS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/mGEMS/include)

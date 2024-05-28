@@ -147,4 +147,38 @@ std::vector<double> Sample::get_rates() const {
   }
   return RATE;
 }
+
+void Sample::write_probs2(const std::vector<std::string> &estimated_indicators_to_string,
+			  const std::vector<std::string> &zero_indicators_to_string, std::ostream *of) {
+  // Write the probability matrix to a file.
+  if (of->good()) {
+    *of << "ec_id" << '\t';
+    size_t n_rows = estimated_indicators_to_string.size() + zero_indicators_to_string.size();
+    size_t n_cols = this->ec_probabilities.get_cols();
+    for (size_t i = 0; i < n_rows; ++i) {
+	if (i < estimated_indicators_to_string.size()) {
+	    *of << estimated_indicators_to_string[i];
+	    *of << (i < n_rows - 1 ? '\t' : '\n');
+	} else {
+	    *of << zero_indicators_to_string[i - estimated_indicators_to_string.size()];
+	    *of << (i < n_rows - 1 ? '\t' : '\n');
+	}
+    }
+    for (size_t i = 0; i < n_cols; ++i) {
+	*of << i << '\t';
+	for (size_t j = 0; j < n_rows; ++j) {
+	    if (j < estimated_indicators_to_string.size()) {
+		*of << std::exp(this->ec_probabilities(j, i));
+	    } else {
+		*of << (double)0.0;
+	    }
+	  *of << (j < n_rows - 1 ? '\t' : '\n');
+	}
+    }
+    *of << std::endl;
+      of->flush();
+  } else {
+    throw std::runtime_error("Can't write to probs file.");
+  }
+}
 }

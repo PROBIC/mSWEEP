@@ -95,4 +95,37 @@ void BootstrapSample::write_abundances(const std::vector<std::string> &group_nam
   }
 }
 
+void BootstrapSample::write_abundances2(const std::vector<std::string> &estimated_group_names,
+					const std::vector<std::string> &zero_group_names, std::ostream *of) const {
+  // Write relative abundances to a file,
+  // outputs to std::cout if outfile is empty.
+  if (of->good()) {
+    (*of) << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
+    (*of) << "#num_reads:" << '\t' << this->get_n_reads() << '\n';
+    (*of) << "#num_aligned:" << '\t' << this->get_counts_total() << '\n';
+    (*of) << "#bootstrap_iters:" << '\t' << this->iters << '\n';
+    (*of) << "#c_id" << '\t' << "mean_theta" << '\t' << "bootstrap_mean_thetas" << '\n';
+
+    size_t n_targets = estimated_group_names.size() + zero_group_names.size();
+    for (size_t i = 0; i < n_targets; ++i) {
+	if (i < estimated_group_names.size()) {
+	    (*of) << estimated_group_names[i] << '\t';
+	    (*of) << this->bootstrap_results[0][i] << '\t'; // First vec has the relative abundances without bootstrapping
+	    for (size_t j = 0; j < this->iters; ++j) {
+		(*of) << this->bootstrap_results[j + 1][i] << (j == this->iters - 1 ? '\n' : '\t');
+	    }
+	} else {
+	    (*of) << zero_group_names[i - estimated_group_names.size()] << '\t';
+	    (*of) << (double)0.0 << '\t'; // First vec has the relative abundances without bootstrapping
+	    for (size_t j = 0; j < this->iters; ++j) {
+		(*of) << (double)0.0 << (j == this->iters - 1 ? '\n' : '\t');
+	    }
+
+	}
+    }
+    of->flush();
+  } else {
+    throw std::runtime_error("Could not write to abundances file.");
+  }
+}
 }

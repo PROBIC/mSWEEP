@@ -173,6 +173,7 @@ Likelihood options:
 
 Experimental options:
 --run-rate	Calculate relative reliability for each abundance estimate using RATE (default: false).
+--ignore-zeros	Ignore target clusters that did not have any reads align against them (default: false):
 ```
 
 # References

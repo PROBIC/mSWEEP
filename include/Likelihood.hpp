@@ -140,8 +140,12 @@ private:
     this->log_likelihoods.resize(n_masked_groups, num_ecs, std::log(this->zero_inflation));
 #pragma omp parallel for schedule(static) shared(precalc_lls_mat)
     for (size_t j = 0; j < num_ecs; ++j) {
-      for (size_t i = 0; i < n_masked_groups; ++i) {
-	this->log_likelihoods(i, j) = precalc_lls_mat(i, alignment(i, j));
+      size_t groups_pos = 0;
+      for (size_t i = 0; i < n_groups; ++i) {
+	if (this->groups_mask[i]) {
+	  this->log_likelihoods(groups_pos, j) = precalc_lls_mat(groups_pos, alignment(i, j));
+	  ++groups_pos;
+	}
       }
     }
   }

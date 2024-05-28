@@ -45,4 +45,29 @@ void PlainSample::write_abundances(const std::vector<std::string> &group_names, 
   }
 }
 
+void PlainSample::write_abundances2(const std::vector<std::string> &estimated_group_names,
+				    const std::vector<std::string> &zero_group_names, std::ostream *of) const {
+  // Write relative abundances to &of,
+  if (of->good()) {
+    (*of) << "#mSWEEP_version:" << '\t' << MSWEEP_BUILD_VERSION << '\n';
+    (*of) << "#num_reads:" << '\t' << this->get_n_reads() << '\n';
+    (*of) << "#num_aligned:" << '\t' << this->get_counts_total() << '\n';
+    (*of) << "#c_id" << '\t' << "mean_theta" << '\n';
+    size_t n_targets = estimated_group_names.size() + zero_group_names.size();
+    for (size_t i = 0; i < n_targets; ++i) {
+	if (i < estimated_group_names.size()) {
+	    (*of) << estimated_group_names[i] << '\t';
+	    (*of) << this->relative_abundances[i];
+	} else {
+	    (*of) << zero_group_names[i - estimated_group_names.size()] << '\t';
+	    (*of) << (double)0.0;
+	}
+	(*of) << '\n';
+    }
+    of->flush();
+  } else {
+    throw std::runtime_error("Can't write to abundances file.");
+  }
+}
+
 }

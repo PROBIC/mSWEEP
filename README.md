@@ -143,6 +143,7 @@ Estimation options:
 --no-fit-model	Do not estimate the abundances. Useful if only the likelihood matrix is required (default: false).
 --max-iters	Maximum number of iterations to run the abundance estimation optimizer for (default: 5000).
 --tol	Optimization terminates when the bound changes by less than the given tolerance (default: 0.000001).
+--ignore-zeros	Ignore target clusters that did not have any reads align against them (default: false):
 
 Bootstrapping options:
 --iters	Number of times to rerun estimation with bootstrapped alignments (default: 0).

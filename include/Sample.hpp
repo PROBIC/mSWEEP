@@ -54,12 +54,16 @@ public:
   virtual const std::vector<double>& get_abundances() const =0;
   // Write the relative abundances
   virtual void write_abundances(const std::vector<std::string> &group_names, std::ostream *of) const =0;
+  virtual void write_abundances2(const std::vector<std::string> &estimated_group_names,
+				 const std::vector<std::string> &zero_group_names, std::ostream *of) const =0;
 
   // Non-virtuals
   // Store equivalence class probabilities
   void store_probs(const seamat::DenseMatrix<double> &probs) { this->ec_probabilities = std::move(probs); }
 
   void write_probs(const std::vector<std::string> &cluster_indicators_to_string, std::ostream *of);
+  void write_probs2(const std::vector<std::string> &cluster_indicators_to_string,
+		    const std::vector<std::string> &zero_indicators_to_string, std::ostream *of);
 
   // Getters
   size_t get_counts_total() const { return this->counts_total; };
@@ -102,6 +106,8 @@ public:
 
   // Write the relative abundances
   void write_abundances(const std::vector<std::string> &group_names, std::ostream *of) const override;
+  void write_abundances2(const std::vector<std::string> &estimated_group_names,
+			 const std::vector<std::string> &zero_group_names, std::ostream *of) const override;
 
   // Getters
   const std::vector<double>& get_abundances() const override { return this->relative_abundances; }
@@ -161,6 +167,8 @@ public:
 
   // Write the bootstrap results
   void write_abundances(const std::vector<std::string> &group_names, std::ostream *os) const override;
+  void write_abundances2(const std::vector<std::string> &estimated_group_names,
+			 const std::vector<std::string> &zero_group_names, std::ostream *of) const override;
 
   // Getters
   const std::vector<double>& get_abundances() const override { return this->bootstrap_results[0]; }

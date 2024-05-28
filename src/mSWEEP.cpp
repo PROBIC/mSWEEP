@@ -122,7 +122,8 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   // Maximum iterations to run the optimizer for
   args.add_long_argument<size_t>("max-iters", "Maximum number of iterations to run the abundance estimation optimizer for (default: 5000).", (size_t)5000);
   // Tolerance for abundance estimation convergence
-  args.add_long_argument<double>("tol", "Optimization terminates when the bound changes by less than the given tolerance (default: 0.000001).\n\nBootstrapping options:", (double)0.000001);
+  args.add_long_argument<double>("tol", "Optimization terminates when the bound changes by less than the given tolerance (default: 0.000001).", (double)0.000001);
+  args.add_long_argument<bool>("ignore-zeros", "Ignore target clusters that did not have any reads align against them (default: false).\n\nBootstrapping options:):", false);
 
   // Number of iterations to run bootstrapping for
   args.add_long_argument<size_t>("iters", "Number of times to rerun estimation with bootstrapped alignments (default: 0).", (size_t)0);
@@ -363,7 +364,7 @@ int main (int argc, char *argv[]) {
 
 	// Use the alignment data to populate the log_likelihoods matrix.
 	try {
-	    log_likelihoods = mSWEEP::ConstructAdaptiveLikelihood<double>(*alignment, reference->get_grouping(i), args.value<double>('q'), args.value<double>('e'));
+	    log_likelihoods = mSWEEP::ConstructAdaptiveLikelihood<double>(*alignment, reference->get_grouping(i), args.value<double>('q'), args.value<double>('e'), args.value<bool>("ignore-zeros"));
 	}  catch (std::exception &e) {
 	  finalize("Building the log-likelihood array failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;
@@ -400,6 +401,8 @@ int main (int argc, char *argv[]) {
 	return 1;
       }
 
+      std::vector<std::string> estimated_reference_names;
+      std::vector<std::string> zero_reference_names;
       // Start the abundance estimation part
       if (args.value<bool>("no-fit-model")) {
 	log << "Skipping relative abundance estimation (--no-fit-model toggled)" << '\n';
@@ -407,9 +410,9 @@ int main (int argc, char *argv[]) {
 	log << "Estimating relative abundances" << '\n';
 
 	// Prior parameters
-	std::vector<double> prior_counts(n_groups, 1.0); // Default is all = 1.0
+	std::vector<double> prior_counts(log_likelihoods->log_mat().get_rows(), 1.0); // Default is all = 1.0
 	if (CmdOptionPresent(argv, argv+argc, "--alphas")) {
-	  if (args.value<std::vector<double>>("alphas").size() != n_groups) {
+	  if (args.value<std::vector<double>>("alphas").size() != log_likelihoods->log_mat().get_rows()) {
 	    finalize("Error: --alphas must have the same number of values as there are groups.", log, true);
 	    return 1;
 	  }
@@ -429,25 +432,36 @@ int main (int argc, char *argv[]) {
 	  // Turn the probs into relative abundances
 	  sample->store_abundances(rcgpar::mixture_components(sample->get_probs(), log_likelihoods->log_counts()));
 
+	  if (args.value<bool>("ignore-zeros")) {
+	      for (size_t j = 0; j < reference->group_names(i).size(); ++j) {
+		  if (log_likelihoods->groups_considered()[j]) {
+		      estimated_reference_names.push_back(reference->group_names(i)[j]);
+		  } else {
+		      zero_reference_names.push_back(reference->group_names(i)[j]);
+		  }
+	      }
+	  } else {
+	      estimated_reference_names = reference->group_names(i);
+	  }
 	  // Bin the reads if requested
 	  if (bin_reads) {
 	    std::vector<std::string> target_names;
 	    if (CmdOptionPresent(argv, argv+argc, "--target-groups")) {
 	      target_names = std::move(args.value<std::vector<std::string>>("target-groups"));
 	    } else {
-	      target_names = reference->group_names(i);
+	      target_names = estimated_reference_names;
 	    }
 	    if (CmdOptionPresent(argv, argv+argc, "--min-abundance")) {
-	      mGEMS::FilterTargetGroups(reference->group_names(i), sample->get_abundances(), args.value<double>("min-abundance"), &target_names);
+	      mGEMS::FilterTargetGroups(estimated_reference_names, sample->get_abundances(), args.value<double>("min-abundance"), &target_names);
 	    }
 	    std::vector<std::vector<uint32_t>> bins;
 	    try {
 	      if (bootstrap_mode) {
 		mSWEEP::BinningBootstrap* bs = static_cast<mSWEEP::BinningBootstrap*>(&(*sample));
-		bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), sample->get_probs(), reference->group_names(i), &target_names));
+		bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), sample->get_probs(), estimated_reference_names, &target_names));
 	      } else {
 		mSWEEP::BinningSample* bs = static_cast<mSWEEP::BinningSample*>(&(*sample));
-		bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), sample->get_probs(), reference->group_names(i), &target_names));
+		bins = std::move(mGEMS::BinFromMatrix(bs->get_aligned_reads(), sample->get_abundances(), sample->get_probs(), estimated_reference_names, &target_names));
 	      }
 	    } catch (std::exception &e) {
 	      finalize("Binning the reads failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
@@ -470,10 +484,18 @@ int main (int argc, char *argv[]) {
 	      // Note: this ignores the printing_output variable because
 	      // we might want to print the probs even when writing to
 	      // pipe them somewhere.
-	      sample->write_probs(reference->group_names(i), &std::cout);
+		if (args.value<bool>("ignore-zeros")) {
+		    sample->write_probs2(estimated_reference_names, zero_reference_names, &std::cout);
+		} else {
+		    sample->write_probs(estimated_reference_names, &std::cout);
+		}
 	    }
 	    if (args.value<bool>("write-probs")) {
-	      sample->write_probs(reference->group_names(i), out.probs());
+		if (args.value<bool>("ignore-zeros")) {
+		    sample->write_probs2(estimated_reference_names, zero_reference_names, out.probs());
+		} else {
+		    sample->write_probs(estimated_reference_names, out.probs());
+		}
 	    }
 	  } catch (std::exception &e) {
 	    finalize("Writing the probabilities failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
@@ -508,7 +530,11 @@ int main (int argc, char *argv[]) {
       // Write relative abundances
       if (rank == 0 && !args.value<bool>("no-fit-model")) {
 	try {
-	  sample->write_abundances(reference->group_names(i), out.abundances());
+	    if (args.value<bool>("ignore-zeros")) {
+		sample->write_abundances2(estimated_reference_names, zero_reference_names, out.abundances());
+	    } else {
+		sample->write_abundances(estimated_reference_names, out.abundances());
+	    }
 	} catch (std::exception &e) {
 	  finalize("Writing the relative abundances failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;

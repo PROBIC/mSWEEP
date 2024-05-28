@@ -136,7 +136,8 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   // Dispersion term for likelihood
   args.add_short_argument<double>('e', "Dispersion term for the beta-binomial component (default: 0.01).", 0.01);
   // Prior parameters for estimation
-  args.add_long_argument<std::vector<double>>("alphas", "Prior counts for the relative abundances, supply as comma-separated nonzero values (default: all 1.0).\n\nExperimental options:");
+  args.add_long_argument<std::vector<double>>("alphas", "Prior counts for the relative abundances, supply as comma-separated nonzero values (default: all 1.0).");
+  args.add_long_argument<double>("zero-inflation", "Likelihood of an observation that contains 0 pseudoalignments against a reference group (default: 0.01).\n\nExperimental options:", 0.01);
   args.set_not_required("alphas");
 
   args.add_long_argument<bool>("run-rate", "Calculate relative reliability for each abundance estimate using RATE (default: false).", false);
@@ -366,7 +367,7 @@ int main (int argc, char *argv[]) {
 
 	// Use the alignment data to populate the log_likelihoods matrix.
 	try {
-	    log_likelihoods = mSWEEP::ConstructAdaptiveLikelihood<double>(*alignment, reference->get_grouping(i), args.value<double>('q'), args.value<double>('e'), args.value<bool>("ignore-zeros"));
+	  log_likelihoods = mSWEEP::ConstructAdaptiveLikelihood<double>(*alignment, reference->get_grouping(i), args.value<double>('q'), args.value<double>('e'), args.value<bool>("ignore-zeros"), args.value<double>("zero-inflation"));
 	}  catch (std::exception &e) {
 	  finalize("Building the log-likelihood array failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;

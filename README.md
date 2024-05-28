@@ -170,6 +170,7 @@ Likelihood options:
 -q	Mean for the beta-binomial component (default: 0.65).
 -e	Dispersion term for the beta-binomial component (default: 0.01).
 --alphas	Prior counts for the relative abundances, supply as comma-separated nonzero values (default: all 1.0).
+--zero-inflation	Likelihood of an observation that contains 0 pseudoalignments against a reference group (default: 0.01).
 
 Experimental options:
 --run-rate	Calculate relative reliability for each abundance estimate using RATE (default: false).

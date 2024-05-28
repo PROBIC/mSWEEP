@@ -114,9 +114,7 @@ private:
 	for (size_t i = 0; i < num_ecs; ++i) {
 	    for (size_t j = 0; j < n_groups; ++j) {
 		this->groups_mask[j] = groups_mask[j] || (alignment(j, i) > 0);
-		std::cerr << alignment(j, i) << '\t';
 	    }
-	    std::cerr << '\n';
 	}
     }
     size_t n_masked_groups = 0;

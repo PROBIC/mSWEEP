@@ -117,7 +117,7 @@ private:
 	// Create mask identifying groups that have at least 1 alignment
 	for (size_t i = 0; i < num_ecs; ++i) {
 	    for (size_t j = 0; j < n_groups; ++j) {
-		group_hit_counts[j] += (alignment(j, i) > 0);
+		group_hit_counts[j] += (alignment(j, i) > 0) * alignment.reads_in_ec(i);
 	    }
 	}
 	for (size_t i = 0; i < n_groups; ++i) {

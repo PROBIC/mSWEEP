@@ -88,20 +88,60 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/mSWEEP_mpi_config.hpp.in ${CM
 add_executable(mSWEEP ${CMAKE_CURRENT_SOURCE_DIR}/src/mSWEEP.cpp)
 
 ## Check supported compression types
-find_package(BZip2)
-if (BZIP2_FOUND)
-  include_directories(${BZIP2_INCLUDE_DIRS})
-  target_link_libraries(mSWEEP ${BZIP2_LIBRARIES})
-endif()    
-find_package(LibLZMA)
-if (LIBLZMA_FOUND)
-  include_directories(${LIBLZMA_INCLUDE_DIRS})
-  target_link_libraries(mSWEEP ${LIBLZMA_LIBRARIES})
+## Dependencies
+### Check supported compression types
+#### zlib
+if ((DEFINED ZLIB_LIBRARY AND DEFINED ZLIB_INCLUDE_DIR) AND (NOT DEFINED ZLIB_FOUND))
+  message(STATUS "zlib library provided in: " ${ZLIB_LIBRARY})
+  message(STATUS "zlib headers provided in: " ${ZLIB_INCLUDE_DIR})
+  include_directories(${ZLIB_INCLUDE_DIR})
+  target_link_libraries(mSWEEP ${ZLIB_LIBRARY})
+  set(MSWEEP_HAVE_ZLIB 1)
+else()
+  find_package(ZLIB)
+  if (ZLIB_FOUND)
+    include_directories(${ZLIB_INCLUDE_DIR})
+    target_link_libraries(mSWEEP ${ZLIB_LIBRARY})
+    set(MSWEEP_HAVE_ZLIB 1)
+  else()
+    set(MSWEEP_HAVE_ZLIB 0)
+  endif()
 endif()
-find_package(ZLIB)
-if (ZLIB_FOUND)
-  include_directories(${ZLIB_INCLUDE_DIRS})
-  target_link_libraries(mSWEEP ${ZLIB_LIBRARIES})
+
+#### bzip2
+if (DEFINED BZIP2_LIBRARIES AND DEFINED BZIP2_INCLUDE_DIR AND (NOT DEFINED BZIP2_FOUND))
+  message(STATUS "bzip2 library provided in: " ${BZIP2_LIBRARIES})
+  message(STATUS "bzip2 headers provided in: " ${BZIP2_INCLUDE_DIR})
+  include_directories(${BZIP2_INCLUDE_DIR})
+  target_link_libraries(mSWEEP ${BZIP2_LIBRARIES})
+  set(MSWEEP_HAVE_BZIP2 1)
+else()
+  find_package(BZip2)
+  if (BZIP2_FOUND)
+    include_directories(${BZIP2_INCLUDE_DIR})
+    target_link_libraries(mSWEEP ${BZIP2_LIBRARIES})
+    set(MSWEEP_HAVE_BZIP2 1)
+  else()
+    set(MSWEEP_HAVE_BZIP2 0)
+  endif()
+endif()
+
+#### lzma
+if (DEFINED LIBLZMA_LIBRARY AND DEFINED LIBLZMA_INCLUDE_DIR AND (NOT DEFINED LIBLZMA_FOUND))
+  message(STATUS "liblzma library provided in: " ${LIBLZMA_LIBRARY})
+  message(STATUS "liblzma headers provided in: " ${LIBLZMA_INCLUDE_DIR})
+  include_directories(${LIBLZMA_INCLUDE_DIR})
+  target_link_libraries(mSWEEP ${LIBLZMA_LIBRARY})
+  set(MSWEEP_HAVE_LIBLZMA 1)
+else()
+  find_package(LibLZMA)
+  if (LIBLZMA_FOUND)
+    include_directories(${LIBLZMA_INCLUDE_DIR})
+    target_link_libraries(mSWEEP ${LIBLZMA_LIBRARY})
+    set(MSWEEP_HAVE_LIBLZMA 1)
+  else()
+    set(MSWEEP_HAVE_LIBLZMA 0)
+  endif()
 endif()
 
 ## bxzstr
@@ -115,6 +155,9 @@ else()
     SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/bxzstr"
     BUILD_IN_SOURCE   0
     CMAKE_ARGS        -D ZSTD_FOUND=0
+                      -D ZLIB_FOUND=${MSWEEP_HAVE_ZLIB}
+		      -D BZIP2_FOUND=${MSWEEP_HAVE_BZIP2}
+		      -D LIBLZMA_FOUND=${MSWEEP_HAVE_LIBLZMA}
     BUILD_COMMAND     ""
     CONFIGURE_COMMAND ""
     INSTALL_COMMAND   ""
@@ -235,7 +278,7 @@ if (DEFINED CMAKE_SEAMAT_HEADERS)
 else()
   FetchContent_Declare(seamat
     GIT_REPOSITORY    https://github.com/tmaklin/seamat.git
-    GIT_TAG           v0.2.1
+    GIT_TAG           v0.2.2
     PREFIX            "external"
     SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/seamat"
     BUILD_IN_SOURCE   0
@@ -245,7 +288,8 @@ else()
     INSTALL_COMMAND   ""
     )
   FetchContent_MakeAvailable(seamat)
-  set(CMAKE_SEAMAT_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/seamat/include)
+  set(CMAKE_SEAMAT_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/seamat/include ${CMAKE_CURRENT_BINARY_DIR}/_deps/seamat-build/include)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/mSWEEP_openmp_config.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/include/mSWEEP_openmp_config.hpp @ONLY)
 endif()
 include_directories(${CMAKE_SEAMAT_HEADERS})
 
@@ -257,7 +301,7 @@ if (DEFINED CMAKE_RCGPAR_LIBRARY AND DEFINED CMAKE_RCGPAR_HEADERS AND DEFINED CM
 else()
   FetchContent_Declare(rcgpar
     GIT_REPOSITORY    https://github.com/tmaklin/rcgpar.git
-    GIT_TAG           v1.1.2
+    GIT_TAG           v1.1.3
     PREFIX            "external"
     SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/rcgpar"
     BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/rcgpar"
@@ -273,7 +317,7 @@ else()
     INSTALL_COMMAND   ""
     )
   FetchContent_MakeAvailable(rcgpar)
-  add_dependencies(mSWEEP rcgomp)
+  add_dependencies(mSWEEP rcgomp rcgutils)
   set(CMAKE_RCGPAR_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/rcgpar/include)
   set(CMAKE_RCGPAR_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/lib/librcgomp.a")
   set(CMAKE_RCGUTILS_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/lib/librcgutils.a")

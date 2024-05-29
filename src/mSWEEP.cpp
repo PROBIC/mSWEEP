@@ -141,7 +141,7 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   args.set_not_required("alphas");
 
   args.add_long_argument<bool>("run-rate", "Calculate relative reliability for each abundance estimate using RATE (default: false).", false);
-  args.add_long_argument<bool>("ignore-zeros", "Ignore target clusters that did not have any reads align against them (default: false).", false);
+  args.add_long_argument<size_t>("min-hits", "Only consider target groups that have at least this many reads align to any sequence in them (default: 0).", (size_t)0);
 
   if (CmdOptionPresent(argv, argv+argc, "--help")) {
     // Print help message and continue.
@@ -367,7 +367,7 @@ int main (int argc, char *argv[]) {
 
 	// Use the alignment data to populate the log_likelihoods matrix.
 	try {
-	  log_likelihoods = mSWEEP::ConstructAdaptiveLikelihood<double>(*alignment, reference->get_grouping(i), args.value<double>('q'), args.value<double>('e'), args.value<bool>("ignore-zeros"), args.value<double>("zero-inflation"));
+	  log_likelihoods = mSWEEP::ConstructAdaptiveLikelihood<double>(*alignment, reference->get_grouping(i), args.value<double>('q'), args.value<double>('e'), args.value<size_t>("min-hits"), args.value<double>("zero-inflation"));
 	}  catch (std::exception &e) {
 	  finalize("Building the log-likelihood array failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;
@@ -435,8 +435,8 @@ int main (int argc, char *argv[]) {
 	    sample->dirichlet_kld(log_likelihoods->log_counts());
 	}
 
-	if (args.value<bool>("ignore-zeros")) {
-	    std::cerr << "WARNING: --ignore-zeros is an experimental option that has not been thoroughly tested and is subject to change.\n" << std::endl;
+	if (args.value<size_t>("min-hits") > 0) {
+	    std::cerr << "WARNING: --min-hits > 0 is an experimental option that has not been thoroughly tested and is subject to change.\n" << std::endl;
 	}
 
 	// Run binning if requested and write results to files.
@@ -444,7 +444,7 @@ int main (int argc, char *argv[]) {
 	  // Turn the probs into relative abundances
 	  sample->store_abundances(rcgpar::mixture_components(sample->get_probs(), log_likelihoods->log_counts()));
 
-	  if (args.value<bool>("ignore-zeros")) {
+	  if (args.value<size_t>("min-hits") > 0) {
 	      for (size_t j = 0; j < reference->group_names(i).size(); ++j) {
 		  if (log_likelihoods->groups_considered()[j]) {
 		      estimated_reference_names.push_back(reference->group_names(i)[j]);
@@ -496,14 +496,14 @@ int main (int argc, char *argv[]) {
 	      // Note: this ignores the printing_output variable because
 	      // we might want to print the probs even when writing to
 	      // pipe them somewhere.
-		if (args.value<bool>("ignore-zeros")) {
+		if (args.value<size_t>("min-hits") > 0) {
 		    sample->write_probs2(estimated_reference_names, zero_reference_names, &std::cout);
 		} else {
 		    sample->write_probs(estimated_reference_names, &std::cout);
 		}
 	    }
 	    if (args.value<bool>("write-probs")) {
-		if (args.value<bool>("ignore-zeros")) {
+		if (args.value<size_t>("min-hits") > 0) {
 		    sample->write_probs2(estimated_reference_names, zero_reference_names, out.probs());
 		} else {
 		    sample->write_probs(estimated_reference_names, out.probs());
@@ -568,7 +568,7 @@ int main (int argc, char *argv[]) {
 		  throw std::runtime_error("Can't write to abundances file.");
 	      }
 	  } else {
-	    if (args.value<bool>("ignore-zeros")) {
+	    if (args.value<size_t>("min-hits") > 0) {
 		sample->write_abundances2(estimated_reference_names, zero_reference_names, out.abundances());
 	    } else {
 		sample->write_abundances(estimated_reference_names, out.abundances());

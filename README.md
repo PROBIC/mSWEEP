@@ -92,6 +92,7 @@ i.e. the file format is automatically detected (alignment-writer v0.4.0 and newe
 We recommend running [demix\_check](https://github.com/tmaklin/coreutils_demix_check) on the binned reads and/or [checkm](https://github.com/Ecogenomics/CheckM) on the bin-assembled genomes (BAGs) to evaluate the accuracy of the results.
 
 ## Working with large alignment files
+### Compressing Themisto output files
 For complex input data with many organisms, the pseudoalignment files from Themisto can get infeasibly large. In these cases, [alignment-writer](https://github.com/tmaklin/alignment-writer) can be used to compress the alignment files to <10% of the original size.
 
 mSWEEP >=v2.0.0 can read the compressed alignments in directly by running
@@ -99,6 +100,32 @@ mSWEEP >=v2.0.0 can read the compressed alignments in directly by running
 mSWEEP --themisto-1 fwd_compressed.aln --themisto-2 rev_compressed.aln -i clustering.txt -t 2
 
 ```
+
+### Running estimation on large sparse alignments
+If the target alignment is sparse, meaning that there are target groups which have few/no reads aligning against them in the whole sample, mSWEEP can be instructed to ignore these in the estimation by adding the `--min-hits 1` flag:
+```
+mSWEEP --themisto sparse.aln -i clustering.txt -t 2 --min-hits 1
+```
+This will reduce the runtime and memory use of the estimation proportional to how many target groups are removed. Using `--min-hits 1` does not affect the results beyond differences in computational accuracy.
+
+The `--min-hits` flag also accepts values higher than 1 for pruning target groups with a small number of aligned reads. Using a value higher than 1 will change the resulting values.
+
+## (experimental) Reliability of abundance estimates
+Add the `--run-rate` flag to calculate a relative reliability value for each abundance estimate using a variation of the [RATE method](https://doi.org/10.1214/18-AOAS1222)
+```
+mSWEEP --themisto compressed.aln -i clustering.txt -t 2 --run-rate
+```
+This will append the RATE and KLD columns to the output. RATE values that exceed `1/(number of lineages in clustering.txt)` are considered reliably estimated.
+
+If the reference contains many sequences that have zero or very few pseudoalignments, the denominator should be set to the number of lineages that have a nonzero abundance estimate instead of the total lineage count.
+
+A reliably estimated value means that an abundance estimate from
+mSWEEP has a large effect on how well the statistical model in mSWEEP
+fits to the input alignment data. This translates to a high value in
+the KLD column and the RATE columns, which is derived from the KLD
+values by dividing each value by the sum of all KLDs.
+
+__RATE as implemented in mSWEEP has not been tested thoroughly and is considered experimental.__ Consider using additional methods to verify the correctness of your results after filtering by RATE.
 
 ## More options
 mSWEEP additionally accepts the following flags:
@@ -153,6 +180,11 @@ Likelihood options:
 -q	Mean for the beta-binomial component (default: 0.65).
 -e	Dispersion term for the beta-binomial component (default: 0.01).
 --alphas	Prior counts for the relative abundances, supply as comma-separated nonzero values (default: all 1.0).
+--zero-inflation	Likelihood of an observation that contains 0 pseudoalignments against a reference group (default: 0.01).
+
+Experimental options:
+--run-rate	Calculate relative reliability for each abundance estimate using RATE (default: false).
+--min-hits	Only consider target groups that have at least this many reads align to any sequence in them (default: 0).
 ```
 
 # References

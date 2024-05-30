@@ -22,9 +22,9 @@ mSWEEP --help
 
 ## Precompiled binaries
 Precompiled binaries are available for
-* [Linux x86\_64 (mSWEEP-v2.0.0)](https://github.com/PROBIC/mSWEEP/releases/download/v2.0.0/mSWEEP_linux-v2.0.0.tar.gz).
-* [macOS arm64 (mSWEEP-v2.0.0)](https://github.com/PROBIC/mSWEEP/releases/download/v2.0.0/mSWEEP_macOS-arm64-v2.0.0.tar.gz)
-* [macOS x86\_64 (mSWEEP-v2.0.0)](https://github.com/PROBIC/mSWEEP/releases/download/v2.0.0/mSWEEP_macOS-x86_64-v2.0.0.tar.gz)
+* [Linux x86\_64 (mSWEEP-v2.1.0)](https://github.com/PROBIC/mSWEEP/releases/download/v2.1.0/mSWEEP-v2.1.0-x86_64-redhat-linux.tar.gz).
+* [macOS arm64 (mSWEEP-v2.1.0)](https://github.com/PROBIC/mSWEEP/releases/download/v2.1.0/mSWEEP-v2.1.0-arm64-apple-darwin22.tar.gz).
+* [macOS x86\_64 (mSWEEP-v2.1.0)](https://github.com/PROBIC/mSWEEP/releases/download/v2.1.0/mSWEEP-v2.1.0-x86_64-apple-darwin22.tar.gz)
 
 ## Compiling from source
 ### Requirements

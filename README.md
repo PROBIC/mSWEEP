@@ -92,6 +92,7 @@ i.e. the file format is automatically detected (alignment-writer v0.4.0 and newe
 We recommend running [demix\_check](https://github.com/tmaklin/coreutils_demix_check) on the binned reads and/or [checkm](https://github.com/Ecogenomics/CheckM) on the bin-assembled genomes (BAGs) to evaluate the accuracy of the results.
 
 ## Working with large alignment files
+### Compressing Themisto output files
 For complex input data with many organisms, the pseudoalignment files from Themisto can get infeasibly large. In these cases, [alignment-writer](https://github.com/tmaklin/alignment-writer) can be used to compress the alignment files to <10% of the original size.
 
 mSWEEP >=v2.0.0 can read the compressed alignments in directly by running
@@ -99,6 +100,15 @@ mSWEEP >=v2.0.0 can read the compressed alignments in directly by running
 mSWEEP --themisto-1 fwd_compressed.aln --themisto-2 rev_compressed.aln -i clustering.txt -t 2
 
 ```
+
+### Running estimation on large sparse alignments
+If the target alignment is sparse, meaning that there are target groups which have few/no reads aligning against them in the whole sample, mSWEEP can be instructed to ignore these in the estimation by adding the `--min-hits 1` flag:
+```
+mSWEEP --themisto sparse.aln -i clustering.txt -t 2 --min-hits 1
+```
+This will reduce the runtime and memory use of the estimation proportional to how many target groups are removed. Using `--min-hits 1` does not affect the results beyond differences in computational accuracy.
+
+The `--min-hits` flag also accepts values higher than 1 for pruning target groups with a small number of aligned reads. Using a value higher than 1 will change the resulting values.
 
 ## (experimental) Reliability of abundance estimates
 Add the `--run-rate` flag to calculate a relative reliability value for each abundance estimate using a variation of the [RATE method](https://doi.org/10.1214/18-AOAS1222)

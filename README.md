@@ -24,10 +24,12 @@ In addition to mSWEEP, you will need to install [Themisto](https://github.com/al
 - C++17 compliant compiler.
 - cmake (v3.0 or newer)
 - [LibTorch](https://pytorch.org/get-started/locally/)
-- CUDA Toolkit (if using LibTorch with CUDA support; version depending on downloaded LibTorch)
 
 #### Optional
+- CUDA Toolkit (if using LibTorch with CUDA support; version depending on downloaded LibTorch)
 - Compiler with OpenMP support.
+
+Without a CUDA supported LibTorch and CUDA Toolkit there will be no GPU acceleration.
 
 If your compiler does not support OpenMP, mSWEEP can only be run in
 single-threaded mode. The prebuilt binaries are compiled with OpenMP support.

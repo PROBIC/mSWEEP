@@ -122,7 +122,11 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   // Maximum iterations to run the optimizer for
   args.add_long_argument<size_t>("max-iters", "Maximum number of iterations to run the abundance estimation optimizer for (default: 5000).", (size_t)5000);
   // Tolerance for abundance estimation convergence
-  args.add_long_argument<double>("tol", "Optimization terminates when the bound changes by less than the given tolerance (default: 0.000001).\n\nBootstrapping options:", (double)0.000001);
+  args.add_long_argument<double>("tol", "Optimization terminates when the bound changes by less than the given tolerance (default: 0.000001).", (double)0.000001);
+  // Algorithm to use for abundance estimation
+  args.add_long_argument<std::string>("algorithm", "Which algorithm to use for abundance estimation (one of rcggpu, emgpu (can't be used with --bin-reads), rcgcpu (original mSWEEP); default: rcggpu).", "rcggpu");
+  // Precision for abundance estimation with emgpu algorithm
+  args.add_long_argument<std::string>("emprecision", "Precision to use for the emgpu algorithm (one of float, double; default: double).\n\nBootstrapping options:", "double");
 
   // Number of iterations to run bootstrapping for
   args.add_long_argument<size_t>("iters", "Number of times to rerun estimation with bootstrapped alignments (default: 0).", (size_t)0);
@@ -199,12 +203,25 @@ seamat::DenseMatrix<double> rcg_optl(const cxxargs::Arguments &args, const seama
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   const seamat::DenseMatrix<double> &ec_probs = rcgpar::rcg_optl_mpi(ll_mat, log_ec_counts, prior_counts, args.value<double>("tol"), args.value<size_t>("max-iters"), (rank == 0 && args.value<bool>("verbose") ? log.stream() : of));
+  return ec_probs;
 
 #else
   // Only OpenMP parallelization (if enabled).
-  const seamat::DenseMatrix<double> &ec_probs = rcgpar::rcg_optl_omp(ll_mat, log_ec_counts, prior_counts, args.value<double>("tol"), args.value<size_t>("max-iters"), (args.value<bool>("verbose") ? log.stream() : of));
+  if (args.value<std::string>("algorithm") == "rcggpu") {
+    const seamat::DenseMatrix<double> &ec_probs = rcgpar::rcg_optl_torch(ll_mat, log_ec_counts, prior_counts, args.value<double>("tol"), args.value<size_t>("max-iters"), (args.value<bool>("verbose") ? log.stream() : of));
+    return ec_probs;
+  } else {
+    const seamat::DenseMatrix<double> &ec_probs = rcgpar::rcg_optl_omp(ll_mat, log_ec_counts, prior_counts, args.value<double>("tol"), args.value<size_t>("max-iters"), (args.value<bool>("verbose") ? log.stream() : of));
+    return ec_probs;
+  }
 #endif
-  return ec_probs;
+}
+
+std::vector<double> rcg_optl_em(const cxxargs::Arguments &args, const seamat::Matrix<double> &ll_mat, const std::vector<double> &log_ec_counts, const std::vector<double> &prior_counts, mSWEEP::Log &log) {
+
+  std::ofstream of; // Silence output from ranks > 1 with an empty ofstream
+  std::vector<double> thetas = rcgpar::em_torch(ll_mat, log_ec_counts, prior_counts, args.value<double>("tol"), args.value<size_t>("max-iters"), (args.value<bool>("verbose") ? log.stream() : of), args.value<std::string>("emprecision"));
+  return thetas;
 }
 
 int main (int argc, char *argv[]) {
@@ -424,7 +441,11 @@ int main (int argc, char *argv[]) {
 
 	try {
 	  // Run estimation
-	  sample->store_probs(rcg_optl(args, log_likelihoods->log_mat(), log_likelihoods->log_counts(), prior_counts, log));
+    if (args.value<std::string>("algorithm") == "rcggpu" || args.value<std::string>("algorithm") == "rcgcpu") {
+      sample->store_probs(rcg_optl(args, log_likelihoods->log_mat(), log_likelihoods->log_counts(), prior_counts, log));
+    } else {
+      sample->store_abundances(rcg_optl_em(args, log_likelihoods->log_mat(), log_likelihoods->log_counts(), prior_counts, log));
+    }
 	} catch (std::exception &e) {
 	  finalize("Estimating relative abundances failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;
@@ -442,7 +463,11 @@ int main (int argc, char *argv[]) {
 	// Run binning if requested and write results to files.
 	if (rank == 0) { // root performs the rest.
 	  // Turn the probs into relative abundances
-	  sample->store_abundances(rcgpar::mixture_components(sample->get_probs(), log_likelihoods->log_counts()));
+    if (args.value<std::string>("algorithm") == "rcgcpu") {
+      sample->store_abundances(rcgpar::mixture_components(sample->get_probs(), log_likelihoods->log_counts()));
+    } else if (args.value<std::string>("algorithm") == "rcggpu") {
+      sample->store_abundances(rcgpar::mixture_components_torch(sample->get_probs(), log_likelihoods->log_counts()));
+    }
 
 	  if (args.value<size_t>("min-hits") > 0) {
 	      for (size_t j = 0; j < reference->group_names(i).size(); ++j) {
@@ -528,13 +553,22 @@ int main (int argc, char *argv[]) {
 	    // Estimate with the bootstrapped counts
 	    // Reuse ec_probs since it has already been processed
 	    try {
-	      sample->store_probs(rcg_optl(args, log_likelihoods->log_mat(), resampled_counts, prior_counts, log));
+        if (args.value<std::string>("algorithm") == "rcggpu" || args.value<std::string>("algorithm") == "rcgcpu") {
+          sample->store_probs(rcg_optl(args, log_likelihoods->log_mat(), resampled_counts, prior_counts, log));
+        } else {
+          sample->store_abundances(rcg_optl_em(args, log_likelihoods->log_mat(), resampled_counts, prior_counts, log));
+        }
 	    } catch (std::exception &e) {
 	      finalize("Bootstrap iteration " + std::to_string(k) + "/" + std::to_string(args.value<size_t>("iters")) + " failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	      return 1;
 	    }
-	    if (rank == 0)
-	      sample->store_abundances(rcgpar::mixture_components(sample->get_probs(), resampled_counts));
+	    if (rank == 0) {
+        if (args.value<std::string>("algorithm") == "rcgcpu") {
+          sample->store_abundances(rcgpar::mixture_components(sample->get_probs(), resampled_counts));
+        } else if (args.value<std::string>("algorithm") == "rcggpu") {
+          sample->store_abundances(rcgpar::mixture_components_torch(sample->get_probs(), resampled_counts));
+        }
+      }
 	  }
 	}
       }

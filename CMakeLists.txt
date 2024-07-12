@@ -33,6 +33,11 @@ endif()
 
 ## Check dependencies
 ### Torch
+if(CMAKE_LIBTORCH_PATH)
+  set(Torch_DIR ${CMAKE_LIBTORCH_PATH}/share/cmake/Torch)
+else()
+  message(FATAL_ERROR "Please provide the path to the libtorch installation directory using -DCMAKE_LIBTORCH_PATH")
+endif()
 find_package(Torch REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
@@ -313,7 +318,7 @@ else()
     CMAKE_ARGS      -D CMAKE_ENABLE_MPI_SUPPORT=${MSWEEP_MPI_SUPPORT}
                     -D CMAKE_SEAMAT_HEADERS=${CMAKE_SEAMAT_HEADERS}
 		    -D CMAKE_BITMAGIC_HEADERS=${CMAKE_BITMAGIC_HEADERS}
-        -D CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
+        -D CMAKE_PREFIX_PATH=${CMAKE_LIBTORCH_PATH}
 		    -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 		    -D "CMAKE_C_FLAGS=${CMAKE_C_FLAGS}"
 		    -D "CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"

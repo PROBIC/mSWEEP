@@ -32,6 +32,10 @@ if(CMAKE_BUILD_WITH_FLTO)
 endif()
 
 ## Check dependencies
+### Torch
+find_package(Torch REQUIRED)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+
 find_package(OpenMP)
 if (OPENMP_FOUND)
   set(MSWEEP_OPENMP_SUPPORT 1)
@@ -277,8 +281,8 @@ if (DEFINED CMAKE_SEAMAT_HEADERS)
   message(STATUS "seamat headers provided in: ${CMAKE_SEAMAT_HEADERS}")
 else()
   FetchContent_Declare(seamat
-    GIT_REPOSITORY    https://github.com/tmaklin/seamat.git
-    GIT_TAG           v0.2.2
+    GIT_REPOSITORY    https://github.com/Piketulus/seamat.git
+    GIT_TAG           v0.2.3
     PREFIX            "external"
     SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/seamat"
     BUILD_IN_SOURCE   0
@@ -300,8 +304,8 @@ if (DEFINED CMAKE_RCGPAR_LIBRARY AND DEFINED CMAKE_RCGPAR_HEADERS AND DEFINED CM
   message(STATUS "rcgutils library provided in: ${CMAKE_RCGUTILS_LIBRARY}")
 else()
   FetchContent_Declare(rcgpar
-    GIT_REPOSITORY    https://github.com/tmaklin/rcgpar.git
-    GIT_TAG           v1.1.3
+    GIT_REPOSITORY    https://github.com/Piketulus/rcgpar-gpu.git
+    GIT_TAG           v1.0.0
     PREFIX            "external"
     SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/rcgpar"
     BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/rcgpar"
@@ -309,6 +313,7 @@ else()
     CMAKE_ARGS      -D CMAKE_ENABLE_MPI_SUPPORT=${MSWEEP_MPI_SUPPORT}
                     -D CMAKE_SEAMAT_HEADERS=${CMAKE_SEAMAT_HEADERS}
 		    -D CMAKE_BITMAGIC_HEADERS=${CMAKE_BITMAGIC_HEADERS}
+        -D CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
 		    -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 		    -D "CMAKE_C_FLAGS=${CMAKE_C_FLAGS}"
 		    -D "CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
@@ -387,3 +392,5 @@ target_link_libraries(mSWEEP libmsweep)
 if (OPENMP_FOUND)
   target_link_libraries(mSWEEP OpenMP::OpenMP_CXX)
 endif()
+
+target_link_libraries(mSWEEP "${TORCH_LIBRARIES}")

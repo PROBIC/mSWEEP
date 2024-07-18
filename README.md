@@ -25,11 +25,32 @@ In addition to mSWEEP, you will need to install [Themisto](https://github.com/al
 - cmake (v3.0 or newer)
 - [LibTorch](https://pytorch.org/get-started/locally/)
 
+Notes on downloading LibTorch:
+- If intended for use on the CSC or UH HPC clusters make sure to download the (Pre-cxx11 ABI) version for compatability with older glibc versions
+- If needing an older version of LibTorch due to not having the latest versions of ROCm (like on LUMI), these can be downloaded by changing the versions in the link.
+  - For example: https://download.pytorch.org/libtorch/rocm6.0/libtorch-shared-with-deps-2.3.1%2Brocm6.0.zip to https://download.pytorch.org/libtorch/rocm5.2/libtorch-shared-with-deps-1.13.1%2Brocm5.2.zip
+
 #### Optional
-- CUDA Toolkit (if using LibTorch with CUDA support; version depending on downloaded LibTorch)
+- CUDA Toolkit (if using LibTorch with CUDA support; version depending on downloaded LibTorch) or ROCm (if using LibTorch with ROCm support; version depending on downloaded LibTorch)
 - Compiler with OpenMP support.
 
-Without a CUDA supported LibTorch and CUDA Toolkit there will be no GPU acceleration.
+Without a CUDA or ROCm supported LibTorch and CUDA Toolkit or ROCm there will be no GPU acceleration.
+
+If your compiler does not support OpenMP, mSWEEP can only be run in
+single-threaded mode. The prebuilt binaries are compiled with OpenMP support.
+
+### Compiling
+Clone the mSWEEP repository
+```
+git clone https://github.com/Piketulus/mSWEEP-gpu.git
+```
+enter the directory and runup to date versions of ROCm (LUMI), 
+
+#### Optional
+- CUDA Toolkit (if using LibTorch with CUDA support; version depending on downloaded LibTorch) or ROCm (if using LibTorch with ROCm support; version depending on downloaded LibTorch)
+- Compiler with OpenMP support.
+
+Without a CUDA or ROCm supported LibTorch and CUDA Toolkit or ROCm there will be no GPU acceleration.
 
 If your compiler does not support OpenMP, mSWEEP can only be run in
 single-threaded mode. The prebuilt binaries are compiled with OpenMP support.
@@ -40,6 +61,23 @@ Clone the mSWEEP repository
 git clone https://github.com/Piketulus/mSWEEP-gpu.git
 ```
 enter the directory and run
+```
+> mkdir build
+> cd build
+> cmake -DCMAKE_LIBTORCH_PATH=/absolute/path/to/libtorch ..
+> cmake --build .
+```
+where `/absolute/path/to/libtorch` should be the absolute (!) path to the unzipped LibTorch distribution.
+
+This will compile the mSWEEP executable in `build/bin/mSWEEP`.
+
+For more info on compiling mSWEEP from source, please see the [documentation on compiling mSWEEP](/docs/compilation.md).
+
+# Usage
+More information about using mSWEEP is available in the [usage documentation](/docs/README.md).
+
+## Abundance estimation
+
 ```
 > mkdir build
 > cd build

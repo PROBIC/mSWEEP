@@ -28,7 +28,7 @@ In addition to mSWEEP, you will need to install [Themisto](https://github.com/al
 Notes on downloading LibTorch:
 - If intended for use on the CSC or UH HPC clusters make sure to download the (Pre-cxx11 ABI) version for compatability with older glibc versions.
 - If needing an older version of LibTorch due to not having the latest versions of ROCm (like on LUMI), these can be downloaded by changing the versions in the link.
-  - For example: https://download.pytorch.org/libtorch/rocm6.0/libtorch-shared-with-deps-2.3.1%2Brocm6.0.zip to https://download.pytorch.org/libtorch/rocm5.2/libtorch-shared-with-deps-1.13.1%2Brocm5.2.zip
+  - For example: https://download.pytorch.org/libtorch/rocm6.0/libtorch-shared-with-deps-2.3.1%2Brocm6.0.zip to https://download.pytorch.org/libtorch/rocm5.4.2/libtorch-shared-with-deps-2.0.1%2Brocm5.4.2.zip
 
 #### Optional
 - CUDA Toolkit (if using LibTorch with CUDA support; version depending on downloaded LibTorch) or ROCm (if using LibTorch with ROCm support; version depending on downloaded LibTorch)

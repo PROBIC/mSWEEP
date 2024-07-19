@@ -60,23 +60,6 @@ For more info on compiling mSWEEP from source, please see the [documentation on 
 More information about using mSWEEP is available in the [usage documentation](/docs/README.md).
 
 ## Abundance estimation
-
-```
-> mkdir build
-> cd build
-> cmake -DCMAKE_LIBTORCH_PATH=/absolute/path/to/libtorch ..
-> cmake --build .
-```
-where `/absolute/path/to/libtorch` should be the absolute (!) path to the unzipped LibTorch distribution.
-
-This will compile the mSWEEP executable in `build/bin/mSWEEP`.
-
-For more info on compiling mSWEEP from source, please see the [documentation on compiling mSWEEP](/docs/compilation.md).
-
-# Usage
-More information about using mSWEEP is available in the [usage documentation](/docs/README.md).
-
-## Abundance estimation
 Estimate relative abundances of [Themisto](https://github.com/algbio/themisto) pseudoalignments `fwd.txt` and `rev.txt` using the lineages in `clustering.txt` with two threads by running 
 ```
 mSWEEP --themisto-1 fwd.txt --themisto-2 rev.txt -i clustering.txt -t 2

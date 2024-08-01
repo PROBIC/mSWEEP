@@ -39,7 +39,9 @@ Without a CUDA or ROCm supported LibTorch and CUDA Toolkit or ROCm there will be
 If your compiler does not support OpenMP, the original mSWEEP can only be run in single-threaded mode.
 
 ### Compiling
-Clone the mSWEEP repository
+Before compiling mSWEEP-GPU in HPC environments, it may be useful to check out the [documentation on compiling and running mSWEEP-GPU in HPC environments](/docs/gpucompilation.md).
+
+Clone the mSWEEP-GPU repository
 ```
 git clone https://github.com/Piketulus/mSWEEP-gpu.git
 ```

@@ -12,7 +12,7 @@ module load CUDA GCC/12.2.0 cmake
 Use GCC/12.2.0 instead of GCC which loads version 13.2.0, since there are some incompatibility issues with the versions of CUDA on the system and the new version of GCC that cause compilation not to work.
 
 ### Before running
-When running in a batch script, make sure to **request a GPU** and have **`CUDA` and `GCC` modules loaded in**.
+When running in a batch script, make sure to **request a GPU** and have **`CUDA` and `GCC/12.2.0` modules loaded in**.
 
 ## LUMI
 

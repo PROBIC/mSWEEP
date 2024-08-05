@@ -1,5 +1,5 @@
 # mSWEEP-GPU
-Extension of mSWEEP with GPU acceleration for the abundance estimation algorithm. Adds two new options to the mSWEEP command line interface: `--algorithm` and `--emprecision`.
+Extension/fork of [mSWEEP](https://github.com/PROBIC/mSWEEP) with GPU acceleration for the abundance estimation algorithm. Adds two new options to the mSWEEP command line interface: `--algorithm` and `--emprecision`.
 
 Algorithm descriptions:
 - `rcggpu`: The original mSWEEP algorithm, implemented with LibTorch and can take advantage of a GPU. This algorithm is the fastest of the three, but uses ~25% more memory than the original algorithm. When using the GPU, memory usage is capped by the GPU memory (for example a Nvidia A100 may have 80GB of memory), so very large inputs may run into memory issues. With no GPU, this algorithm will run on the CPU, and is still marginally faster than the original algorithm.

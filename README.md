@@ -3,7 +3,7 @@ Extension/fork of [mSWEEP](https://github.com/PROBIC/mSWEEP) with GPU accelerati
 
 Algorithm descriptions:
 - `rcggpu`: The original mSWEEP algorithm, implemented with LibTorch and can take advantage of a GPU. This algorithm is the fastest of the three, but uses ~25% more memory than the original algorithm. When using the GPU, memory usage is capped by the GPU memory (for example a Nvidia A100 may have 80GB of memory), so very large inputs may run into memory issues. With no GPU, this algorithm will run on the CPU, and is still marginally faster than the original algorithm.
-- `emgpu`: A new algorithm that uses an expectation-maximization algorithm to estimate the relative abundances. This algorithm is slower than `rcggpu`, but uses ~40% less memory than the original algorithm. Inputs that run into memory issues on the GPU with `rcggpu` may still be able to take advantage of the GPU with this algorithm. Also, the precision of the algorithm can be changed with the `--emprecision` flag. The `float` precision is much faster and halves the memory usage, but loses some accuracy compared to the `double` precision and other algorithms. With no GPU, this algorithm will run on the CPU, and is faster than the original algorithm when using the `float` precision, but slower when using the `double` precision. **Cannot be used with `--bin-reads`.**
+- `emgpu`: A new algorithm that uses an expectation-maximization algorithm to estimate the relative abundances. This algorithm is slower than `rcggpu`, but uses ~40% less memory than the original algorithm. Inputs that run into memory issues on the GPU with `rcggpu` may still be able to take advantage of the GPU with this algorithm. Also, the precision of the algorithm can be changed with the `--emprecision` flag. The `float` precision is much faster and halves the memory usage, but loses some accuracy compared to the `double` precision and other algorithms. With no GPU, this algorithm will run on the CPU, and is faster than the original algorithm when using the `float` precision, but slower when using the `double` precision.
 - `rcgcpu`: The original mSWEEP algorithm, running on the CPU. This algorithm is the slowest of the three, but can be improved through OpenMP support and supplying a large number of CPU's.
 
 The default algorithm is set to `rcggpu`, which will use the GPU if available.
@@ -175,7 +175,7 @@ Estimation options:
 --no-fit-model	Do not estimate the abundances. Useful if only the likelihood matrix is required (default: false).
 --max-iters	Maximum number of iterations to run the abundance estimation optimizer for (default: 5000).
 --tol	Optimization terminates when the bound changes by less than the given tolerance (default: 0.000001).
---algorithm Which algorithm to use for abundance estimation (one of rcggpu, emgpu (can't be used with --bin-reads), rcgcpu (original mSWEEP); default: rcggpu).
+--algorithm Which algorithm to use for abundance estimation (one of rcggpu, emgpu, rcgcpu (original mSWEEP); default: rcggpu).
 --emprecision   Precision to use for the emgpu algorithm (one of float, double; default: double).
 
 Bootstrapping options:

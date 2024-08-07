@@ -243,7 +243,7 @@ if (DEFINED CMAKE_TELESCOPE_LIBRARY AND DEFINED CMAKE_TELESCOPE_HEADERS)
 else()
   FetchContent_Declare(telescope
     GIT_REPOSITORY    https://github.com/tmaklin/telescope.git
-    GIT_TAG           v0.7.1
+    GIT_TAG           v0.7.2
     PREFIX            "external"
     SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/telescope"
     BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/telescope"

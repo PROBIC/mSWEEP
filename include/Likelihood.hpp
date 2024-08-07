@@ -135,7 +135,6 @@ private:
     const seamat::DenseMatrix<T> &precalc_lls_mat = this->precalc_lls(masked_group_sizes, n_masked_groups);
 
     this->log_likelihoods.resize(n_masked_groups, num_ecs, std::log(this->zero_inflation));
-#pragma omp parallel for schedule(static) shared(precalc_lls_mat)
     for (size_t j = 0; j < num_ecs; ++j) {
       size_t groups_pos = 0;
       for (size_t i = 0; i < n_groups; ++i) {

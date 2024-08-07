@@ -101,6 +101,7 @@ void Sample::dirichlet_kld(const std::vector<double> &log_ec_hit_counts) {
   size_t cols = this->get_probs().get_cols();
 
   std::vector<double> alphas(rows, 0.0);
+#pragma omp parallel for schedule(static)
   for (size_t i = 0; i < rows; ++i) {
     for (size_t j = 0; j < cols; ++j) {
       size_t num_hits = std::round(std::exp(log_ec_hit_counts[j]));
@@ -111,11 +112,13 @@ void Sample::dirichlet_kld(const std::vector<double> &log_ec_hit_counts) {
   }
 
   double alpha0 = 0.0;
+#pragma omp parallel for schedule(static) reduction(+:alpha0)
   for (size_t i = 0; i < rows; ++i) {
     alpha0 += alphas[i];
   }
 
   this->log_KLDs.resize(rows);
+#pragma omp parallel for schedule(static)
   for (size_t i = 0; i < rows; ++i) {
     double log_theta = std::log(alphas[i]) - std::log(alpha0);
     double alpha_k = alphas[rows - 1];

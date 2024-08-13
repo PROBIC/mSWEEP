@@ -8,6 +8,8 @@ Algorithm descriptions:
 
 The default algorithm is set to `rcggpu`, which will use the GPU if available.
 
+To get a better idea of the performance of these algorithms, check out this benchmark [documentation](/docs/gpubenchmarks.md).
+
 # mSWEEP
 Fast and accurate bacterial community composition estimation on within-species
 level by using pseudoalignments and variational inference.

@@ -27,7 +27,7 @@
 #include <exception>
 
 namespace mSWEEP {
-void ConstructSample(const telescope::Alignment &alignment, const size_t bootstrap_iters, const size_t bootstrap_count, const size_t bootstrap_seed, const bool bin_reads, std::unique_ptr<Sample> &sample) {
+void ConstructSample(const mSWEEP::Alignment &alignment, const size_t bootstrap_iters, const size_t bootstrap_count, const size_t bootstrap_seed, const bool bin_reads, std::unique_ptr<Sample> &sample) {
   // Wrapper for determining which Sample type to construct.
   // Initialize Sample depending on how the alignment needs to be processed.
   if (bootstrap_iters > 0) {
@@ -49,7 +49,7 @@ void ConstructSample(const telescope::Alignment &alignment, const size_t bootstr
   }
 }
 
-void Sample::count_alignments(const telescope::Alignment &alignment) {
+void Sample::count_alignments(const mSWEEP::Alignment &alignment) {
   // Count the number of aligned reads and store in counts_total
   size_t aln_counts_total = 0;
 #pragma omp parallel for schedule(static) reduction(+:aln_counts_total)

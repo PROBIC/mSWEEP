@@ -168,6 +168,11 @@ endif()
 include_directories(${CMAKE_BXZSTR_HEADERS})
 
 ## Check dependencies and download them if not given
+## BitMagic
+set(CMAKE_BITMAGIC_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS/external/telescope/external/BitMagic-7.12.3/src/)
+include_directories(${CMAKE_BITMAGIC_HEADERS})
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS/external/telescope/include)
+
 ## cxxio
 if (DEFINED CMAKE_CXXIO_HEADERS)
   message(STATUS "cxxio headers provided in: ${CMAKE_CXXIO_HEADERS}")
@@ -235,42 +240,6 @@ else()
 endif()
 include_directories(${CMAKE_ALIGNMENT_WRITER_HEADERS})
 target_link_libraries(mSWEEP ${CMAKE_ALIGNMENT_WRITER_LIBRARY})
-
-## telescope
-if (DEFINED CMAKE_TELESCOPE_LIBRARY AND DEFINED CMAKE_TELESCOPE_HEADERS)
-  message(STATUS "telescope headers provided in: ${CMAKE_TELESCOPE_HEADERS}")
-  message(STATUS "telescope library provided in: ${CMAKE_TELESCOPE_LIBRARY}")
-else()
-  FetchContent_Declare(telescope
-    GIT_REPOSITORY    https://github.com/tmaklin/telescope.git
-    GIT_TAG           v0.7.2
-    PREFIX            "external"
-    SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/telescope"
-    BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/telescope"
-    BUILD_IN_SOURCE   0
-    CMAKE_ARGS      -D CMAKE_BXZSTR_HEADERS=${CMAKE_BXZSTR_HEADERS}
-		    -D CMAKE_CXXARGS_HEADERS=${CMAKE_CXXARGS_HEADERS}
-		    -D CMAKE_CXXIO_HEADERS=${CMAKE_CXXIO_HEADERS}
-		    -D CMAKE_ALIGNMENT_WRITER_HEADERS=${CMAKE_ALIGNMENT_WRITER_HEADERS}
-		    -D CMAKE_ALIGNMENT_WRITER_LIBRARY=${CMAKE_ALIGNMENT_WRITER_LIBRARY}
-		    -D CMAKE_BITMAGIC_HEADERS=${CMAKE_CURRENT_SOURCE_DIR}/external/telescope/external/BitMagic-7.12.3/src
-		    -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-		    -D "CMAKE_C_FLAGS=${CMAKE_C_FLAGS}"
-		    -D "CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
-		    -D "CMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
-		    -D "CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
-    INSTALL_COMMAND   ""
-    )
-  FetchContent_MakeAvailable(telescope)
-  add_dependencies(telescope libalignmentwriter)
-  add_dependencies(mSWEEP telescope)
-  set_target_properties(telescope PROPERTIES EXCLUDE_FROM_ALL 1)
-  set(CMAKE_TELESCOPE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/telescope/include)
-  set(CMAKE_TELESCOPE_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/lib/libtelescope.a)
-  set(CMAKE_BITMAGIC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/telescope/external/BitMagic-7.12.3/src)
-endif()
-include_directories(${CMAKE_TELESCOPE_HEADERS} ${CMAKE_BITMAGIC_HEADERS})
-target_link_libraries(mSWEEP ${CMAKE_TELESCOPE_LIBRARY})
 
 ## seamat
 if (DEFINED CMAKE_SEAMAT_HEADERS)

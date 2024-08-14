@@ -34,10 +34,11 @@
 
 #include "cxxargs.hpp"
 #include "Matrix.hpp"
-#include "telescope.hpp"
 #include "cxxio.hpp"
 #include "rcgpar.hpp"
 #include "bin_reads.h"
+
+#include "mSWEEP_alignment.hpp"
 
 #include "mSWEEP_mpi_config.hpp"
 #include "mSWEEP_openmp_config.hpp"
@@ -332,7 +333,8 @@ int main (int argc, char *argv[]) {
 	// To save memory, the alignment can go out of scope.
 	// The necessary values are stored in the Sample class.
 	log << "  reading pseudoalignments" << '\n';
-	std::unique_ptr<telescope::Alignment> alignment;
+	mSWEEP::Alignment alignment(n_refs);
+	// std::unique_ptr<telescope::Alignment> alignment;
 	try {
 	  const std::vector<std::string> &alignment_paths = args.value<std::vector<std::string>>("themisto");
 	  size_t n_files = alignment_paths.size();
@@ -350,16 +352,8 @@ int main (int argc, char *argv[]) {
 	    strands.emplace_back(&std::cin);
 	  }
 
-	  // Read the pseudoalignment
-	  if (n_groups <= std::numeric_limits<uint8_t>::max()) {
-	    telescope::read::ThemistoGrouped(telescope::get_mode(args.value<std::string>("themisto-mode")), n_refs, static_cast<const mSWEEP::AdaptiveReference<uint8_t>*>(&(*reference))->get_group_indicators(i), strands, alignment);
-	  } else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
-	    telescope::read::ThemistoGrouped(telescope::get_mode(args.value<std::string>("themisto-mode")), n_refs, static_cast<const mSWEEP::AdaptiveReference<uint16_t>*>(&(*reference))->get_group_indicators(i), strands, alignment);
-	  } else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
-	    telescope::read::ThemistoGrouped(telescope::get_mode(args.value<std::string>("themisto-mode")), n_refs, static_cast<const mSWEEP::AdaptiveReference<uint32_t>*>(&(*reference))->get_group_indicators(i), strands, alignment);
-	  } else {
-	    telescope::read::ThemistoGrouped(telescope::get_mode(args.value<std::string>("themisto-mode")), n_refs, static_cast<const mSWEEP::AdaptiveReference<uint64_t>*>(&(*reference))->get_group_indicators(i), strands, alignment);
-	  }
+	  alignment.read(args.value<std::string>("themisto-mode"), strands);
+
 	} catch (std::exception &e) {
 	  finalize("Reading the pseudoalignments failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;
@@ -367,7 +361,18 @@ int main (int argc, char *argv[]) {
 
 	// Use the alignment data to populate the log_likelihoods matrix.
 	try {
-	  log_likelihoods = mSWEEP::ConstructAdaptiveLikelihood<double>(*alignment, reference->get_grouping(i), args.value<double>('q'), args.value<double>('e'), args.value<size_t>("min-hits"), args.value<double>("zero-inflation"));
+	    // Read the pseudoalignment
+	    if (n_groups <= std::numeric_limits<uint8_t>::max()) {
+		alignment.add_groups(static_cast<const mSWEEP::AdaptiveReference<uint8_t>*>(&(*reference))->get_group_indicators(i));
+	    } else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
+		alignment.add_groups(static_cast<const mSWEEP::AdaptiveReference<uint16_t>*>(&(*reference))->get_group_indicators(i));
+	    } else if (n_groups <= std::numeric_limits<uint32_t>::max()) {
+		alignment.add_groups(static_cast<const mSWEEP::AdaptiveReference<uint32_t>*>(&(*reference))->get_group_indicators(i));
+	    } else {
+		alignment.add_groups(static_cast<const mSWEEP::AdaptiveReference<uint64_t>*>(&(*reference))->get_group_indicators(i));
+	    }
+
+	    log_likelihoods = mSWEEP::ConstructAdaptiveLikelihood<double>(alignment, reference->get_grouping(i), args.value<double>('q'), args.value<double>('e'), args.value<size_t>("min-hits"), args.value<double>("zero-inflation"));
 	}  catch (std::exception &e) {
 	  finalize("Building the log-likelihood array failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;
@@ -375,9 +380,9 @@ int main (int argc, char *argv[]) {
 
 	// Initialize Sample depending on how the alignment needs to be processed.
 	// Note: this is also only used by the root process in MPI configuration.
-	mSWEEP::ConstructSample(*alignment, args.value<size_t>("iters"), args.value<size_t>("bootstrap-count"), args.value<size_t>("seed"), bin_reads, sample);
+	mSWEEP::ConstructSample(alignment, args.value<size_t>("iters"), args.value<size_t>("bootstrap-count"), args.value<size_t>("seed"), bin_reads, sample);
 
-	log << "  read " << alignment->n_ecs() << " unique alignments" << '\n';
+	log << "  read " << alignment.n_ecs() << " unique alignments" << '\n';
 	log.flush();
       } else {
 	try {

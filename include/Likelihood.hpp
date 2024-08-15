@@ -108,43 +108,61 @@ private:
 
   void fill_ll_mat(const mSWEEP::Alignment &alignment, const std::vector<V> &group_sizes, const size_t n_groups, const size_t min_hits) {
     size_t num_ecs = alignment.n_ecs();
+    size_t n_targets = alignment.get_n_targets();
+
+    bm::sparse_vector<V, bm::bvector<>> group_counts;
+    for (size_t i = 0; i < num_ecs; ++i) {
+	for (size_t j = 0; j < n_targets; ++j) {
+	    if (alignment(i, j)) {
+		group_counts.inc(alignment.get_groups()[j]*num_ecs + i);
+	    }
+	}
+    }
 
     bool mask_groups = min_hits > 0;
     this->groups_mask = std::vector<bool>(n_groups, !mask_groups);
     std::vector<V> masked_group_sizes;
+    std::vector<size_t> groups_pos(n_groups, 0);
+    size_t n_masked_groups = 0;
     if (mask_groups) {
 	std::vector<size_t> group_hit_counts(n_groups, (size_t)0);
 	// Create mask identifying groups that have at least 1 alignment
+#pragma omp parallel for schedule(static) reduction(vec_size_t_plus:group_hit_counts)
 	for (size_t i = 0; i < num_ecs; ++i) {
-	    std::vector<size_t> ec_hit_counts = alignment(i);
 	    for (size_t j = 0; j < n_groups; ++j) {
-		group_hit_counts[j] += ec_hit_counts[j] * alignment.reads_in_ec(i);
+		group_hit_counts[j] += group_counts[i*n_groups + j] * alignment.reads_in_ec(i);
 	    }
 	}
+
 	for (size_t i = 0; i < n_groups; ++i) {
 	    this->groups_mask[i] = groups_mask[i] || (group_hit_counts[i] >= min_hits);
 	    if (this->groups_mask[i]) {
+		groups_pos[i] = n_masked_groups;
 		masked_group_sizes.push_back(group_sizes[i]);
+		++n_masked_groups;
 	    }
 	}
     } else {
 	masked_group_sizes = group_sizes;
+#pragma omp parallel for schedule(static)
+	for (size_t i = 0; i < n_groups; ++i) {
+	    groups_pos[i] = i;
+	}
     }
-    size_t n_masked_groups = masked_group_sizes.size();
+    n_masked_groups = masked_group_sizes.size();
 
     this->update_bb_parameters(masked_group_sizes, n_masked_groups, this->bb_constants);
     const seamat::DenseMatrix<T> &precalc_lls_mat = this->precalc_lls(masked_group_sizes, n_masked_groups);
 
     this->log_likelihoods.resize(n_masked_groups, num_ecs, std::log(this->zero_inflation));
-    for (size_t j = 0; j < num_ecs; ++j) {
-      size_t groups_pos = 0;
-      std::vector<size_t> ec_hit_counts = alignment(j);
-      for (size_t i = 0; i < n_groups; ++i) {
+
+#pragma omp parallel for schedule(static)
+    for (size_t i = 0; i < n_groups; ++i) {
 	if (this->groups_mask[i]) {
-	  this->log_likelihoods(groups_pos, j) = precalc_lls_mat(groups_pos, ec_hit_counts[i]);
-	  ++groups_pos;
+	    for (size_t j = 0; j < num_ecs; ++j) {
+		this->log_likelihoods(groups_pos[i], j) = precalc_lls_mat(groups_pos[i], group_counts[i*num_ecs + j]);
+	    }
 	}
-      }
     }
   }
 

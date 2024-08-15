@@ -167,22 +167,30 @@ public:
 
     void collapse() {
 	std::unordered_map<size_t, size_t> mymap;
+
 	bm::bvector<> collapsed_bits;
 	size_t ec_id = 0;
 	size_t unl = std::hash<std::vector<bool>>{}(std::vector<bool>(this->n_targets, false));
+
+	std::vector<size_t> hashes(this->n_queries);
+
+#pragma omp parallel for schedule(static)
 	for (size_t i = 0; i < this->n_queries; ++i) {
 	    std::vector<bool> aln(this->n_targets, false);
 	    for (size_t j = 0; j < this->n_targets; ++j) {
 		aln[j] = this->bits[i*this->n_targets + j];
 	    }
-	    size_t hash = std::hash<std::vector<bool>>{}(aln);
-	    bool any_aligned = hash != unl;
+	    hashes[i] = std::hash<std::vector<bool>>{}(aln);
+	}
+
+	for (size_t i = 0; i < this->n_queries; ++i) {
+	    bool any_aligned = hashes[i] != unl;
 	    if (any_aligned) {
-		auto got = mymap.find(hash);
+		auto got = mymap.find(hashes[i]);
 		if (got == mymap.end()) {
-		    mymap.insert(std::make_pair(hash, ec_id));
+		    mymap.insert(std::make_pair(hashes[i], ec_id));
 		    for (size_t j = 0; j < this->n_targets; ++j) {
-			collapsed_bits[ec_id*this->n_targets + j] = aln[j];
+			collapsed_bits[ec_id*this->n_targets + j] = this->bits[i*this->n_targets + j];
 		    }
 		    this->ec_counts.emplace_back(1);
 		    this->ec_read_ids.emplace_back(std::vector<uint32_t>({(uint32_t)i}));
@@ -199,14 +207,9 @@ public:
     size_t n_ecs() const { return this->ec_counts.size(); };
     size_t n_reads() const { return this->n_queries; };
     size_t reads_in_ec(const size_t i) const { return this->ec_counts[i]; };
+    size_t get_n_targets() const { return this->n_targets; };
 
-    std::vector<size_t> operator()(const size_t row) const {
-	std::vector<size_t> ret(this->n_groups, 0);
-	for (size_t i = 0; i < this->n_targets; ++i) {
-	    ret[this->group_indicators[i]] += this->bits[row*n_targets + i];
-	}
-	return ret;
-    }
+    bool operator()(const size_t row, const size_t col) const { return this->bits[row*this->n_targets + col]; }
 
     const std::vector<std::vector<uint32_t>>& get_aligned_reads() const {
 	return this->ec_read_ids;
@@ -222,6 +225,8 @@ public:
 	}
 	this->n_groups = _n_groups + 1;
     }
+
+    const std::vector<size_t>& get_groups() const { return this->group_indicators; };
 
 };
 }

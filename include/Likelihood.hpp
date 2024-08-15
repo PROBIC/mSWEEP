@@ -118,7 +118,7 @@ private:
 	for (size_t i = 0; i < num_ecs; ++i) {
 	    std::vector<size_t> ec_hit_counts = alignment(i);
 	    for (size_t j = 0; j < n_groups; ++j) {
-		group_hit_counts[j] += ec_hit_counts[j];
+		group_hit_counts[j] += ec_hit_counts[j] * alignment.reads_in_ec(i);
 	    }
 	}
 	for (size_t i = 0; i < n_groups; ++i) {
@@ -153,7 +153,7 @@ private:
     this->log_ec_counts.resize(alignment.n_ecs(), 0);
 #pragma omp parallel for schedule(static)
     for (size_t i = 0; i < alignment.n_ecs(); ++i) {
-      this->log_ec_counts[i] = 0.0;
+	this->log_ec_counts[i] = std::log(alignment.reads_in_ec(i));
     }
   }
 

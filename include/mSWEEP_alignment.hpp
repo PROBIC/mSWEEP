@@ -28,18 +28,23 @@
 #include "bm64.h"
 #include "unpack.hpp"
 
+#include "mSWEEP_openmp_config.hpp"
+
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <unordered_map>
 
 namespace mSWEEP {
 class Alignment {
 private:
-    bm::bvector<> bits;
     size_t n_targets;
     size_t n_queries;
     std::vector<size_t> group_indicators;
     size_t n_groups;
+    std::vector<std::vector<uint32_t>> ec_read_ids;
+    std::vector<size_t> ec_counts;
+    bm::bvector<> bits;
 
 public:
     Alignment(size_t _n_targets) {
@@ -161,12 +166,39 @@ public:
     }
 
     void collapse() {
-	
+	std::unordered_map<size_t, size_t> mymap;
+	bm::bvector<> collapsed_bits;
+	size_t ec_id = 0;
+	size_t unl = std::hash<std::vector<bool>>{}(std::vector<bool>(this->n_targets, false));
+	for (size_t i = 0; i < this->n_queries; ++i) {
+	    std::vector<bool> aln(this->n_targets, false);
+	    for (size_t j = 0; j < this->n_targets; ++j) {
+		aln[j] = this->bits[i*this->n_targets + j];
+	    }
+	    size_t hash = std::hash<std::vector<bool>>{}(aln);
+	    bool any_aligned = hash != unl;
+	    if (any_aligned) {
+		auto got = mymap.find(hash);
+		if (got == mymap.end()) {
+		    mymap.insert(std::make_pair(hash, ec_id));
+		    for (size_t j = 0; j < this->n_targets; ++j) {
+			collapsed_bits[ec_id*this->n_targets + j] = aln[j];
+		    }
+		    this->ec_counts.emplace_back(1);
+		    this->ec_read_ids.emplace_back(std::vector<uint32_t>({(uint32_t)i}));
+		    ++ec_id;
+		} else {
+		    ++this->ec_counts[got->second];
+		    this->ec_read_ids[got->second].emplace_back(i);
+		}
+	    }
+	}
+	this->bits = std::move(collapsed_bits);
     }
 
-    size_t n_ecs() const { return this->n_queries; };
+    size_t n_ecs() const { return this->ec_counts.size(); };
     size_t n_reads() const { return this->n_queries; };
-    size_t reads_in_ec(const size_t i=0) const { return 1; };
+    size_t reads_in_ec(const size_t i) const { return this->ec_counts[i]; };
 
     std::vector<size_t> operator()(const size_t row) const {
 	std::vector<size_t> ret(this->n_groups, 0);
@@ -176,12 +208,8 @@ public:
 	return ret;
     }
 
-    std::vector<std::vector<uint32_t>> get_aligned_reads() const {
-	std::vector<std::vector<uint32_t>> ret(this->n_queries, std::vector<uint32_t>(1, 0));
-	for (size_t i = 0; i < n_queries; ++i) {
-	    ret[i][0] = i;
-	}
-	return ret;
+    const std::vector<std::vector<uint32_t>>& get_aligned_reads() const {
+	return this->ec_read_ids;
     }
 
     template <typename T>

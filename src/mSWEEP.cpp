@@ -353,6 +353,7 @@ int main (int argc, char *argv[]) {
 	  }
 
 	  alignment.read(args.value<std::string>("themisto-mode"), strands);
+	  alignment.collapse();
 
 	} catch (std::exception &e) {
 	  finalize("Reading the pseudoalignments failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);

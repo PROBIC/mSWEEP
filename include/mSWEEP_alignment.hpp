@@ -175,24 +175,22 @@ public:
 #endif
 
 
-	std::vector<size_t> hashes(this->n_queries);
-	size_t unl = std::hash<std::vector<bool>>{}(std::vector<bool>(this->n_targets, false));
 	std::vector<std::unordered_map<size_t, std::pair<size_t, size_t>>> mymap(n_threads);
 	std::vector<std::vector<size_t>> my_ec_counts(n_threads);
 	std::vector<std::vector<std::vector<uint32_t>>> my_ec_read_ids(n_threads);
 	size_t ec_id = 0;
 #pragma omp parallel for schedule(static) firstprivate(ec_id)
 	for (size_t i = 0; i < this->n_queries; ++i) {
-	    std::vector<bool> aln(this->n_targets, false);
-	    for (size_t j = 0; j < this->n_targets; ++j) {
-		aln[j] = this->bits[i*this->n_targets + j];
-	    }
-	    hashes[i] = std::hash<std::vector<bool>>{}(aln);
-	    bool any_aligned = hashes[i] != unl;
-	    if (any_aligned) {
-		auto got = mymap[omp_get_thread_num()].find(hashes[i]);
+	    if (bits.any_range(i*this->n_targets, (i + 1)*this->n_targets - 1)) {
+		size_t hash = 0;
+		for (size_t j = 0; j < this->n_targets; ++j) {
+		    if (this->bits[i*this->n_targets + j]) {
+			hash ^= j + 0x517cc1b727220a95 + (hash << 6) + (hash >> 2);
+		    }
+		}
+		auto got = mymap[omp_get_thread_num()].find(hash);
 		if (got == mymap[omp_get_thread_num()].end()) {
-		    mymap[omp_get_thread_num()].insert(std::make_pair(hashes[i], std::make_pair(ec_id, i*this->n_targets)));//i*this->n_targets));
+		    mymap[omp_get_thread_num()].insert(std::make_pair(hash, std::make_pair(ec_id, i*this->n_targets)));
 		    my_ec_counts[omp_get_thread_num()].emplace_back(1);
 		    my_ec_read_ids[omp_get_thread_num()].emplace_back(std::vector<uint32_t>({(uint32_t)i}));
 		    ++ec_id;

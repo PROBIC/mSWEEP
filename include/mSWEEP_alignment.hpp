@@ -180,17 +180,28 @@ public:
 	this->ec_counts = std::vector<size_t>(n_ecs, 0);
 	this->ec_read_ids = std::vector<std::vector<uint32_t>>(n_ecs);
 	size_t i = 0;
-	bm::bvector<> collapsed_bits;
-	collapsed_bits.resize(n_ecs*this->n_targets);
-	for (auto kv : map) {
-	    this->ec_read_ids[i] = std::move(kv.second);
-	    this->ec_counts[i] = this->ec_read_ids[i].size();
-	    for (size_t k = 0; k < this->n_targets; ++k) {
-		collapsed_bits[i*this->n_targets + k] = this->bits[this->ec_read_ids[i][0]*this->n_targets + k];
+	std::vector<bm::bvector<>> collapsed_bits(n_threads);
+
+#pragma omp parallel
+	{
+	    size_t i = 0;
+	    size_t thread_id = omp_get_thread_num();
+	    collapsed_bits[thread_id].resize(n_ecs*this->n_targets);
+	    for(auto element = map.begin(); element !=map.end(); ++element, i++) {
+		if(i%n_threads == thread_id) {
+		    this->ec_read_ids[i] = std::move(element->second);
+		    this->ec_counts[i] = this->ec_read_ids[i].size();
+		    for (size_t k = 0; k < this->n_targets; ++k) {
+			collapsed_bits[thread_id][i*this->n_targets + k] = this->bits[this->ec_read_ids[i][0]*this->n_targets + k];
+		    }
+		}
 	    }
-	    ++i;
 	}
-	this->bits = std::move(collapsed_bits);
+
+	this->bits.clear();
+	for (size_t i = 0; i < n_threads; ++i) {
+	    this->bits.bit_or(collapsed_bits[i]);
+	}
     }
 
     size_t n_ecs() const { return this->ec_counts.size(); };

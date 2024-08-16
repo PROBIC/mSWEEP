@@ -119,19 +119,14 @@ private:
 #endif
 
     // This double loop is currently the slowest part in the input reading
-    std::vector<bm::sparse_vector<V, bm::bvector<>>> local_counts(n_threads);
+    std::vector<size_t> group_counts(num_ecs*n_groups, 0);
 #pragma omp parallel for schedule(static)
     for (size_t i = 0; i < num_ecs; ++i) {
 	for (size_t j = 0; j < n_targets; ++j) {
 	    if (alignment(i, j)) {
-		local_counts[omp_get_thread_num()].inc(alignment.get_groups()[j]*num_ecs + i);
+		++group_counts[alignment.get_groups()[j]*num_ecs + i];
 	    }
 	}
-    }
-
-    bm::sparse_vector<V, bm::bvector<>> group_counts = std::move(local_counts[0]);
-    for (size_t i = 1; i < n_threads; ++i) {
-	group_counts.merge(local_counts[i]);
     }
 
     bool mask_groups = min_hits > 0;

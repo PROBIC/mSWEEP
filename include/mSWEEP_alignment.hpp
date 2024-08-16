@@ -33,6 +33,7 @@
 #include <fstream>
 #include <sstream>
 #include <unordered_map>
+#include <map>
 
 namespace mSWEEP {
 class Alignment {
@@ -161,7 +162,7 @@ public:
 	    }
 	}
 
-	std::unordered_map<size_t, std::vector<uint32_t>> map;
+	std::map<size_t, std::vector<uint32_t>> map;
 	for (size_t i = 0; i < n_threads; ++i) {
 	    for (auto kv : mymap[i]) {
 		auto got = map.find(kv.first);

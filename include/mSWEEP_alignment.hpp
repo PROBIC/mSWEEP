@@ -32,7 +32,6 @@
 
 #include <fstream>
 #include <sstream>
-#include <iostream>
 #include <unordered_map>
 
 namespace mSWEEP {
@@ -52,19 +51,6 @@ public:
     }
 
     void ReadPlaintextLine(const size_t n_targets, std::string &line, bm::bvector<>::bulk_insert_iterator &it) {
-	// telescope::ReadPlaintextLine
-	//
-	// Reads a line in a plaintext alignment file from Themisto
-	// (https://github.com/algbio/themisto) into the bm::bvector<> `it`
-	// inserts to.
-	//
-	// Input:
-	//   `n_targets`: number of pseudoalignment targets (reference
-	//                sequences). It's not possible to infer this from the Themisto
-	//                file format so has to be provided separately.
-	//   `line`: the line from the alignment file to read in.
-	//   `it`: insert iterator to the bm::bvector<> variable for storing the alignment.
-	//
 	std::string part;
 	std::stringstream partition(line);
 
@@ -79,24 +65,6 @@ public:
     }
 
     size_t ReadPlaintextAlignment(const size_t n_targets, std::string &line, std::istream *stream, bm::bvector<> *ec_configs) {
-	// telescope::ReadPlaintextAlignment
-	//
-	// Reads a plaintext alignment file from Themisto
-	// (https://github.com/algbio/themisto) into `*ec_configs` and
-	// return the number of reads in the file (both unaligned and
-	// aligned).
-	//
-	// Input:
-	//   `n_targets`: number of pseudoalignment targets (reference
-	//                sequences). It's not possible to infer this from the Themisto
-	//                file format so has to be provided separately.
-	//   `line`: read each line into this variable.
-	//     NOTE: the contents of the *first* line should already be stored in this variable.
-	//   `stream`: pointer to an istream opened on the pseudoalignment file.
-	//   `ec_configs`: pointer to the output variable that will contain the alignment.
-	// Output:
-	//   `n_reads`: total number of reads in the pseudoalignment (unaligned + aligned).
-	//
 	bm::bvector<>::bulk_insert_iterator it(*ec_configs); // Bulk insert iterator buffers the insertions
 
 	size_t n_reads = 1;
@@ -173,7 +141,6 @@ public:
 	    n_threads = omp_get_num_threads();
 	}
 #endif
-
 
 	std::vector<std::unordered_map<size_t, std::pair<size_t, size_t>>> mymap(n_threads);
 	std::vector<std::vector<size_t>> my_ec_counts(n_threads);

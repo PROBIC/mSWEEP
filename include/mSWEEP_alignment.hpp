@@ -166,41 +166,76 @@ public:
     }
 
     void collapse() {
-	std::unordered_map<size_t, size_t> mymap;
+	size_t n_threads = 1;
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
+#pragma omp parallel
+	{
+	    n_threads = omp_get_num_threads();
+	}
+#endif
 
-	bm::bvector<> collapsed_bits;
-	size_t ec_id = 0;
-	size_t unl = std::hash<std::vector<bool>>{}(std::vector<bool>(this->n_targets, false));
 
 	std::vector<size_t> hashes(this->n_queries);
-
-#pragma omp parallel for schedule(static)
+	size_t unl = std::hash<std::vector<bool>>{}(std::vector<bool>(this->n_targets, false));
+	std::vector<std::unordered_map<size_t, std::pair<size_t, size_t>>> mymap(n_threads);
+	std::vector<std::vector<size_t>> my_ec_counts(n_threads);
+	std::vector<std::vector<std::vector<uint32_t>>> my_ec_read_ids(n_threads);
+	size_t ec_id = 0;
+#pragma omp parallel for schedule(static) firstprivate(ec_id)
 	for (size_t i = 0; i < this->n_queries; ++i) {
 	    std::vector<bool> aln(this->n_targets, false);
 	    for (size_t j = 0; j < this->n_targets; ++j) {
 		aln[j] = this->bits[i*this->n_targets + j];
 	    }
 	    hashes[i] = std::hash<std::vector<bool>>{}(aln);
-	}
-
-	for (size_t i = 0; i < this->n_queries; ++i) {
 	    bool any_aligned = hashes[i] != unl;
 	    if (any_aligned) {
-		auto got = mymap.find(hashes[i]);
-		if (got == mymap.end()) {
-		    mymap.insert(std::make_pair(hashes[i], ec_id));
-		    for (size_t j = 0; j < this->n_targets; ++j) {
-			collapsed_bits[ec_id*this->n_targets + j] = this->bits[i*this->n_targets + j];
-		    }
-		    this->ec_counts.emplace_back(1);
-		    this->ec_read_ids.emplace_back(std::vector<uint32_t>({(uint32_t)i}));
+		auto got = mymap[omp_get_thread_num()].find(hashes[i]);
+		if (got == mymap[omp_get_thread_num()].end()) {
+		    mymap[omp_get_thread_num()].insert(std::make_pair(hashes[i], std::make_pair(ec_id, i*this->n_targets)));//i*this->n_targets));
+		    my_ec_counts[omp_get_thread_num()].emplace_back(1);
+		    my_ec_read_ids[omp_get_thread_num()].emplace_back(std::vector<uint32_t>({(uint32_t)i}));
 		    ++ec_id;
 		} else {
-		    ++this->ec_counts[got->second];
-		    this->ec_read_ids[got->second].emplace_back(i);
+		    ++my_ec_counts[omp_get_thread_num()][got->second.first];
+		    my_ec_read_ids[omp_get_thread_num()][got->second.first].emplace_back(i);
 		}
 	    }
 	}
+
+	bm::bvector<> collapsed_bits;
+	if (n_threads == 1) {
+	    this->ec_counts = std::move(my_ec_counts[0]);
+	    this->ec_read_ids = std::move(my_ec_read_ids[0]);
+	    for (auto kv : mymap[0]) {
+		for (size_t k = 0; k < this->n_targets; ++k) {
+		    collapsed_bits[kv.second.first*this->n_targets + k] = bits[kv.second.second + k];
+		}
+	    }
+	} else {
+	    std::unordered_map<size_t, size_t> map;
+	    size_t j = 0;
+	    for (size_t i = 0; i < n_threads; ++i) {
+		for (auto kv : mymap[i]) {
+		    auto got = map.find(kv.first);
+		    if (got == map.end()) {
+			map.insert(std::make_pair(kv.first, j));
+			this->ec_counts.emplace_back(my_ec_counts[i][kv.second.first]);
+			this->ec_read_ids.emplace_back(my_ec_read_ids[i][kv.second.first]);
+			for (size_t k = 0; k < this->n_targets; ++k) {
+			    collapsed_bits[j*this->n_targets + k] = bits[kv.second.second + k];
+			}
+			++j;
+		    } else {
+			this->ec_counts[got->second] += my_ec_counts[i][kv.second.first];
+			for (size_t k = 0; k < my_ec_read_ids[i][kv.second.first].size(); ++k) {
+			    this->ec_read_ids[got->second].emplace_back(my_ec_read_ids[i][kv.second.first][k]);
+			}
+		    }
+		}
+	    }
+	}
+
 	this->bits = std::move(collapsed_bits);
     }
 

@@ -140,7 +140,7 @@ private:
 #pragma omp parallel for schedule(static) reduction(vec_size_t_plus:group_hit_counts)
 	for (size_t i = 0; i < num_ecs; ++i) {
 	    for (size_t j = 0; j < n_groups; ++j) {
-		group_hit_counts[j] += group_counts[i*n_groups + j] * alignment.reads_in_ec(i);
+		group_hit_counts[j] += (group_counts[i*n_groups + j] > 0) * alignment.reads_in_ec(i);
 	    }
 	}
 

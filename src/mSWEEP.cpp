@@ -353,7 +353,10 @@ int main (int argc, char *argv[]) {
 	  }
 
 	  alignment.read(args.value<std::string>("themisto-mode"), strands);
+	  log << "  read alignments for " << alignment.n_reads() << " reads" << '\n';
+	  log << "Building equivalence classes" << '\n';
 	  alignment.collapse();
+	  log << "  found " << alignment.n_ecs() << " unique alignments" << '\n';
 
 	} catch (std::exception &e) {
 	  finalize("Reading the pseudoalignments failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
@@ -363,6 +366,7 @@ int main (int argc, char *argv[]) {
 	// Use the alignment data to populate the log_likelihoods matrix.
 	try {
 	    // Read the pseudoalignment
+	    log << "Computing the likelihood matrix" << '\n';
 	    if (n_groups <= std::numeric_limits<uint8_t>::max()) {
 		alignment.add_groups(static_cast<const mSWEEP::AdaptiveReference<uint8_t>*>(&(*reference))->get_group_indicators(i));
 	    } else if (n_groups <= std::numeric_limits<uint16_t>::max()) {
@@ -383,7 +387,6 @@ int main (int argc, char *argv[]) {
 	// Note: this is also only used by the root process in MPI configuration.
 	mSWEEP::ConstructSample(alignment, args.value<size_t>("iters"), args.value<size_t>("bootstrap-count"), args.value<size_t>("seed"), bin_reads, sample);
 
-	log << "  read " << alignment.n_ecs() << " unique alignments" << '\n';
 	log.flush();
       } else {
 	try {

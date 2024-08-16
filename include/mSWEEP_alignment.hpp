@@ -220,17 +220,27 @@ public:
 		    auto got = map.find(kv.first);
 		    if (got == map.end()) {
 			map.insert(std::make_pair(kv.first, j));
-			this->ec_counts.emplace_back(my_ec_counts[i][kv.second.first]);
-			this->ec_read_ids.emplace_back(my_ec_read_ids[i][kv.second.first]);
+			// Move leaves the values in my_X indeterminate but that's ok
+			// since each element in my_X is accessed only once
+			this->ec_counts.insert(this->ec_counts.end(),
+					       std::make_move_iterator(my_ec_counts[i].begin() + kv.second.first),
+					       std::make_move_iterator(my_ec_counts[i].begin() + kv.second.first + 1));
+			this->ec_read_ids.emplace_back(std::vector<uint32_t>());
+			this->ec_read_ids.back().insert(this->ec_read_ids.back().end(),
+							std::make_move_iterator(my_ec_read_ids[i][kv.second.first].begin()),
+							std::make_move_iterator(my_ec_read_ids[i][kv.second.first].end()));
+
 			for (size_t k = 0; k < this->n_targets; ++k) {
 			    collapsed_bits[j*this->n_targets + k] = bits[kv.second.second + k];
 			}
 			++j;
 		    } else {
+			// This is where the move would be bad if the elements were accessed more than once
 			this->ec_counts[got->second] += my_ec_counts[i][kv.second.first];
-			for (size_t k = 0; k < my_ec_read_ids[i][kv.second.first].size(); ++k) {
-			    this->ec_read_ids[got->second].emplace_back(my_ec_read_ids[i][kv.second.first][k]);
-			}
+
+			this->ec_read_ids[got->second].insert(this->ec_read_ids[got->second].end(),
+							      std::make_move_iterator(my_ec_read_ids[i][kv.second.first].begin()),
+							      std::make_move_iterator(my_ec_read_ids[i][kv.second.first].end()));
 		    }
 		}
 	    }

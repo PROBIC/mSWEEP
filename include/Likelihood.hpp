@@ -124,7 +124,7 @@ private:
     for (size_t i = 0; i < num_ecs; ++i) {
 	for (size_t j = 0; j < n_targets; ++j) {
 	    if (alignment(i, j)) {
-		local_counts[omp_get_thread_num()].inc(alignment.get_groups()[j]*num_ecs + i);
+		local_counts[omp_get_thread_num()].inc((size_t)((size_t)alignment.get_groups()[j]*num_ecs) + i);
 	    }
 	}
     }

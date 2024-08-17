@@ -138,9 +138,9 @@ private:
 	std::vector<size_t> group_hit_counts(n_groups, (size_t)0);
 	// Create mask identifying groups that have at least 1 alignment
 #pragma omp parallel for schedule(static) reduction(vec_size_t_plus:group_hit_counts)
-	for (size_t i = 0; i < num_ecs; ++i) {
-	    for (size_t j = 0; j < n_groups; ++j) {
-		group_hit_counts[j] += (group_counts[i*n_groups + j] > 0) * alignment.reads_in_ec(i);
+	for (size_t j = 0; j < n_groups; ++j) {
+	    for (size_t i = 0; i < num_ecs; ++i) {
+		group_hit_counts[j] += (group_counts[j*num_ecs + i] > 0) * alignment.reads_in_ec(i);
 	    }
 	}
 

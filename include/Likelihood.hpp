@@ -26,7 +26,6 @@
 #define MSWEEP_LIKELIHOOD_HPP
 
 #include "Matrix.hpp"
-#include "telescope.hpp"
 
 #include "mSWEEP_openmp_config.hpp"
 
@@ -41,6 +40,7 @@
 #include <algorithm>
 #include <memory>
 
+#include "mSWEEP_alignment.hpp"
 #include "Grouping.hpp"
 
 namespace mSWEEP {
@@ -106,52 +106,91 @@ private:
     return ll_mat;
   }
 
-  void fill_ll_mat(const telescope::Alignment &alignment, const std::vector<V> &group_sizes, const size_t n_groups, const size_t min_hits) {
+  void fill_ll_mat(const mSWEEP::Alignment &alignment, const std::vector<V> &group_sizes, const size_t n_groups, const size_t min_hits) {
     size_t num_ecs = alignment.n_ecs();
+    size_t n_targets = alignment.get_n_targets();
+
+    size_t n_threads = 1;
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
+#pragma omp parallel
+    {
+	n_threads = omp_get_num_threads();
+    }
+#endif
+
+    // This double loop is currently the slowest part in the input reading
+    std::vector<bm::sparse_vector<V, bm::bvector<>>> local_counts(n_threads);
+#pragma omp parallel for schedule(static)
+    for (size_t i = 0; i < num_ecs; ++i) {
+	for (size_t j = 0; j < n_targets; ++j) {
+	    if (alignment(i, j)) {
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
+		local_counts[omp_get_thread_num()].inc((size_t)((size_t)alignment.get_groups()[j]*num_ecs) + i);
+#else
+		local_counts[0].inc((size_t)((size_t)alignment.get_groups()[j]*num_ecs) + i);
+#endif
+	    }
+	}
+    }
+
+    bm::sparse_vector<V, bm::bvector<>> group_counts = std::move(local_counts[0]);
+    for (size_t i = 1; i < n_threads; ++i) {
+	group_counts.merge(local_counts[i]);
+    }
 
     bool mask_groups = min_hits > 0;
     this->groups_mask = std::vector<bool>(n_groups, !mask_groups);
     std::vector<V> masked_group_sizes;
+    std::vector<size_t> groups_pos(n_groups, 0);
+    size_t n_masked_groups = 0;
     if (mask_groups) {
 	std::vector<size_t> group_hit_counts(n_groups, (size_t)0);
 	// Create mask identifying groups that have at least 1 alignment
-	for (size_t i = 0; i < num_ecs; ++i) {
-	    for (size_t j = 0; j < n_groups; ++j) {
-		group_hit_counts[j] += (alignment(j, i) > 0) * alignment.reads_in_ec(i);
+#pragma omp parallel for schedule(static) reduction(vec_size_t_plus:group_hit_counts)
+	for (size_t j = 0; j < n_groups; ++j) {
+	    for (size_t i = 0; i < num_ecs; ++i) {
+		group_hit_counts[j] += (group_counts[j*num_ecs + i] > 0) * alignment.reads_in_ec(i);
 	    }
 	}
+
 	for (size_t i = 0; i < n_groups; ++i) {
 	    this->groups_mask[i] = groups_mask[i] || (group_hit_counts[i] >= min_hits);
 	    if (this->groups_mask[i]) {
+		groups_pos[i] = n_masked_groups;
 		masked_group_sizes.push_back(group_sizes[i]);
+		++n_masked_groups;
 	    }
 	}
     } else {
 	masked_group_sizes = group_sizes;
+#pragma omp parallel for schedule(static)
+	for (size_t i = 0; i < n_groups; ++i) {
+	    groups_pos[i] = i;
+	}
     }
-    size_t n_masked_groups = masked_group_sizes.size();
+    n_masked_groups = masked_group_sizes.size();
 
     this->update_bb_parameters(masked_group_sizes, n_masked_groups, this->bb_constants);
     const seamat::DenseMatrix<T> &precalc_lls_mat = this->precalc_lls(masked_group_sizes, n_masked_groups);
 
     this->log_likelihoods.resize(n_masked_groups, num_ecs, std::log(this->zero_inflation));
-    for (size_t j = 0; j < num_ecs; ++j) {
-      size_t groups_pos = 0;
-      for (size_t i = 0; i < n_groups; ++i) {
+
+#pragma omp parallel for schedule(static)
+    for (size_t i = 0; i < n_groups; ++i) {
 	if (this->groups_mask[i]) {
-	  this->log_likelihoods(groups_pos, j) = precalc_lls_mat(groups_pos, alignment(i, j));
-	  ++groups_pos;
+	    for (size_t j = 0; j < num_ecs; ++j) {
+		this->log_likelihoods(groups_pos[i], j) = precalc_lls_mat(groups_pos[i], group_counts[i*num_ecs + j]);
+	    }
 	}
-      }
     }
   }
 
-  void fill_ec_counts(const telescope::Alignment &alignment) {
+  void fill_ec_counts(const mSWEEP::Alignment &alignment) {
     // Fill log ec counts.
     this->log_ec_counts.resize(alignment.n_ecs(), 0);
 #pragma omp parallel for schedule(static)
     for (size_t i = 0; i < alignment.n_ecs(); ++i) {
-      this->log_ec_counts[i] = std::log(alignment.reads_in_ec(i));
+	this->log_ec_counts[i] = std::log(alignment.reads_in_ec(i));
     }
   }
 
@@ -170,14 +209,14 @@ private:
 public:
   LL_WOR21() = default;
 
-  LL_WOR21(const std::vector<V> &group_sizes, const telescope::Alignment &alignment, const size_t n_groups, const T tol, const T frac_mu, const size_t min_hits, const T _zero_inflation) {
+  LL_WOR21(const std::vector<V> &group_sizes, const mSWEEP::Alignment &alignment, const size_t n_groups, const T tol, const T frac_mu, const size_t min_hits, const T _zero_inflation) {
     this->bb_constants[0] = tol;
     this->bb_constants[1] = frac_mu;
     this->zero_inflation = _zero_inflation;
     this->from_grouped_alignment(alignment, group_sizes, n_groups, min_hits);
   }
 
-  void from_grouped_alignment(const telescope::Alignment &alignment, const std::vector<V> &group_sizes, const size_t n_groups, const size_t min_hits) {
+  void from_grouped_alignment(const mSWEEP::Alignment &alignment, const std::vector<V> &group_sizes, const size_t n_groups, const size_t min_hits) {
     this->fill_ll_mat(alignment, group_sizes, n_groups, min_hits);
     this->fill_ec_counts(alignment);
   }
@@ -292,7 +331,7 @@ public:
   const std::vector<bool>& groups_considered() const override { return this->groups_mask; };
 };
 template <typename T>
-std::unique_ptr<Likelihood<T>> ConstructAdaptiveLikelihood(const telescope::Alignment &alignment, const Grouping &grouping, const T q, const T e, const size_t min_hits, const T zero_inflation) {
+std::unique_ptr<Likelihood<T>> ConstructAdaptiveLikelihood(const mSWEEP::Alignment &alignment, const Grouping &grouping, const T q, const T e, const size_t min_hits, const T zero_inflation) {
     size_t max_group_size = grouping.max_group_size();
     size_t n_groups = grouping.get_n_groups();
     std::unique_ptr<Likelihood<T>> log_likelihoods;

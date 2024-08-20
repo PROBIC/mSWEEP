@@ -30,7 +30,7 @@
 #include "mSWEEP_version.h"
 
 namespace mSWEEP {
-void BootstrapSample::init_bootstrap(const telescope::Alignment &alignment) {
+void BootstrapSample::init_bootstrap(const mSWEEP::Alignment &alignment) {
   // Clear the bootstrap abundances in case we're estimating the same sample again.
   this->bootstrap_results = std::vector<std::vector<double>>();
 
@@ -43,7 +43,7 @@ void BootstrapSample::init_bootstrap(const telescope::Alignment &alignment) {
   ec_distribution = std::discrete_distribution<uint32_t>(weights.begin(), weights.end());
 }
 
-void BootstrapSample::construct(const telescope::Alignment &alignment, const size_t _iters, const int32_t seed, const size_t _bootstrap_count) {
+void BootstrapSample::construct(const mSWEEP::Alignment &alignment, const size_t _iters, const int32_t seed, const size_t _bootstrap_count) {
   this->count_alignments(alignment);
   if (seed == 26012023) {
     std::random_device rd;

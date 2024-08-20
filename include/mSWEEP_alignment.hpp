@@ -153,9 +153,16 @@ public:
 			hash ^= j + 0x517cc1b727220a95 + (hash << 6) + (hash >> 2);
 		    }
 		}
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
 		auto got = mymap[omp_get_thread_num()].find(hash);
 		if (got == mymap[omp_get_thread_num()].end()) {
 		    mymap[omp_get_thread_num()].insert(std::make_pair(hash, std::vector<uint32_t>({(uint32_t)i})));
+#else
+		auto got = mymap[0].find(hash);
+		if (got == mymap[0].end()) {
+		    mymap[0].insert(std::make_pair(hash, std::vector<uint32_t>({(uint32_t)i})));
+
+#endif
 		} else {
 		    got->second.emplace_back(i);
 		}
@@ -185,7 +192,10 @@ public:
 #pragma omp parallel
 	{
 	    size_t i = 0;
-	    size_t thread_id = omp_get_thread_num();
+	    size_t thread_id = 0;
+#if defined(MSWEEP_OPENMP_SUPPORT) && (MSWEEP_OPENMP_SUPPORT) == 1
+	    thread_id = omp_get_thread_num();
+#endif
 	    collapsed_bits[thread_id].resize(n_ecs*this->n_targets);
 	    for(auto element = map.begin(); element !=map.end(); ++element, i++) {
 		if(i%n_threads == thread_id) {

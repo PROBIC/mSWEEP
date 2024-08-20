@@ -225,6 +225,8 @@ public:
 	return this->ec_read_ids;
     }
 
+    const std::vector<uint32_t>& reads_assigned_to_ec(size_t ec_id) const { return this->ec_read_ids[ec_id]; }
+
     template <typename T>
     void add_groups(const std::vector<T> &grouping) {
 	size_t _n_groups = 0;

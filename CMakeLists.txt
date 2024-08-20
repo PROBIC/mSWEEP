@@ -168,11 +168,6 @@ endif()
 include_directories(${CMAKE_BXZSTR_HEADERS})
 
 ## Check dependencies and download them if not given
-## BitMagic
-set(CMAKE_BITMAGIC_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS/external/telescope/external/BitMagic-7.12.3/src/)
-include_directories(${CMAKE_BITMAGIC_HEADERS})
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS/external/telescope/include)
-
 ## cxxio
 if (DEFINED CMAKE_CXXIO_HEADERS)
   message(STATUS "cxxio headers provided in: ${CMAKE_CXXIO_HEADERS}")
@@ -237,9 +232,18 @@ else()
   set_target_properties(alignment-writer PROPERTIES EXCLUDE_FROM_ALL 1)
   set(CMAKE_ALIGNMENT_WRITER_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/alignment-writer/include)
   set(CMAKE_ALIGNMENT_WRITER_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/lib/libalignment-writer.a)
+  set(CMAKE_BITMAGIC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/alignment-writer/external/BitMagic-7.12.3/src/)
 endif()
 include_directories(${CMAKE_ALIGNMENT_WRITER_HEADERS})
 target_link_libraries(mSWEEP ${CMAKE_ALIGNMENT_WRITER_LIBRARY})
+
+## BitMagic
+if (DEFINED CMAKE_BITMAGIC_HEADERS)
+  message(STATUS "BitMagic headers provided in: ${CMAKE_BITMAGIC_HEADERS}")
+else()
+  message(FATAL_ERROR "Provide BitMagic C++ headers with -DCMAKE_BITMAGIC_HEADERS")
+endif()
+include_directories(${CMAKE_BITMAGIC_HEADERS})
 
 ## seamat
 if (DEFINED CMAKE_SEAMAT_HEADERS)
@@ -252,6 +256,7 @@ else()
     SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/seamat"
     BUILD_IN_SOURCE   0
     CMAKE_ARGS        -D CMAKE_BUILD_TESTS=0
+                      -D CMAKE_BITMAGIC_HEADERS=${CMAKE_BITMAGIC_HEADERS}
     BUILD_COMMAND     ""
     CONFIGURE_COMMAND ""
     INSTALL_COMMAND   ""
@@ -301,7 +306,7 @@ if (DEFINED CMAKE_MGEMS_LIBRARY AND DEFINED CMAKE_MGEMS_HEADERS)
 else()
   FetchContent_Declare(mGEMS
     GIT_REPOSITORY    https://github.com/PROBIC/mGEMS.git
-    GIT_TAG           v1.3.0
+    GIT_TAG           v1.3.3
     PREFIX            "external"
     SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/mGEMS"
     BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS"
@@ -310,9 +315,8 @@ else()
 		    -D CMAKE_CXXARGS_HEADERS=${CMAKE_CXXARGS_HEADERS}
 		    -D CMAKE_CXXIO_HEADERS=${CMAKE_CXXIO_HEADERS}
 		    -D CMAKE_ALIGNMENT_WRITER_HEADERS=${CMAKE_ALIGNMENT_WRITER_HEADERS}
-		    -D CMAKE_BITMAGIC_HEADERS=${CMAKE_CURRENT_BINARY_DIR}/external/telescope/external/BitMagic-7.12.3/src
+		    -D CMAKE_BITMAGIC_HEADERS=${CMAKE_BITMAGIC_HEADERS}
 		    -D CMAKE_SEAMAT_HEADERS=${CMAKE_SEAMAT_HEADERS}
-		    -D CMAKE_TELESCOPE_HEADERS=${CMAKE_TELESCOPE_HEADERS}
 		    -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 		    -D "CMAKE_C_FLAGS=${CMAKE_C_FLAGS}"
 		    -D "CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
@@ -321,13 +325,13 @@ else()
     INSTALL_COMMAND   ""
     )
   FetchContent_MakeAvailable(mGEMS)
-  add_dependencies(mGEMS telescope libalignmentwriter)
+  add_dependencies(mGEMS libalignmentwriter)
   add_dependencies(mSWEEP libmgems)
   set_target_properties(mGEMS PROPERTIES EXCLUDE_FROM_ALL 1)
-  set(CMAKE_MGEMS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/mGEMS/include)
+  set(CMAKE_MGEMS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/mGEMS/include ${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS/include)
   set(CMAKE_MGEMS_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/external/mGEMS/lib/libmgems.a)
 endif()
-target_link_libraries(mSWEEP ${CMAKE_MGEMS_LIBRARY} ${CMAKE_TELESCOPE_LIBRARY} ${CMAKE_ALIGNMENT_WRITER_LIBRARY})
+target_link_libraries(mSWEEP ${CMAKE_MGEMS_LIBRARY} ${CMAKE_ALIGNMENT_WRITER_LIBRARY})
 include_directories(${CMAKE_MGEMS_HEADERS})
 
 include_directories(

@@ -201,7 +201,7 @@ Estimation options:
 --no-fit-model	Do not estimate the abundances. Useful if only the likelihood matrix is required (default: false).
 --max-iters	Maximum number of iterations to run the abundance estimation optimizer for (default: 5000).
 --tol	Optimization terminates when the bound changes by less than the given tolerance (default: 0.000001).
---algorithm Which algorithm to use for abundance estimation (one of rcggpu, emgpu, rcgcpu (original mSWEEP); default: rcggpu).
+--algorithm Which algorithm to use for abundance estimation (one of rcggpu, emgpu, rcgcpu (original mSWEEP); default: rcgcpu).
 --emprecision   Precision to use for the emgpu algorithm (one of float, double; default: double).
 
 Bootstrapping options:

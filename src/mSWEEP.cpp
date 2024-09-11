@@ -125,7 +125,7 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   // Tolerance for abundance estimation convergence
   args.add_long_argument<double>("tol", "Optimization terminates when the bound changes by less than the given tolerance (default: 0.000001).", (double)0.000001);
   // Algorithm to use for abundance estimation
-  args.add_long_argument<std::string>("algorithm", "Which algorithm to use for abundance estimation (one of rcggpu, emgpu, rcgcpu (original mSWEEP); default: rcggpu).", "rcggpu");
+  args.add_long_argument<std::string>("algorithm", "Which algorithm to use for abundance estimation (one of rcggpu, emgpu, rcgcpu (original mSWEEP); default: rcgcpu).", "rcgcpu");
   // Precision for abundance estimation with emgpu algorithm
   args.add_long_argument<std::string>("emprecision", "Precision to use for the emgpu algorithm (one of float, double; default: double).\n\nBootstrapping options:", "double");
 

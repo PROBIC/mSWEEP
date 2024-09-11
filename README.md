@@ -12,7 +12,7 @@ In addition to mSWEEP, you will need to install [Themisto](https://github.com/al
 ## Conda
 Install mSWEEP from bioconda with
 ```
-conda install -y -c bioconda -c conda-forge -c defaults msweep
+conda install -y -c bioconda -c conda-forge msweep
 ```
 
 check that the installation succeeded by running
@@ -22,14 +22,17 @@ mSWEEP --help
 
 ## Precompiled binaries
 Precompiled binaries are available for
-* [Linux x86\_64 (mSWEEP-v2.1.0)](https://github.com/PROBIC/mSWEEP/releases/download/v2.1.0/mSWEEP-v2.1.0-x86_64-redhat-linux.tar.gz)
-* [macOS arm64 (mSWEEP-v2.1.0)](https://github.com/PROBIC/mSWEEP/releases/download/v2.1.0/mSWEEP-v2.1.0-arm64-apple-darwin22.tar.gz)
-* [macOS x86\_64 (mSWEEP-v2.1.0)](https://github.com/PROBIC/mSWEEP/releases/download/v2.1.0/mSWEEP-v2.1.0-x86_64-apple-darwin22.tar.gz)
+* Linux x86\_64
+* macOS arm64
+* macOS x86\_64
 
-## Compiling from source
+from the [Releases](https://github.com/PROBIC/mSWEEP/releases) page.
+
+## Building from source
 ### Requirements
 - C++17 compliant compiler.
-- cmake (v3.0 or newer)
+- cmake (v3.11 or newer)
+- git
 
 #### Optional
 - Compiler with OpenMP support.
@@ -49,9 +52,37 @@ enter the directory and run
 > cmake ..
 > make
 ```
+
 This will compile the mSWEEP executable in `build/bin/mSWEEP`.
 
 For more info on compiling mSWEEP from source, please see the [documentation on compiling mSWEEP](/docs/compilation.md).
+
+### Enabling GPU acceleration
+Compiling mSWEEP with GPU support requires installing
+- [LibTorch](https://pytorch.org/get-started/locally/)
+- ... and CUDA Toolkit (LibTorch w/ CUDA support)
+- ... or ROCm (LibTorch w/ ROCm)
+
+then, build mSWEEP with
+```
+> mkdir build
+> cd build
+> cmake -DCMAKE_LIBTORCH_PATH=/absolute/path/to/libtorch ..
+> make
+```
+
+where `/absolute/path/to/libtorch` should be the absolute (!) path to
+the root of the LibTorch distribution.
+
+Compiling mSWEEP with LibTorch support enables the `rcggpu` and
+`emgpu` options for `--algorithm` which directs the abundance
+estimation to run on the GPU if one is available.
+
+Both algorithms can also be run on the CPU. Compared to the default algorithm, on the CPU
+- `rcggpu` is faster but uses more memory.
+- `emgpu` is slower but uses less memory.
+
+See [docs/gpubenchmarks.md](/docs/gpubenchmarks.md) for more details.
 
 # Usage
 More information about using mSWEEP is available in the [usage documentation](/docs/README.md).
@@ -170,6 +201,8 @@ Estimation options:
 --no-fit-model	Do not estimate the abundances. Useful if only the likelihood matrix is required (default: false).
 --max-iters	Maximum number of iterations to run the abundance estimation optimizer for (default: 5000).
 --tol	Optimization terminates when the bound changes by less than the given tolerance (default: 0.000001).
+--algorithm Which algorithm to use for abundance estimation (one of rcggpu, emgpu, rcgcpu (original mSWEEP); default: rcggpu).
+--emprecision   Precision to use for the emgpu algorithm (one of float, double; default: double).
 
 Bootstrapping options:
 --iters	Number of times to rerun estimation with bootstrapped alignments (default: 0).

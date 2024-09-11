@@ -34,12 +34,24 @@ endif()
 ## Check dependencies
 ### Torch
 if(CMAKE_LIBTORCH_PATH)
+  message(STATUS "Torch libraries provided in: ${CMAKE_LIBTORCH_PATH}")
   set(Torch_DIR ${CMAKE_LIBTORCH_PATH}/share/cmake/Torch)
-else()
-  message(FATAL_ERROR "Please provide the path to the libtorch installation directory using -DCMAKE_LIBTORCH_PATH")
 endif()
-find_package(Torch REQUIRED)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+
+find_package(Torch)
+if (TORCH_FOUND)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+  set(MSWEEP_TORCH_SUPPORT 1)
+  include_directories(${TORCH_INCLUDE_DIRS})
+  message(STATUS "Compiling mSWEEP with GPU and CPU support")
+else()
+  set(MSWEEP_TORCH_SUPPORT 0)
+  if (DEFINED CMAKE_LIBTORCH_PATH)
+    message(FATAL_ERROR "Could not find libtorch in: ${CMAKE_LIBTORCH_PATH}")
+  else()
+    message(STATUS "Compiling mSWEEP with CPU support only")
+  endif()
+endif()
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
@@ -259,7 +271,7 @@ if (DEFINED CMAKE_SEAMAT_HEADERS)
   message(STATUS "seamat headers provided in: ${CMAKE_SEAMAT_HEADERS}")
 else()
   FetchContent_Declare(seamat
-    GIT_REPOSITORY    https://github.com/Piketulus/seamat.git
+    GIT_REPOSITORY    https://github.com/tmaklin/seamat.git
     GIT_TAG           v0.2.3
     PREFIX            "external"
     SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/seamat"
@@ -272,19 +284,18 @@ else()
     )
   FetchContent_MakeAvailable(seamat)
   set(CMAKE_SEAMAT_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/seamat/include ${CMAKE_CURRENT_BINARY_DIR}/_deps/seamat-build/include)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/mSWEEP_openmp_config.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/include/mSWEEP_openmp_config.hpp @ONLY)
 endif()
 include_directories(${CMAKE_SEAMAT_HEADERS})
 
 ## rcgpar
-if (DEFINED CMAKE_RCGPAR_LIBRARY AND DEFINED CMAKE_RCGPAR_HEADERS AND DEFINED CMAKE_RCGUTILS_LIBRARY)
+if (DEFINED CMAKE_RCGPAR_LIBRARIES AND DEFINED CMAKE_RCGPAR_HEADERS AND DEFINED CMAKE_RCGUTILS_LIBRARY)
   message(STATUS "rcgpar headers provided in: ${CMAKE_RCGPAR_HEADERS}")
-  message(STATUS "rcgpar library provided in: ${CMAKE_RCGPAR_LIBRARY}")
+  message(STATUS "rcgpar library provided in: ${CMAKE_RCGPAR_LIBRARIES}")
   message(STATUS "rcgutils library provided in: ${CMAKE_RCGUTILS_LIBRARY}")
 else()
   FetchContent_Declare(rcgpar
-    GIT_REPOSITORY    https://github.com/Piketulus/rcgpar-gpu.git
-    GIT_TAG           v1.0.0
+    GIT_REPOSITORY    https://github.com/tmaklin/rcgpar.git
+    GIT_TAG           v1.2.1
     PREFIX            "external"
     SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/rcgpar"
     BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/rcgpar"
@@ -292,7 +303,7 @@ else()
     CMAKE_ARGS      -D CMAKE_ENABLE_MPI_SUPPORT=${MSWEEP_MPI_SUPPORT}
                     -D CMAKE_SEAMAT_HEADERS=${CMAKE_SEAMAT_HEADERS}
 		    -D CMAKE_BITMAGIC_HEADERS=${CMAKE_BITMAGIC_HEADERS}
-        -D CMAKE_LIBTORCH_PATH=${CMAKE_LIBTORCH_PATH}
+		    -D CMAKE_LIBTORCH_PATH=${CMAKE_LIBTORCH_PATH}
 		    -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 		    -D "CMAKE_C_FLAGS=${CMAKE_C_FLAGS}"
 		    -D "CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
@@ -301,12 +312,19 @@ else()
     INSTALL_COMMAND   ""
     )
   FetchContent_MakeAvailable(rcgpar)
-  add_dependencies(mSWEEP rcgomp rcgutils)
+
+  if (TORCH_FOUND)
+    add_dependencies(mSWEEP rcgomp rcggpu rcgutils)
+    set(CMAKE_RCGPAR_LIBRARIES "${CMAKE_CURRENT_BINARY_DIR}/lib/librcgomp.a" "${CMAKE_CURRENT_BINARY_DIR}/lib/librcggpu.a")
+  else()
+    add_dependencies(mSWEEP rcgomp rcgutils)
+    set(CMAKE_RCGPAR_LIBRARIES "${CMAKE_CURRENT_BINARY_DIR}/lib/librcgomp.a")
+  endif()
   set(CMAKE_RCGPAR_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/rcgpar/include)
-  set(CMAKE_RCGPAR_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/lib/librcgomp.a")
   set(CMAKE_RCGUTILS_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/lib/librcgutils.a")
 endif()
-target_link_libraries(mSWEEP ${CMAKE_RCGPAR_LIBRARY} ${CMAKE_RCGUTILS_LIBRARY})
+target_link_libraries(mSWEEP ${CMAKE_RCGPAR_LIBRARIES})
+target_link_libraries(mSWEEP ${CMAKE_RCGUTILS_LIBRARY})
 include_directories(${CMAKE_RCGPAR_HEADERS})
 
 ## mGEMS
@@ -371,4 +389,6 @@ if (OPENMP_FOUND)
   target_link_libraries(mSWEEP OpenMP::OpenMP_CXX)
 endif()
 
-target_link_libraries(mSWEEP "${TORCH_LIBRARIES}")
+if (TORCH_FOUND)
+  target_link_libraries(mSWEEP "${TORCH_LIBRARIES}")
+endif()

@@ -446,7 +446,7 @@ int main (int argc, char *argv[]) {
 
 	try {
 	  // Run estimation
-    sample->store_probs(rcg_optl(args, log_likelihoods->log_mat(), log_likelihoods->log_counts(), prior_counts, log));
+	  sample->store_probs(rcg_optl(args, log_likelihoods->log_mat(), log_likelihoods->log_counts(), prior_counts, log));
 	} catch (std::exception &e) {
 	  finalize("Estimating relative abundances failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	  return 1;
@@ -464,11 +464,11 @@ int main (int argc, char *argv[]) {
 	// Run binning if requested and write results to files.
 	if (rank == 0) { // root performs the rest.
 	  // Turn the probs into relative abundances
-    if (args.value<std::string>("algorithm") == "rcgcpu") {
-      sample->store_abundances(rcgpar::mixture_components(sample->get_probs(), log_likelihoods->log_counts()));
-    } else {
-      sample->store_abundances(rcgpar::mixture_components_torch(sample->get_probs(), log_likelihoods->log_counts()));
-    }
+	  if (args.value<std::string>("algorithm") == "rcgcpu") {
+	      sample->store_abundances(rcgpar::mixture_components(sample->get_probs(), log_likelihoods->log_counts()));
+	  } else {
+	      sample->store_abundances(rcgpar::mixture_components_torch(sample->get_probs(), log_likelihoods->log_counts()));
+	  }
 
 	  if (args.value<size_t>("min-hits") > 0) {
 	      for (size_t j = 0; j < reference->group_names(i).size(); ++j) {
@@ -554,18 +554,18 @@ int main (int argc, char *argv[]) {
 	    // Estimate with the bootstrapped counts
 	    // Reuse ec_probs since it has already been processed
 	    try {
-        sample->store_probs(rcg_optl(args, log_likelihoods->log_mat(), resampled_counts, prior_counts, log));
+	      sample->store_probs(rcg_optl(args, log_likelihoods->log_mat(), resampled_counts, prior_counts, log));
 	    } catch (std::exception &e) {
 	      finalize("Bootstrap iteration " + std::to_string(k) + "/" + std::to_string(args.value<size_t>("iters")) + " failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	      return 1;
 	    }
 	    if (rank == 0) {
-        if (args.value<std::string>("algorithm") == "rcgcpu") {
-          sample->store_abundances(rcgpar::mixture_components(sample->get_probs(), resampled_counts));
-        } else {
-          sample->store_abundances(rcgpar::mixture_components_torch(sample->get_probs(), resampled_counts));
-        }
-      }
+		if (args.value<std::string>("algorithm") == "rcgcpu") {
+		    sample->store_abundances(rcgpar::mixture_components(sample->get_probs(), resampled_counts));
+		} else {
+		    sample->store_abundances(rcgpar::mixture_components_torch(sample->get_probs(), resampled_counts));
+		}
+	    }
 	  }
 	}
       }

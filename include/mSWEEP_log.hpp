@@ -11,7 +11,6 @@
 #include <string>
 
 #include "cxxio.hpp"
-#include "mSWEEP_mpi_config.hpp"
 
 namespace mSWEEP {
 class Log : public cxxio::Out {
@@ -43,12 +42,7 @@ class Log : public cxxio::Out {
 
 template <typename T>
 Log& operator<<(Log &os, T t) {
-  int rank = 0;
-#if defined(MSWEEP_MPI_SUPPORT) && (MSWEEP_MPI_SUPPORT) == 1
-  // Only root will log
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-#endif
-  if (os.verbose && rank == 0) {
+  if (os.verbose) {
     if (os.log_time){
       std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
       std::time_t now_t = std::chrono::system_clock::to_time_t(now);

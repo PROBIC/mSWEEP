@@ -1,15 +1,3 @@
-# mSWEEP-GPU
-Extension/fork of [mSWEEP](https://github.com/PROBIC/mSWEEP) with GPU acceleration for the abundance estimation algorithm. Adds two new options to the mSWEEP command line interface: `--algorithm` and `--emprecision`.
-
-Algorithm descriptions:
-- `rcggpu`: The original mSWEEP algorithm, implemented with LibTorch and can take advantage of a GPU. This algorithm is the fastest of the three, but uses ~25% more memory than the original algorithm. When using the GPU, memory usage is capped by the GPU memory (for example a Nvidia A100 may have 80GB of memory), so very large inputs may run into memory issues. With no GPU, this algorithm will run on the CPU, and is still marginally faster than the original algorithm.
-- `emgpu`: A new algorithm that uses an expectation-maximization algorithm to estimate the relative abundances. This algorithm is slower than `rcggpu`, but uses ~40% less memory than the original algorithm. Inputs that run into memory issues on the GPU with `rcggpu` may still be able to take advantage of the GPU with this algorithm. Also, the precision of the algorithm can be changed with the `--emprecision` flag. The `float` precision is much faster and halves the memory usage, but loses some accuracy compared to the `double` precision and other algorithms. With no GPU, this algorithm will run on the CPU, and is faster than the original algorithm when using the `float` precision, but slower when using the `double` precision.
-- `rcgcpu`: The original mSWEEP algorithm, running on the CPU. This algorithm is the slowest of the three, but can be improved through OpenMP support and supplying a large number of CPU's.
-
-The default algorithm is set to `rcggpu`, which will use the GPU if available.
-
-To get a better idea of the performance of these algorithms, check out this benchmark [documentation](/docs/gpubenchmarks.md).
-
 # mSWEEP
 Fast and accurate bacterial community composition estimation on within-species
 level by using pseudoalignments and variational inference.
@@ -21,44 +9,80 @@ in Wellcome Open Research.
 # Installation
 In addition to mSWEEP, you will need to install [Themisto](https://github.com/algbio/themisto) for pseudoalignment.
 
-## Compiling from source
+## Conda
+Install mSWEEP from bioconda with
+```
+conda install -y -c bioconda -c conda-forge msweep
+```
+
+check that the installation succeeded by running
+```
+mSWEEP --help
+```
+
+## Precompiled binaries
+Precompiled binaries are available for
+* Linux x86\_64
+* macOS arm64
+* macOS x86\_64
+
+from the [Releases](https://github.com/PROBIC/mSWEEP/releases) page.
+
+## Building from source
 ### Requirements
 - C++17 compliant compiler.
-- cmake (v3.0 or newer)
-- [LibTorch](https://pytorch.org/get-started/locally/)
-
-Notes on downloading LibTorch:
-- If intended for use on the CSC or UH HPC clusters make sure to download the (Pre-cxx11 ABI) version for compatability with older glibc versions.
-- If needing an older version of LibTorch due to not having the latest versions of ROCm (like on LUMI), these can be downloaded by changing the versions in the link.
-  - For example: https://download.pytorch.org/libtorch/rocm6.0/libtorch-shared-with-deps-2.3.1%2Brocm6.0.zip to https://download.pytorch.org/libtorch/rocm5.4.2/libtorch-shared-with-deps-2.0.1%2Brocm5.4.2.zip
+- cmake (v3.11 or newer)
+- git
 
 #### Optional
-- CUDA Toolkit (if using LibTorch with CUDA support; version depending on downloaded LibTorch) or ROCm (if using LibTorch with ROCm support; version depending on downloaded LibTorch)
 - Compiler with OpenMP support.
 
-Without a CUDA or ROCm supported LibTorch and CUDA Toolkit or ROCm there will be no GPU acceleration.
-
-If your compiler does not support OpenMP, the original mSWEEP can only be run in single-threaded mode.
+If your compiler does not support OpenMP, mSWEEP can only be run in
+single-threaded mode. The prebuilt binaries are compiled with OpenMP support.
 
 ### Compiling
-Before compiling mSWEEP-GPU in HPC environments, it may be useful to check out the [documentation on compiling and running mSWEEP-GPU in HPC environments](/docs/gpucompilation.md).
-
-Clone the mSWEEP-GPU repository
+Clone the mSWEEP repository
 ```
-git clone https://github.com/Piketulus/mSWEEP-gpu.git
+git clone https://github.com/PROBIC/mSWEEP.git
 ```
 enter the directory and run
 ```
 > mkdir build
 > cd build
-> cmake -DCMAKE_LIBTORCH_PATH=/absolute/path/to/libtorch ..
-> cmake --build .
+> cmake ..
+> make
 ```
-where `/absolute/path/to/libtorch` should be the absolute (!) path to the unzipped LibTorch distribution.
 
 This will compile the mSWEEP executable in `build/bin/mSWEEP`.
 
 For more info on compiling mSWEEP from source, please see the [documentation on compiling mSWEEP](/docs/compilation.md).
+
+### Enabling GPU acceleration
+Compiling mSWEEP with GPU support requires installing
+- [LibTorch](https://pytorch.org/get-started/locally/)
+- ... and CUDA Toolkit (LibTorch w/ CUDA support)
+- ... or ROCm (LibTorch w/ ROCm)
+
+then, build mSWEEP with
+```
+> mkdir build
+> cd build
+> cmake -DCMAKE_LIBTORCH_PATH=/absolute/path/to/libtorch ..
+> make
+```
+
+where `/absolute/path/to/libtorch` should be the absolute (!) path to
+the root of the LibTorch distribution.
+
+Compiling mSWEEP with LibTorch support enables the `rcggpu` and
+`emgpu` options for `--algorithm` which directs the abundance
+estimation to run on the GPU if one is available.
+
+Both algorithms can also be run on the CPU. Compared to the default algorithm, on the CPU
+- `rcggpu` is faster but uses more memory.
+- `emgpu` is slower but uses less memory.
+
+See [docs/gpubenchmarks.md](/docs/gpubenchmarks.md) for more details.
 
 # Usage
 More information about using mSWEEP is available in the [usage documentation](/docs/README.md).

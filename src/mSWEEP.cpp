@@ -40,7 +40,6 @@
 
 #include "mSWEEP_alignment.hpp"
 
-#include "mSWEEP_mpi_config.hpp"
 #include "mSWEEP_openmp_config.hpp"
 #include "mSWEEP_version.h"
 
@@ -125,7 +124,7 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
   // Tolerance for abundance estimation convergence
   args.add_long_argument<double>("tol", "Optimization terminates when the bound changes by less than the given tolerance (default: 0.000001).", (double)0.000001);
   // Algorithm to use for abundance estimation
-  args.add_long_argument<std::string>("algorithm", "Which algorithm to use for abundance estimation (one of rcggpu, emgpu, rcgcpu (original mSWEEP); default: rcggpu).", "rcggpu");
+  args.add_long_argument<std::string>("algorithm", "Which algorithm to use for abundance estimation (one of rcggpu, emgpu, rcgcpu (original mSWEEP); default: rcgcpu).", "rcgcpu");
   // Precision for abundance estimation with emgpu algorithm
   args.add_long_argument<std::string>("emprecision", "Precision to use for the emgpu algorithm (one of float, double; default: double).\n\nBootstrapping options:", "double");
 
@@ -162,30 +161,20 @@ void parse_args(int argc, char* argv[], cxxargs::Arguments &args) {
 
 void finalize(const std::string &msg, mSWEEP::Log &log, bool abort = false) {
   // Set the state of the program so that it can finish correctly:
-  // - Finalizes (or aborts) any/all MPI processes.
   // - Writes a potential message `msg` to the log.
   // - Flushes the log (ensure all messages are displayed).
   //
   // Input:
   //   `msg`: message to print.
   //   `log`: logger (see msweep_log.hpp).
-  //   `abort`: terminate MPI (from any process).
   //
-  if (abort != 0)  {
-#if defined(MSWEEP_MPI_SUPPORT) && (MSWEEP_MPI_SUPPORT) == 1
-    MPI_Abort(MPI_COMM_WORLD, 1);
-#endif
-  }
-#if defined(MSWEEP_MPI_SUPPORT) && (MSWEEP_MPI_SUPPORT) == 1
-  MPI_Finalize();
-#endif
   if (!msg.empty())
     std::cerr << msg;
   log.flush();
 }
 
 seamat::DenseMatrix<double> rcg_optl(const cxxargs::Arguments &args, const seamat::Matrix<double> &ll_mat, const std::vector<double> &log_ec_counts, const std::vector<double> &prior_counts, mSWEEP::Log &log) {
-  // Wrapper for calling rcgpar with omp or mpi depending on config.
+  // Wrapper for calling rcgpar with omp or gpu depending on config.
   //
   // Input:
   //   `args`: commandl line arguments.
@@ -198,49 +187,29 @@ seamat::DenseMatrix<double> rcg_optl(const cxxargs::Arguments &args, const seama
   //   `ec_probs`: read-lineage probability matrix. Use rcgpar::mixture_components to
   //               transform this into the relative abundances vector.
   //
-  std::ofstream of; // Silence output from ranks > 1 with an empty ofstream
-#if defined(MSWEEP_MPI_SUPPORT) && (MSWEEP_MPI_SUPPORT) == 1
-  // MPI parallelization (hybrid with OpenMP if enabled).
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-  const seamat::DenseMatrix<double> &ec_probs = rcgpar::rcg_optl_mpi(ll_mat, log_ec_counts, prior_counts, args.value<double>("tol"), args.value<size_t>("max-iters"), (rank == 0 && args.value<bool>("verbose") ? log.stream() : of));
-  return ec_probs;
+  std::ofstream of;
 
-#else
-  // Only OpenMP parallelization (if enabled).
   if (args.value<std::string>("algorithm") == "rcggpu") {
+    // Run rcg on CPU or GPU if present
     const seamat::DenseMatrix<double> &ec_probs = rcgpar::rcg_optl_torch(ll_mat, log_ec_counts, prior_counts, args.value<double>("tol"), args.value<size_t>("max-iters"), (args.value<bool>("verbose") ? log.stream() : of));
     return ec_probs;
   } else if (args.value<std::string>("algorithm") == "rcgcpu") {
+    // Run rcg on CPU, use OpenMP if supported
     const seamat::DenseMatrix<double> &ec_probs = rcgpar::rcg_optl_omp(ll_mat, log_ec_counts, prior_counts, args.value<double>("tol"), args.value<size_t>("max-iters"), (args.value<bool>("verbose") ? log.stream() : of));
     return ec_probs;
   } else {
+    // Run em on CPU or GPU if present
     const seamat::DenseMatrix<double> &ec_probs = rcgpar::em_torch(ll_mat, log_ec_counts, prior_counts, args.value<double>("tol"), args.value<size_t>("max-iters"), (args.value<bool>("verbose") ? log.stream() : of), args.value<std::string>("emprecision"));
     return ec_probs;
   }
-#endif
 }
 
 int main (int argc, char *argv[]) {
   // mSWEEP executable main
   
-  int rank = 0; // If MPI is not supported then we are always on the root process
   mSWEEP::Log log(std::cerr, CmdOptionPresent(argv, argv+argc, "--verbose"), false); // logger class from msweep_log.hpp
 
-  // Initialize MPI if enabled
-#if defined(MSWEEP_MPI_SUPPORT) && (MSWEEP_MPI_SUPPORT) == 1
-  int rc = MPI_Init(&argc, &argv);
-  if (rc != MPI_SUCCESS) {
-    finalize("MPI initialization failed\n\n", log);
-    return 1;
-  }
-  int ntasks;
-  rc=MPI_Comm_size(MPI_COMM_WORLD,&ntasks);
-  rc=MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-#endif
-
   // Use the cxxargs library to parse the command line arguments.
-  // Note: if MPI is enabled the arguments are currently parsed to all processes.
   cxxargs::Arguments args("mSWEEP", "Usage: mSWEEP --themisto-1 <forwardPseudoalignments> --themisto-2 <reversePseudoalignments> -i <groupIndicatorsFile>");
 
   // Print version when running if `--verbose` is used.
@@ -290,7 +259,6 @@ int main (int argc, char *argv[]) {
   std::unique_ptr<mSWEEP::Reference> reference;
   log << "Reading the input files" << '\n';
   try {
-    if (rank == 0) { // Only root reads in data
       log << "  reading group indicators" << '\n';
       cxxio::In indicators(args.value<std::string>('i'));
       reference = std::move(mSWEEP::ConstructAdaptiveReference(&indicators.stream(), '\t'));
@@ -298,7 +266,6 @@ int main (int argc, char *argv[]) {
 	log << "  read " << reference->get_n_groupings() << " groupings" << '\n';
       }
       log << "  read " << reference->get_n_refs() << " group indicators" << '\n';
-    }
   } catch (std::exception &e) {
     finalize("Reading group indicators failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
     return 1;
@@ -306,26 +273,14 @@ int main (int argc, char *argv[]) {
 
   // Estimate abundances with all groupings that were provided
   uint16_t n_groupings;
-  if (rank == 0) { // rank 0
-    n_groupings = reference->get_n_groupings();
-  }
-#if defined(MSWEEP_MPI_SUPPORT) && (MSWEEP_MPI_SUPPORT) == 1
-  // Only root process has read in the input.
-  MPI_Bcast(&n_groupings, 1, MPI_UINT16_T, 0, MPI_COMM_WORLD);
-#endif
+  n_groupings = reference->get_n_groupings();
 
   // Wrapper class for ensuring the outfile names are set consistently and correctly
   mSWEEP::OutfileDesignator out(args.value<std::string>('o'), n_groupings, args.value<std::string>("compress"), args.value<int>("compression-level"));
 
   // Estimate abundances with all groupings
   for (uint16_t i = 0; i < n_groupings; ++i) {
-      // Send the number of groups in this grouping from root to all processes
-      uint16_t n_groups;
-      if (rank == 0) // rank 0
-	n_groups = reference->n_groups(i);
-#if defined(MSWEEP_MPI_SUPPORT) && (MSWEEP_MPI_SUPPORT) == 1
-      MPI_Bcast(&n_groups, 1, MPI_UINT16_T, 0, MPI_COMM_WORLD);
-#endif
+      size_t n_groups = reference->n_groups(i);
 
       // `Sample` and its children are classes for storing data from
       // the pseudoalignment that are needed or not needed depending on
@@ -339,9 +294,7 @@ int main (int argc, char *argv[]) {
       std::unique_ptr<mSWEEP::Likelihood<double>> log_likelihoods;
 
       // Check if reading likelihood from file.
-      // In MPI configurations, only root needs to read in the data. Distributing the values
-      // is handled by the rcgpar::rcg_optl_mpi implementation.
-      if (rank == 0 && !CmdOptionPresent(argv, argv+argc, "--read-likelihood")) {
+      if (!CmdOptionPresent(argv, argv+argc, "--read-likelihood")) {
 	// Start from the pseudoalignments.
 	// To save memory, the alignment can go out of scope.
 	// The necessary values are stored in the Sample class.
@@ -397,7 +350,6 @@ int main (int argc, char *argv[]) {
 	}
 
 	// Initialize Sample depending on how the alignment needs to be processed.
-	// Note: this is also only used by the root process in MPI configuration.
 	mSWEEP::ConstructSample(alignment, args.value<size_t>("iters"), args.value<size_t>("bootstrap-count"), args.value<size_t>("seed"), bin_reads, sample);
 
 	log.flush();
@@ -419,7 +371,7 @@ int main (int argc, char *argv[]) {
 
       try {
 	// Write the likelihood to disk here if it was requested.
-	if (rank == 0 && (args.value<bool>("write-likelihood") || args.value<bool>("write-likelihood-bitseq")))
+	if (args.value<bool>("write-likelihood") || args.value<bool>("write-likelihood-bitseq"))
 	  log_likelihoods->write((args.value<bool>("write-likelihood-bitseq") ? "bitseq" : "mSWEEP"), out.likelihoods((args.value<bool>("write-likelihood-bitseq") ? "bitseq" : "mSWEEP")));
       } catch (std::exception &e) {
 	finalize("Writing the likelihood to file failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
@@ -462,7 +414,6 @@ int main (int argc, char *argv[]) {
 	}
 
 	// Run binning if requested and write results to files.
-	if (rank == 0) { // root performs the rest.
 	  // Turn the probs into relative abundances
 	  if (args.value<std::string>("algorithm") == "rcgcpu") {
 	      sample->store_abundances(rcgpar::mixture_components(sample->get_probs(), log_likelihoods->log_counts()));
@@ -539,7 +490,6 @@ int main (int argc, char *argv[]) {
 	    finalize("Writing the probabilities failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	    return 1;
 	  }
-	}
 
 	// Bootstrap the ec_counts and estimate from the bootstrapped data if required
 	if (bootstrap_mode) {
@@ -548,7 +498,6 @@ int main (int argc, char *argv[]) {
 	    // Bootstrap the counts
 	    log << "Bootstrap" << " iter " << k + 1 << "/" << args.value<size_t>("iters") << '\n';
 	    std::vector<double> resampled_counts;
-	    if (rank == 0)
 	      resampled_counts = std::move(static_cast<mSWEEP::BootstrapSample*>(&(*sample))->resample_counts());
 
 	    // Estimate with the bootstrapped counts
@@ -559,19 +508,17 @@ int main (int argc, char *argv[]) {
 	      finalize("Bootstrap iteration " + std::to_string(k) + "/" + std::to_string(args.value<size_t>("iters")) + " failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
 	      return 1;
 	    }
-	    if (rank == 0) {
 		if (args.value<std::string>("algorithm") == "rcgcpu") {
 		    sample->store_abundances(rcgpar::mixture_components(sample->get_probs(), resampled_counts));
 		} else {
 		    sample->store_abundances(rcgpar::mixture_components_torch(sample->get_probs(), resampled_counts));
 		}
-	    }
 	  }
 	}
       }
 
       // Write relative abundances
-      if (rank == 0 && !args.value<bool>("no-fit-model")) {
+      if (!args.value<bool>("no-fit-model")) {
 	try {
 	  if (sample->get_rate_run()) {
 	      const std::vector<double> &log_kld = sample->get_log_klds();

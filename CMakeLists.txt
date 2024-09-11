@@ -65,20 +65,6 @@ endif()
 set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
-### MPI
-if (CMAKE_ENABLE_MPI_SUPPORT)
-  find_package(MPI REQUIRED)
-  set(MSWEEP_MPI_SUPPORT 1)
-  include_directories(MPI_C_INCLUDE_DIRS)
-  if (CMAKE_MPI_MAX_PROCESSES)
-    set(MSWEEP_MPI_MAX_PROCESSES ${CMAKE_MPI_MAX_PROCESSES})
-  else()
-    set(MSWEEP_MPI_MAX_PROCESSES 1024)
-  endif()
-else()
-  set(MSWEEP_MPI_SUPPORT 0)
-endif()
-
 set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
@@ -103,8 +89,6 @@ string(TIMESTAMP _BUILD_TIMESTAMP)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/mSWEEP_version.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/mSWEEP_version.h @ONLY)
 ## Configure OpenMP if it supported on the system.
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/mSWEEP_openmp_config.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/include/mSWEEP_openmp_config.hpp @ONLY)
-## Configure MPI if it's supported on the system.
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/mSWEEP_mpi_config.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/include/mSWEEP_mpi_config.hpp @ONLY)
 
 add_executable(mSWEEP ${CMAKE_CURRENT_SOURCE_DIR}/src/mSWEEP.cpp)
 
@@ -300,8 +284,7 @@ else()
     SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/rcgpar"
     BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/external/rcgpar"
     BUILD_IN_SOURCE   0
-    CMAKE_ARGS      -D CMAKE_ENABLE_MPI_SUPPORT=${MSWEEP_MPI_SUPPORT}
-                    -D CMAKE_SEAMAT_HEADERS=${CMAKE_SEAMAT_HEADERS}
+    CMAKE_ARGS      -D CMAKE_SEAMAT_HEADERS=${CMAKE_SEAMAT_HEADERS}
 		    -D CMAKE_BITMAGIC_HEADERS=${CMAKE_BITMAGIC_HEADERS}
 		    -D CMAKE_LIBTORCH_PATH=${CMAKE_LIBTORCH_PATH}
 		    -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
@@ -367,11 +350,6 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/external ${CMAKE_CURRENT_SOURCE_DIR}/include/tools
   ${CMAKE_CURRENT_BINARY_DIR}/include
   )
-
-if(MPI_FOUND)
-  add_dependencies(mSWEEP rcgmpi bigmpi)
-  target_link_libraries(mSWEEP rcgmpi ${LIBRARY_OUTPUT_PATH}/libbigmpi.a)
-endif()
 
 add_library(libmsweep
 ${CMAKE_CURRENT_SOURCE_DIR}/src/Sample.cpp

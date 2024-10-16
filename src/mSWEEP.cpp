@@ -285,7 +285,7 @@ int main (int argc, char *argv[]) {
       // `Sample` and its children are classes for storing data from
       // the pseudoalignment that are needed or not needed depending on
       // the command line arguments.
-      std::unique_ptr<mSWEEP::Sample> sample;
+      std::unique_ptr<mSWEEP::Sample> sample = std::make_unique<mSWEEP::PlainSample>();
       bool bootstrap_mode = args.value<size_t>("iters") > (size_t)0;
       bool bin_reads = args.value<bool>("bin-reads");
 
@@ -362,6 +362,7 @@ int main (int argc, char *argv[]) {
 	  }
 
 	  cxxio::In infile(args.value<std::string>("read-likelihood"));
+	  log_likelihoods = std::make_unique<mSWEEP::LL_WOR21<double, int64_t>>();
 	  log_likelihoods->from_file(reference->n_groups(i), &infile.stream());
 	} catch (std::exception &e) {
 	  finalize("Reading the likelihoods failed:\n  " + std::string(e.what()) + "\nexiting\n", log, true);
